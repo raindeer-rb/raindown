@@ -42,6 +42,23 @@ RSpec.describe Raindown::CLI do
       expect(File.read(output)).to include('Table of contents')
     end
 
+    it 'updates the Markdown TOC when rendering' do
+      path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
+      output = File.join(@dir, 'sample.html')
+
+      described_class.run(['render', path, '-o', output])
+
+      expect(File.read(path)).to include('- [Section](#section)')
+      expect(File.read(output)).not_to include('raindown:toc')
+    end
+
+    it 'renders a file without a :toc directive' do
+      path = write_markdown("# Title\n")
+
+      expect { described_class.run(['render', path]) }.to output(/Title/).to_stdout
+      expect(File.read(path)).to eq("# Title\n")
+    end
+
     it 'aborts when the file does not exist' do
       expect { described_class.run(['render', File.join(@dir, 'missing.md')]) }
         .to raise_error(SystemExit)

@@ -4,6 +4,14 @@ Run `raindown watch examples/example.md` and edit this file to see `examples/exa
 
 <{ :toc }>
 
+<!-- raindown:toc -->
+- [Raindown Example](#raindown-example)
+  - [Directives](#directives)
+  - [Alerts](#alerts)
+  - [Markdown](#markdown)
+    - [Nested heading](#nested-heading)
+<!-- /raindown:toc -->
+
 ## Directives
 
 Raindown directives sit between `<{` and `}>`. The table of contents above comes from:

@@ -12,6 +12,9 @@ module Raindown
   CODE_BRACES = { '{' => "\u{E000}", '}' => "\u{E001}" }.freeze
   CODE_BRACE_ENTITIES = { "\u{E000}" => '&#123;', "\u{E001}" => '&#125;' }.freeze
 
+  # The Markdown TOC injected by "raindown toc", which the <{ :toc }> directive replaces in HTML.
+  INJECTED_TOC = %r{\n*<!-- raindown:toc -->.*?<!-- /raindown:toc -->}m
+
   module_function
 
   def headings(markdown:)
@@ -24,7 +27,7 @@ module Raindown
   end
 
   def render(markdown:, metadata: {})
-    template = markdown.gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->')
+    template = markdown.gsub(INJECTED_TOC, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->')
 
     doc = Commonmarker.parse(template.force_encoding('UTF-8'), options: { extension: { alerts: true } })
     preserve_code(doc:)

@@ -65,6 +65,7 @@ module Raindown
       def render(path, output = nil)
         ensure_exists(path)
 
+        TOCInjector.update(path:)
         write(output, render_file(path))
       end
 

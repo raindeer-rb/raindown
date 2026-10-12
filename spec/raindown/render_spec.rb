@@ -35,6 +35,15 @@ RSpec.describe Raindown do
       expect([plain, directive]).to all(end_with("\n").and(satisfy { |html| !html.end_with?("\n\n") }))
     end
 
+    it 'leaves out the Markdown TOC injected by "raindown toc"' do
+      markdown = "# Title\n\n<{ :toc }>\n\n<!-- raindown:toc -->\n- [Title](#title)\n<!-- /raindown:toc -->\n\nText.\n"
+      html = described_class.render(markdown:)
+
+      expect(html).not_to include('raindown:toc')
+      expect(html.scan('Table of contents').length).to eq(1)
+      expect(html).to include('<p>Text.</p>')
+    end
+
     it 'still renders directives outside code' do
       html = described_class.render(markdown: "# Title\n\n<{ :toc }>\n\n```\n<{ :toc }>\n```\n")
 

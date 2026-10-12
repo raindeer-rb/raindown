@@ -42,6 +42,18 @@ RSpec.describe Raindown::Watcher do
       expect(File.read(output_path)).to include('Title')
     end
 
+    it 'updates the Markdown TOC then renders on the change that update triggers' do
+      File.write(path, "# Title\n\n<{ :toc }>\n")
+      expect { watcher.start }.to output.to_stdout
+      File.write(path, "#{File.read(path)}\n## Added\n")
+
+      expect { on_change.first.call([path], [], []) }.not_to output.to_stdout
+      expect(File.read(path)).to include('- [Added](#added)')
+
+      expect { on_change.first.call([path], [], []) }.to output(/Re-rendered/).to_stdout
+      expect(File.read(output_path)).to include('Added')
+    end
+
     it 're-renders when the file changes' do
       expect { watcher.start }.to output.to_stdout
       File.write(path, "# Changed\n")

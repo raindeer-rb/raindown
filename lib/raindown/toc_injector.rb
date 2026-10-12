@@ -14,6 +14,18 @@ module Raindown
       new(content:, path:).call
     end
 
+    # Update the TOC in the file at path, if it has one. Returns true when the file changed.
+    def self.update(path:)
+      content = File.read(path)
+      updated = call(content:, path:)
+      return false if updated == content
+
+      File.write(path, updated)
+      true
+    rescue MissingDirective
+      false
+    end
+
     def initialize(content:, path:)
       @content = content
       @path = path
