@@ -74,52 +74,5 @@ RSpec.describe Raindown::CLI do
     it 'aborts on an unknown command' do
       expect { described_class.run(['bogus']) }.to raise_error(SystemExit)
     end
-
-    it 'injects a Markdown link list beneath the :toc directive' do
-      path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
-
-      silence { described_class.run(['toc', path]) }
-
-      expect(File.read(path)).to eq(<<~MARKDOWN)
-        # Title
-
-        <{ :toc }>
-
-        <!-- raindown:toc -->
-        - [Title](#title)
-          - [Section](#section)
-        <!-- /raindown:toc -->
-
-        ## Section
-      MARKDOWN
-    end
-
-    it 'is idempotent when nothing has changed' do
-      path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
-
-      silence { described_class.run(['toc', path]) }
-      first_pass = File.read(path)
-      silence { described_class.run(['toc', path]) }
-
-      expect(File.read(path)).to eq(first_pass)
-    end
-
-    it 'updates an existing TOC block in place when headings change' do
-      path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
-
-      silence { described_class.run(['toc', path]) }
-      File.write(path, "#{File.read(path)}\n## New Section\n")
-      silence { described_class.run(['toc', path]) }
-
-      content = File.read(path)
-      expect(content.scan('raindown:toc').length).to eq(2)
-      expect(content).to include('[New Section](#new-section)')
-    end
-
-    it 'aborts when the file has no :toc directive' do
-      path = write_markdown("# Title\n\n## Section\n")
-
-      expect { described_class.run(['toc', path]) }.to raise_error(SystemExit)
-    end
   end
 end

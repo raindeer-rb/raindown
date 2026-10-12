@@ -2,7 +2,6 @@
 
 require 'trees'
 require_relative '../raindown'
-require_relative 'toc_injector'
 require_relative 'formatter'
 require_relative 'watcher'
 
@@ -16,10 +15,9 @@ module Raindown
       Commands:
         render   Render FILE once and print (or write) the HTML output
         watch    Re-render FILE every time it is saved
-        toc      Inject/update a Markdown link list beneath <{ :toc }> in FILE
 
       Options:
-        -o, --output PATH   Write output to PATH instead of stdout/in place
+        -o, --output PATH   Write output to PATH instead of stdout
         -h, --help          Show this message
     TEXT
 
@@ -39,16 +37,6 @@ module Raindown
       ['--output', '-o'].each do |flag|
         line("#{flag} :output") do |path, output|
           execute { watch(path, output) }
-        end
-      end
-    end
-
-    line('toc :path') do |path|
-      execute { toc(path) }
-
-      ['--output', '-o'].each do |flag|
-        line("#{flag} :output") do |path, output|
-          execute { toc(path, output) }
         end
       end
     end
@@ -74,26 +62,6 @@ module Raindown
         ensure_exists(path)
 
         Watcher.new(path:, output:).start
-      end
-
-      def toc(path, output = nil)
-        ensure_exists(path)
-        output ||= path
-
-        content = File.read(path)
-
-        updated = begin
-          TOCInjector.call(content:, path:)
-        rescue TOCInjector::MissingDirective => e
-          abort(e.message)
-        end
-
-        if updated == content
-          puts "No changes: #{output}"
-        else
-          File.write(output, updated)
-          puts "Updated TOC in #{output}"
-        end
       end
 
       def ensure_exists(path)

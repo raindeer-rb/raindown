@@ -8,22 +8,13 @@ module Raindown
     END_MARKER = '<!-- /raindown:toc -->'
     DIRECTIVE = '<{ :toc }>'
 
-    class MissingDirective < StandardError; end
-
-    def self.call(content:, path:)
-      new(content:, path:).call
+    # Formatter interface. Content without a TOC directive is returned unchanged.
+    def self.format(content:, **)
+      new(content:).call
     end
 
-    # Formatter interface: like call, but leaves content without a TOC directive unchanged.
-    def self.format(content:, path:)
-      call(content:, path:)
-    rescue MissingDirective
-      content
-    end
-
-    def initialize(content:, path:)
+    def initialize(content:)
       @content = content
-      @path = path
     end
 
     def call
@@ -34,7 +25,7 @@ module Raindown
       elsif @content.include?(DIRECTIVE)
         @content.sub(DIRECTIVE, "#{DIRECTIVE}\n\n#{block}")
       else
-        raise MissingDirective, "No #{DIRECTIVE} directive found in #{@path}"
+        @content
       end
     end
 

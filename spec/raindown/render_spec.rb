@@ -35,7 +35,7 @@ RSpec.describe Raindown do
       expect([plain, directive]).to all(end_with("\n").and(satisfy { |html| !html.end_with?("\n\n") }))
     end
 
-    it 'leaves out the Markdown TOC injected by "raindown toc"' do
+    it 'leaves out the injected Markdown TOC' do
       markdown = "# Title\n\n<{ :toc }>\n\n<!-- raindown:toc -->\n- [Title](#title)\n<!-- /raindown:toc -->\n\nText.\n"
       html = described_class.render(markdown:)
 
@@ -48,6 +48,15 @@ RSpec.describe Raindown do
       html = described_class.render(markdown: "# Title\n\n<{ :toc }>\n\n```\n<{ :toc }>\n```\n")
 
       expect(html.scan('Table of contents').length).to eq(1)
+    end
+  end
+
+  describe '.headings' do
+    it 'reads frozen Markdown without changing it' do
+      markdown = "# Title\n".encode('ASCII-8BIT').freeze
+
+      expect(described_class.headings(markdown:)).to eq([{ level: 1, text: 'Title', id: 'title' }])
+      expect(markdown.encoding).to eq(Encoding::ASCII_8BIT)
     end
   end
 end

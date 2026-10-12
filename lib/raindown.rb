@@ -12,13 +12,13 @@ module Raindown
   CODE_BRACES = { '{' => "\u{E000}", '}' => "\u{E001}" }.freeze
   CODE_BRACE_ENTITIES = { "\u{E000}" => '&#123;', "\u{E001}" => '&#125;' }.freeze
 
-  # The Markdown TOC injected by "raindown toc", which the <{ :toc }> directive replaces in HTML.
+  # The Markdown TOC injected by TOCInjector, which the <{ :toc }> directive replaces in HTML.
   INJECTED_TOC = %r{\n*<!-- raindown:toc -->.*?<!-- /raindown:toc -->}m
 
   module_function
 
   def headings(markdown:)
-    html = Commonmarker.parse(markdown.force_encoding('UTF-8'), options: { extension: { alerts: true } })
+    html = Commonmarker.parse(markdown.dup.force_encoding('UTF-8'), options: { extension: { alerts: true } })
                        .to_html(options: { render: { unsafe: true } })
 
     Nokogiri::HTML(html).css('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').map do |heading|
