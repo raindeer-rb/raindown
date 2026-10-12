@@ -3,7 +3,7 @@
 require 'antlers/api'
 require 'nokogiri'
 
-module Rain
+module Raindown
   class TOCNode < Antlers::LeafNode
     def initialize(name:, template:)
       super(name:)

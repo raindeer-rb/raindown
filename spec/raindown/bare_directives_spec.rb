@@ -12,6 +12,10 @@ RSpec.describe Raindown::BareDirectives do
       expect(described_class.expand(":list\n")).to eq("<{ :list }>\n")
     end
 
+    it 'wraps directives with arguments' do
+      expect(described_class.expand("endpoint: :x\nendpoint:\n")).to eq("<{ endpoint: :x }>\n<{ endpoint: }>\n")
+    end
+
     it 'keeps up to three spaces of indent' do
       expect(described_class.expand("   :toc  \n")).to eq("   <{ :toc }>\n")
     end
@@ -26,6 +30,8 @@ RSpec.describe Raindown::BareDirectives do
       'in a backtick fence' => "```\n:toc\n```\n",
       'in a tilde fence' => "~~~\n:toc\n~~~\n",
       'an unknown keyword' => ":foo\n",
+      'a keyword without a space before its arguments' => "endpoint:x\n",
+      'a capitalised keyword' => "Endpoint: :x\n",
       'an emoji shortcode' => ":toc:\n",
       'already wrapped' => "<{ :toc }>\n"
     }.each do |description, content|

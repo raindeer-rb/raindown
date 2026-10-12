@@ -9,8 +9,10 @@ module Raindown
     EXTENSIONS = %w[.rd .raindown].freeze
     # The directives that take no arguments. :list closes a <{ list: ... }> block.
     KEYWORDS = %w[:toc :list].freeze
+    # The directives that take arguments, like "endpoint: :x".
+    ARGUMENT_KEYWORDS = %w[endpoint:].freeze
     # Four spaces of indent would make the line a Markdown code block.
-    LINE = /\A( {0,3})(#{KEYWORDS.join('|')})[ \t]*$/
+    LINE = /\A( {0,3})(#{KEYWORDS.join('|')}|(?:#{ARGUMENT_KEYWORDS.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
     FENCE = /\A\s*(```|~~~)/
 
     module_function

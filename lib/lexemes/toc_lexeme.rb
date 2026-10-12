@@ -2,7 +2,7 @@
 
 require 'antlers/api'
 
-module Rain
+module Raindown
   module TOCLexeme
     include Antlers::Lexeme
 

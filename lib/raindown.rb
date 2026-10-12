@@ -44,7 +44,7 @@ module Raindown
 
     return template unless template.include?('<{') || template.include?('{')
 
-    ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :var, :prop, :slot, :if, :for] + Rain::Elements[:toc, :list])
+    ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :var, :prop, :slot, :if, :for] + Elements[:toc, :list, :endpoint])
 
     "#{Antlers.render(ast:, current_binding: binding, metadata:).chomp}\n"
   end

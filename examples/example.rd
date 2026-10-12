@@ -9,6 +9,7 @@ This is a Raindown file (`.rd`), so directives can be written bare on their own 
 <!-- raindown:toc -->
 - [Raindown Example](#raindown-example)
   - [Directives](#directives)
+  - [Endpoints](#endpoints)
   - [Alerts](#alerts)
   - [Markdown](#markdown)
     - [Nested heading](#nested-heading)
@@ -23,6 +24,22 @@ In a `.rd` file a directive on its own line needs no delimiters. The table of co
 ```
 
 It lists every heading in the file and stays in sync as you edit. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. `<{ :toc }>` works too, and is the only form `.md` files understand.
+
+## Endpoints
+
+An `endpoint:` directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.
+
+endpoint: :x
+
+```sh
+curl https://httpbin.org/uuid
+```
+
+```json
+{
+  "uuid": "18e0906c-1e4d-4432-9089-b408f847e1a6"
+}
+```
 
 ## Alerts
 

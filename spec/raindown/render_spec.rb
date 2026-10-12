@@ -35,6 +35,13 @@ RSpec.describe Raindown do
       expect(html).to include('Table of contents')
     end
 
+    it 'renders the endpoint directive as nothing' do
+      html = described_class.render(markdown: "<{ endpoint: :x }>\n\n```sh\ncurl https://api.example.com\n```\n")
+
+      expect(html).not_to include('endpoint')
+      expect(text(html)).to include('curl https://api.example.com')
+    end
+
     it 'keeps braces in code blocks' do
       html = described_class.render(markdown: "```ruby\nh = { a: 1 }\n```\n")
 

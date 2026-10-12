@@ -45,6 +45,32 @@ bare: true
 ---
 ```
 
+### Endpoints
+
+Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type:
+
+````md
+<{ endpoint: :x }>
+
+```sh
+curl https://httpbin.org/uuid
+```
+
+```json
+{
+  "uuid": "4c9d6a2e-…"
+}
+```
+````
+
+The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
+
+```sh
+raindown render api.md -x
+```
+
+To refresh a response, empty its code block. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported.
+
 ### Standalone binaries
 
 Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed.

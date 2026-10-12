@@ -12,7 +12,7 @@ module Raindown
     BARE_DIRECTIVE = Regexp.union(DIRECTIVE, /^ {0,3}:toc[ \t]*$/)
 
     # Formatter interface. Content without a TOC directive is returned unchanged.
-    def self.format(content:, path: nil, bare: false)
+    def self.format(content:, path: nil, bare: false, **)
       new(content:, path:, bare:).call
     end
 

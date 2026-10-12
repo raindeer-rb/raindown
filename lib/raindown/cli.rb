@@ -19,20 +19,27 @@ module Raindown
       Options:
         -o, --output PATH   Write output to PATH instead of stdout
         --bare              Allow bare directives like :toc in Markdown files
+        -x, --execute       Run endpoint curl snippets that have no output yet
         -h, --help          Show this message
     TEXT
 
-    OUTPUT_FLAGS = ['--output', '-o'].freeze
+    OPTIONS = { output: ['-o :output', '--output :output'], bare: ['--bare'], execute: ['-x', '--execute'] }.freeze
 
-    # Trees matches tokens in order, so --bare is accepted before or after the output flag.
+    # Trees matches tokens in order, so there's a line for every order and spelling of the options.
+    OPTION_LINES = (0..OPTIONS.size).flat_map { |count| OPTIONS.keys.permutation(count).to_a }.flat_map do |names|
+      [[]].product(*names.map { |name| OPTIONS[name] }).map { |flags| [names, flags.flatten] }
+    end
+
     %i[render watch].each do |command|
-      line("#{command} :path") { |path| execute { send(command, path) } }
-      line("#{command} :path --bare") { |path| execute { send(command, path, bare: true) } }
+      OPTION_LINES.each do |names, flags|
+        options = { bare: names.include?(:bare), execute: names.include?(:execute) }
+        pattern = ["#{command} :path", *flags].join(' ')
 
-      OUTPUT_FLAGS.each do |flag|
-        line("#{command} :path #{flag} :output") { |path, output| execute { send(command, path, output) } }
-        line("#{command} :path #{flag} :output --bare") { |path, output| execute { send(command, path, output, bare: true) } }
-        line("#{command} :path --bare #{flag} :output") { |path, output| execute { send(command, path, output, bare: true) } }
+        if names.include?(:output)
+          line(pattern) { |path, output| execute { send(command, path, output, **options) } }
+        else
+          line(pattern) { |path| execute { send(command, path, **options) } }
+        end
       end
     end
 
@@ -46,17 +53,17 @@ module Raindown
     class << self
       private
 
-      def render(path, output = nil, bare: false)
+      def render(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
 
-        Formatter.update(path:, bare:)
+        Formatter.update(path:, bare:, execute:)
         write(output, Raindown.render_file(path:, bare:))
       end
 
-      def watch(path, output = nil, bare: false)
+      def watch(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
 
-        Watcher.new(path:, output:, bare:).start
+        Watcher.new(path:, output:, bare:, execute:).start
       end
 
       def ensure_exists(path)

@@ -59,6 +59,18 @@ RSpec.describe Raindown::CLI do
       end
     end
 
+    it 'runs endpoints with -x or --execute' do
+      allow(Raindown::Curl).to receive(:run).and_return(['{}', 'json'])
+      output = File.join(@dir, 'sample.html')
+
+      [['-x'], ['--execute', '-o', output], ['-o', output, '--bare', '-x']].each do |args|
+        path = write_markdown("<{ endpoint: :later }>\n\n```sh\ncurl https://api.example.com\n```\n")
+        silence { described_class.run(['render', path, *args]) }
+
+        expect(File.read(path)).to end_with("```\n\n```json\n{}\n```\n")
+      end
+    end
+
     it 'writes rendered output to the given path' do
       path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
       output = File.join(@dir, 'sample.html')
