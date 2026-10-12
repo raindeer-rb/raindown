@@ -3,3 +3,18 @@
 # Raindown
 
 Raindown is a templating layer for static site generation and an annotation framework for Markdown files.
+
+## CLI
+
+The gem ships a `raindown` executable for rendering a Markdown file (including directives like `<{ :toc }>`) to HTML from the command line.
+
+```sh
+# Render once and print to stdout:
+raindown render README.md
+
+# Render once and write to a file:
+raindown render README.md -o README.html
+
+# Watch and render every time the file is saved:
+raindown watch README.md -o README.html
+```

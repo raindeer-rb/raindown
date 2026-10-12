@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
   TEXT
 
   spec.homepage = 'https://github.com/raindeer-rb/raindown'
-  spec.required_ruby_version = '>= 3.3.0'
+  spec.required_ruby_version = '>= 3.4.2'
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/raindeer-rb/raindown/src/branch/main'
@@ -26,10 +26,13 @@ Gem::Specification.new do |spec|
   end
 
   spec.require_paths = ['lib']
-  spec.bindir = 'exe'
-  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
+  spec.bindir = 'bin'
+  spec.executables = ['raindown']
 
   spec.add_dependency 'antlers'
   spec.add_dependency 'commonmarker'
+  spec.add_dependency 'listen'
+  spec.add_dependency 'nokogiri'
   spec.add_dependency 'plugs'
+  spec.add_dependency 'trees', '>= 0.3.5'
 end
