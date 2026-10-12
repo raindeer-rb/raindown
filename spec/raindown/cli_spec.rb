@@ -12,8 +12,8 @@ RSpec.describe Raindown::CLI do
     end
   end
 
-  def write_markdown(content)
-    path = File.join(@dir, 'sample.md')
+  def write_markdown(content, name: 'sample.md')
+    path = File.join(@dir, name)
     File.write(path, content)
     path
   end
@@ -31,6 +31,13 @@ RSpec.describe Raindown::CLI do
       path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
 
       expect { described_class.run(['render', path]) }.to output(/Table of contents/).to_stdout
+    end
+
+    it 'renders bare directives in Raindown files' do
+      path = write_markdown("# Title\n\n:toc\n\n## Section\n", name: 'sample.rd')
+
+      expect { described_class.run(['render', path]) }.to output(/Table of contents/).to_stdout
+      expect(File.read(path)).to include("\n:toc\n\n<!-- raindown:toc -->\n")
     end
 
     it 'writes rendered output to the given path' do

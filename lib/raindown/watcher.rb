@@ -42,7 +42,7 @@ module Raindown
     end
 
     def render
-      File.write(output, Raindown.render(markdown: File.read(path)))
+      File.write(output, Raindown.render_file(path:))
     end
 
     def default_output

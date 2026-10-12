@@ -2,6 +2,7 @@
 
 require 'raindown'
 require 'cgi'
+require 'tmpdir'
 
 RSpec.describe Raindown do
   describe '.render' do
@@ -48,6 +49,35 @@ RSpec.describe Raindown do
       html = described_class.render(markdown: "# Title\n\n<{ :toc }>\n\n```\n<{ :toc }>\n```\n")
 
       expect(html.scan('Table of contents').length).to eq(1)
+    end
+  end
+
+  describe '.render_file' do
+    def render_file(name, markdown)
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, name)
+        File.write(path, markdown)
+        described_class.render_file(path:)
+      end
+    end
+
+    it 'renders bare directives in Raindown files' do
+      expect(render_file('notes.rd', "# Title\n\n:toc\n")).to include('Table of contents')
+      expect(render_file('notes.raindown', "# Title\n\n:toc\n")).to include('Table of contents')
+    end
+
+    it 'leaves bare directives as text in Markdown files' do
+      html = render_file('notes.md', "# Title\n\n:toc\n")
+
+      expect(html).not_to include('Table of contents')
+      expect(html).to include('<p>:toc</p>')
+    end
+
+    it 'keeps bare directives in code as-is' do
+      html = render_file('notes.rd', "# Title\n\n```\n:toc\n```\n")
+
+      expect(html).not_to include('Table of contents')
+      expect(html).to include(':toc')
     end
   end
 

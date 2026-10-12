@@ -5,6 +5,7 @@ require 'antlers'
 require 'antlers/api'
 require 'nokogiri'
 require_relative 'elements'
+require_relative 'raindown/bare_directives'
 
 module Raindown
   # Antlers evaluates any braces in the HTML, so braces in code are swapped for placeholders
@@ -24,6 +25,13 @@ module Raindown
     Nokogiri::HTML(html).css('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').map do |heading|
       { level: heading.name[1].to_i, text: heading.text.strip, id: heading['id'] }
     end
+  end
+
+  def render_file(path:, metadata: {})
+    markdown = File.read(path)
+    markdown = BareDirectives.expand(markdown) if BareDirectives.file?(path)
+
+    render(markdown:, metadata:)
   end
 
   def render(markdown:, metadata: {})

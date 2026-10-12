@@ -55,7 +55,7 @@ module Raindown
         ensure_exists(path)
 
         Formatter.update(path:)
-        write(output, render_file(path))
+        write(output, Raindown.render_file(path:))
       end
 
       def watch(path, output = nil)
@@ -66,10 +66,6 @@ module Raindown
 
       def ensure_exists(path)
         abort("File not found: #{path}") unless File.exist?(path)
-      end
-
-      def render_file(path)
-        Raindown.render(markdown: File.read(path))
       end
 
       def write(output, html)

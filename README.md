@@ -19,6 +19,18 @@ raindown render README.md -o README.html
 raindown watch README.md -o README.html
 ```
 
+### Raindown files
+
+Raindown is a superset of Markdown. Give a file the `.rd` or `.raindown` extension and a directive on its own line no longer needs delimiters:
+
+```
+# Notes
+
+:toc
+```
+
+Directives in prose or code are left as text, and `<{ :toc }>` still works.
+
 ### Standalone binaries
 
 Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed.
