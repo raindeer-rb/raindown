@@ -19,6 +19,7 @@ PATH
       nokogiri
       plugs
       trees (>= 0.3.5)
+      unicode-display_width (~> 3.1)
 
 GEM
   remote: https://rubygems.org/

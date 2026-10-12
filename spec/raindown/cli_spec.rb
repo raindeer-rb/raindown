@@ -52,6 +52,13 @@ RSpec.describe Raindown::CLI do
       expect(File.read(output)).not_to include('raindown:toc')
     end
 
+    it 'aligns Markdown tables when rendering' do
+      path = write_markdown("| a | b |\n|-|-|\n| ccc | d |\n")
+
+      expect { described_class.run(['render', path]) }.to output(/<table>/).to_stdout
+      expect(File.read(path)).to eq("| a   | b   |\n| --- | --- |\n| ccc | d   |\n")
+    end
+
     it 'renders a file without a :toc directive' do
       path = write_markdown("# Title\n")
 

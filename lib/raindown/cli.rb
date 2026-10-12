@@ -3,6 +3,7 @@
 require 'trees'
 require_relative '../raindown'
 require_relative 'toc_injector'
+require_relative 'formatter'
 require_relative 'watcher'
 
 module Raindown
@@ -65,7 +66,7 @@ module Raindown
       def render(path, output = nil)
         ensure_exists(path)
 
-        TOCInjector.update(path:)
+        Formatter.update(path:)
         write(output, render_file(path))
       end
 

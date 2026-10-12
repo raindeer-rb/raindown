@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../raindown'
-require_relative 'toc_injector'
+require_relative 'formatter'
 
 module Raindown
   class Watcher
@@ -17,7 +17,7 @@ module Raindown
 
       $stdout.sync = true
 
-      TOCInjector.update(path:)
+      Formatter.update(path:)
       render
       puts "Watching #{path} for changes (writing to #{output})..."
 
@@ -33,8 +33,8 @@ module Raindown
 
       Listen.to(directory) do |modified, added, _removed|
         next unless (modified + added).any? { |f| File.basename(f) == filename }
-        # Updating the TOC saves the file again, and that change triggers the render.
-        next if TOCInjector.update(path:)
+        # Formatting saves the file again, and that change triggers the render.
+        next if Formatter.update(path:)
 
         render
         puts "Re-rendered #{path} -> #{output}"

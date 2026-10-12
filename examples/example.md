@@ -37,11 +37,11 @@ Regular Markdown works as usual:
 - **Bold**, *italic* and `code`
 - [Links](https://github.com/raindeer-rb/raindown)
 
-| Command | Description |
-| ------- | ----------- |
-| render  | Render once |
-| watch   | Re-render on save |
-| toc     | Inject a Markdown TOC |
+| Command | Description                         |
+| ------- | ----------------------------------- |
+| render  | Render once                         |
+| watch   | Re-render on save                   |
+| toc     | Inject a Markdown table of contents |
 
 ### Nested heading
 

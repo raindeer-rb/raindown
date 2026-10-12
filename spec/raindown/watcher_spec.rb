@@ -54,6 +54,17 @@ RSpec.describe Raindown::Watcher do
       expect(File.read(output_path)).to include('Added')
     end
 
+    it 'aligns Markdown tables on save' do
+      expect { watcher.start }.to output.to_stdout
+      File.write(path, "| a | b |\n|-|-|\n| ccc | d |\n")
+
+      expect { on_change.first.call([path], [], []) }.not_to output.to_stdout
+      expect(File.read(path)).to eq("| a   | b   |\n| --- | --- |\n| ccc | d   |\n")
+
+      expect { on_change.first.call([path], [], []) }.to output(/Re-rendered/).to_stdout
+      expect(File.read(output_path)).to include('<table>')
+    end
+
     it 're-renders when the file changes' do
       expect { watcher.start }.to output.to_stdout
       File.write(path, "# Changed\n")
