@@ -1,0 +1,114 @@
+name: release
+
+# Builds a standalone raindown executable per platform with tebako and attaches them to the GitHub release.
+# Tebako can't cross-compile, so every platform builds on its own runner.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+env:
+  TEBAKO_VERSION: '2.8.27'
+
+jobs:
+  build:
+    name: build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: macos-arm64, runner: macos-latest, tebako: macos-arm64 }
+          - { platform: macos-x86_64, runner: macos-15-intel, tebako: macos-x86_64 }
+          - { platform: linux-x86_64, runner: ubuntu-latest, tebako: linux-gnu-x86_64 }
+          - { platform: linux-arm64, runner: ubuntu-24.04-arm, tebako: linux-gnu-arm64 }
+          - { platform: linux-musl-x86_64, runner: ubuntu-latest, tebako: linux-musl-x86_64, alpine: true }
+          - { platform: linux-musl-arm64, runner: ubuntu-24.04-arm, tebako: linux-musl-arm64, alpine: true }
+          - { platform: windows-x86_64, runner: windows-latest, tebako: windows-ucrt64, exe: .exe }
+    env:
+      TEBAKO_PLATFORM: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch tebako (sha256-verified)
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="tebako-$TEBAKO_VERSION-${{ matrix.tebako }}${{ matrix.exe }}"
+          base="https://github.com/tamatebako/tebako/releases/download/v$TEBAKO_VERSION"
+          mkdir -p .tools && cd .tools
+          curl -fsSLO --retry 5 --retry-all-errors --retry-delay 3 "$base/$asset"
+          curl -fsSLO --retry 5 --retry-all-errors --retry-delay 3 "$base/SHA256SUMS"
+          grep " $asset\$" SHA256SUMS > expected
+          if command -v sha256sum > /dev/null; then sha256sum -c expected; else shasum -a 256 -c expected; fi
+          mv "$asset" "tebako${{ matrix.exe }}"
+          chmod +x "tebako${{ matrix.exe }}"
+
+      - uses: ruby/setup-ruby@v1
+        if: ${{ !matrix.alpine }}
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+
+      - name: Build
+        if: ${{ !matrix.alpine }}
+        shell: bash
+        run: bundle exec rake tebako TEBAKO="$PWD/.tools/tebako${{ matrix.exe }}"
+
+      # musl builds run in Alpine, which JavaScript actions like checkout can't run inside on arm64.
+      - name: Build (Alpine)
+        if: ${{ matrix.alpine }}
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work -e TEBAKO_PLATFORM alpine:3.22 sh -euc '
+            apk add --no-cache bash build-base curl git ruby ruby-dev yaml-dev
+            git config --global --add safe.directory /work
+            gem install bundler --no-document
+            bundle install
+            bundle exec rake tebako TEBAKO=/work/.tools/tebako
+          '
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="pkg/raindown-*-$TEBAKO_PLATFORM${{ matrix.exe }}"
+          run() {
+            if [ "${{ matrix.alpine }}" = "true" ]; then
+              docker run --rm -v "$PWD:/work" -w /work alpine:3.22 $bin "$@"
+            else
+              $bin "$@"
+            fi
+          }
+          run -h 2>&1 | grep 'Usage: raindown'
+          run render examples/example.md -o out.html
+          grep 'Table of contents' out.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: raindown-${{ matrix.platform }}
+          path: pkg/raindown-*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Attach binaries to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release view "$tag" > /dev/null 2>&1 || gh release create "$tag" --generate-notes
+          gh release upload "$tag" dist/* --clobber

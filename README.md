@@ -18,3 +18,13 @@ raindown render README.md -o README.html
 # Watch and render every time the file is saved:
 raindown watch README.md -o README.html
 ```
+
+### Standalone binaries
+
+Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed.
+
+To build one for your own machine, [install Tebako](https://github.com/tamatebako/tebako#installation) and run:
+
+```sh
+bundle exec rake tebako  # writes pkg/raindown-<version>-<platform>
+```
