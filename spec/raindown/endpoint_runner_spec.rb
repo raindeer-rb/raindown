@@ -18,6 +18,10 @@ RSpec.describe Raindown::EndpointRunner do
     expect(format("<{ endpoint: :x }>\n\n#{curl}\nAfter.\n")).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}\nAfter.\n")
   end
 
+  it 'writes the response inside the closing tag' do
+    expect(format("<{ endpoint: :x }>\n#{curl}<{ :endpoint }>\n")).to eq("<{ endpoint: :x }>\n#{curl}\n#{response}<{ :endpoint }>\n")
+  end
+
   it 'accepts :execute' do
     expect(format("<{ endpoint: :execute }>\n\n#{curl}")).to eq("<{ endpoint: :execute }>\n\n#{curl}\n#{response}")
   end

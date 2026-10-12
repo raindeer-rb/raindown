@@ -61,7 +61,10 @@ curl https://httpbin.org/uuid
   "uuid": "4c9d6a2e-…"
 }
 ```
+<{ :endpoint }>
 ````
+
+In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare and leave out `<{ :endpoint }>`, which is added after the curl snippet and response.
 
 The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
 

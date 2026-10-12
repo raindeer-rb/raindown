@@ -8,14 +8,16 @@ module Raindown
 
     module_function
 
-    KEYWORDS = ['endpoint:'].freeze
+    KEYWORDS = ['endpoint:', ':endpoint'].freeze
 
     def match?(keywords:, **)
-      keywords.key?('endpoint:')
+      KEYWORDS.include?(keywords.keys.first)
     end
 
     def lexeme(keywords:, **)
-      { endpoint: keywords }
+      return { endpoint_def: keywords } if keywords.key?('endpoint:')
+
+      { endpoint_end: 'level_1' }
     end
   end
 end

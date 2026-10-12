@@ -3,15 +3,14 @@
 require 'antlers/api'
 
 module Raindown
-  # The curl snippet and its response are plain code blocks, so the directive itself renders nothing.
-  class EndpointNode < Antlers::LeafNode
-    def render(**)
-      ''
-    end
+  # Holds an endpoint's curl snippet and response, which render as the code blocks they are.
+  class EndpointNode < Antlers::BranchNode
+    DEF_KEY = :endpoint_def
+    END_KEY = :endpoint_end
 
     class << self
       def match?(segment:)
-        segment[:endpoint]
+        segment[DEF_KEY]
       end
 
       def build(**)

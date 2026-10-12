@@ -64,10 +64,10 @@ RSpec.describe Raindown::CLI do
       output = File.join(@dir, 'sample.html')
 
       [['-x'], ['--execute', '-o', output], ['-o', output, '--bare', '-x']].each do |args|
-        path = write_markdown("<{ endpoint: :later }>\n\n```sh\ncurl https://api.example.com\n```\n")
+        path = write_markdown("<{ endpoint: }>\n\n```sh\ncurl https://api.example.com\n```\n<{ :endpoint }>\n")
         silence { described_class.run(['render', path, *args]) }
 
-        expect(File.read(path)).to end_with("```\n\n```json\n{}\n```\n")
+        expect(File.read(path)).to end_with("```\n\n```json\n{}\n```\n<{ :endpoint }>\n")
       end
     end
 

@@ -12,8 +12,25 @@ RSpec.describe Raindown::BareDirectives do
       expect(described_class.expand(":list\n")).to eq("<{ :list }>\n")
     end
 
-    it 'wraps directives with arguments' do
-      expect(described_class.expand("endpoint: :x\nendpoint:\n")).to eq("<{ endpoint: :x }>\n<{ endpoint: }>\n")
+    it 'closes block directives after the code blocks they hold' do
+      content = "endpoint: :x\n\n```sh\ncurl x\n```\n\n```json\n{}\n```\n\nAfter\n"
+
+      expect(described_class.expand(content))
+        .to eq("<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n\n```json\n{}\n```\n<{ :endpoint }>\n\nAfter\n")
+    end
+
+    it 'only closes around code blocks directly below' do
+      content = "endpoint:\n```sh\ncurl x\n```\nText\n```\nother\n```\n"
+
+      expect(described_class.expand(content)).to eq("<{ endpoint: }>\n```sh\ncurl x\n```\n<{ :endpoint }>\nText\n```\nother\n```\n")
+    end
+
+    it 'closes block directives with nothing below them straight away' do
+      expect(described_class.expand("endpoint:\n\nText")).to eq("<{ endpoint: }>\n<{ :endpoint }>\n\nText")
+    end
+
+    it 'closes block directives at the end of the file' do
+      expect(described_class.expand("endpoint:\n```sh\ncurl x\n```")).to eq("<{ endpoint: }>\n```sh\ncurl x\n```\n<{ :endpoint }>\n")
     end
 
     it 'keeps up to three spaces of indent' do

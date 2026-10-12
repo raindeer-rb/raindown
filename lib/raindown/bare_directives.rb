@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'code_blocks'
 require_relative 'front_matter'
 
 module Raindown
@@ -9,11 +10,11 @@ module Raindown
     EXTENSIONS = %w[.rd .raindown].freeze
     # The directives that take no arguments. :list closes a <{ list: ... }> block.
     KEYWORDS = %w[:toc :list].freeze
-    # The directives that take arguments, like "endpoint: :x".
-    ARGUMENT_KEYWORDS = %w[endpoint:].freeze
+    # The block directives that take arguments, and how many code blocks below them they hold.
+    # An endpoint holds its curl snippet and the response.
+    BLOCK_KEYWORDS = { 'endpoint:' => 2 }.freeze
     # Four spaces of indent would make the line a Markdown code block.
-    LINE = /\A( {0,3})(#{KEYWORDS.join('|')}|(?:#{ARGUMENT_KEYWORDS.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
-    FENCE = /\A\s*(```|~~~)/
+    LINE = /\A( {0,3})(#{KEYWORDS.join('|')}|(#{BLOCK_KEYWORDS.keys.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
 
     module_function
 
@@ -33,14 +34,40 @@ module Raindown
 
     # Wrap each bare directive in Antlers delimiters, leaving fenced code as-is.
     def expand(content)
-      in_fence = false
+      lines = content.lines
+      index = 0
 
-      content.lines.map do |line|
-        in_fence = !in_fence if line.match?(FENCE)
-        next line if in_fence
+      while index < lines.length
+        block = CodeBlocks.at(lines, index)
+        index = (block ? block[:close] : expand_line(lines, index)) + 1
+      end
 
-        line.sub(LINE) { "#{::Regexp.last_match(1)}<{ #{::Regexp.last_match(2)} }>" }
-      end.join
+      lines.join
+    end
+
+    # The directive in Antlers delimiters, or nil when the line isn't a bare directive.
+    def wrap(line)
+      line.sub(LINE) { "#{::Regexp.last_match(1)}<{ #{::Regexp.last_match(2)} }>" } if line.match?(LINE)
+    end
+
+    # Returns the index of the last line it handled.
+    def expand_line(lines, index)
+      match = lines[index].match(LINE)
+      return index unless match
+
+      lines[index] = wrap(lines[index])
+      return index unless match[3]
+
+      close_block(lines, index, indent: match[1], keyword: match[3])
+    end
+
+    # Bare block directives have no end tag, so it goes after the code blocks they hold.
+    def close_block(lines, index, indent:, keyword:)
+      last = CodeBlocks.following(lines, index + 1, limit: BLOCK_KEYWORDS[keyword]).last&.fetch(:close) || index
+      lines[last] = "#{lines[last]}\n" unless lines[last].end_with?("\n")
+      lines.insert(last + 1, "#{indent}<{ :#{keyword.delete_suffix(':')} }>\n")
+
+      last + 1
     end
   end
 end

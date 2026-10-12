@@ -35,11 +35,18 @@ RSpec.describe Raindown do
       expect(html).to include('Table of contents')
     end
 
-    it 'renders the endpoint directive as nothing' do
-      html = described_class.render(markdown: "<{ endpoint: :x }>\n\n```sh\ncurl https://api.example.com\n```\n")
+    it 'renders an endpoint as its code blocks' do
+      ['<{ endpoint: :x }>', '<{ endpoint: }>'].each do |directive|
+        html = described_class.render(markdown: "#{directive}\n\n```sh\ncurl https://api.example.com\n```\n<{ :endpoint }>\n")
 
-      expect(html).not_to include('endpoint')
-      expect(text(html)).to include('curl https://api.example.com')
+        expect(html).not_to include('endpoint')
+        expect(text(html)).to include('curl https://api.example.com')
+      end
+    end
+
+    it 'raises when an endpoint is not closed' do
+      expect { described_class.render(markdown: "<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n") }
+        .to raise_error(Antlers::Parser::ParserError, /Missing end tag/)
     end
 
     it 'keeps braces in code blocks' do
