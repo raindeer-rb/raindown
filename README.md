@@ -31,6 +31,20 @@ Raindown is a superset of Markdown. Give a file the `.rd` or `.raindown` extensi
 
 Directives in prose or code are left as text, and `<{ :toc }>` still works.
 
+Markdown files can opt in too, with the `--bare` flag:
+
+```sh
+raindown render README.md --bare
+```
+
+Or with `bare: true` in the front matter:
+
+```
+---
+bare: true
+---
+```
+
 ### Standalone binaries
 
 Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed.

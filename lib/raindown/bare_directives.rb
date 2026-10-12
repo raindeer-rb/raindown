@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+require_relative 'front_matter'
+
 module Raindown
   # Raindown files (.rd/.raindown) can write a directive like <{ :toc }> as a bare :toc on its own line.
+  # Markdown files opt in with the --bare flag or "bare: true" in their front matter.
   module BareDirectives
     EXTENSIONS = %w[.rd .raindown].freeze
     # The directives that take no arguments. :list closes a <{ list: ... }> block.
@@ -12,10 +15,18 @@ module Raindown
 
     module_function
 
+    def enabled?(content:, path: nil, bare: false)
+      bare || file?(path) || front_matter?(content)
+    end
+
     def file?(path)
       return false if path.nil?
 
       EXTENSIONS.include?(File.extname(path).downcase)
+    end
+
+    def front_matter?(content)
+      FrontMatter.parse(content).first[:bare] == true
     end
 
     # Wrap each bare directive in Antlers delimiters, leaving fenced code as-is.

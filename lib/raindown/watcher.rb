@@ -5,11 +5,12 @@ require_relative 'formatter'
 
 module Raindown
   class Watcher
-    attr_reader :path, :output
+    attr_reader :path, :output, :bare
 
-    def initialize(path:, output: nil)
+    def initialize(path:, output: nil, bare: false)
       @path = path
       @output = output || default_output
+      @bare = bare
     end
 
     def start
@@ -17,7 +18,7 @@ module Raindown
 
       $stdout.sync = true
 
-      Formatter.update(path:)
+      Formatter.update(path:, bare:)
       render
       puts "Watching #{path} for changes (writing to #{output})..."
 
@@ -34,7 +35,7 @@ module Raindown
       Listen.to(directory) do |modified, added, _removed|
         next unless (modified + added).any? { |f| File.basename(f) == filename }
         # Formatting saves the file again, and that change triggers the render.
-        next if Formatter.update(path:)
+        next if Formatter.update(path:, bare:)
 
         render
         puts "Re-rendered #{path} -> #{output}"
@@ -42,7 +43,7 @@ module Raindown
     end
 
     def render
-      File.write(output, Raindown.render_file(path:))
+      File.write(output, Raindown.render_file(path:, bare:))
     end
 
     def default_output

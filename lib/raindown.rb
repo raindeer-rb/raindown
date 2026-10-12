@@ -16,10 +16,13 @@ module Raindown
   # The Markdown TOC injected by TOCInjector, which the <{ :toc }> directive replaces in HTML.
   INJECTED_TOC = %r{\n*<!-- raindown:toc -->.*?<!-- /raindown:toc -->}m
 
+  # Front matter is metadata, so it's left out of the HTML and the headings.
+  MARKDOWN_OPTIONS = { extension: { alerts: true, front_matter_delimiter: '---' } }.freeze
+
   module_function
 
   def headings(markdown:)
-    html = Commonmarker.parse(markdown.dup.force_encoding('UTF-8'), options: { extension: { alerts: true } })
+    html = Commonmarker.parse(markdown.dup.force_encoding('UTF-8'), options: MARKDOWN_OPTIONS)
                        .to_html(options: { render: { unsafe: true } })
 
     Nokogiri::HTML(html).css('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').map do |heading|
@@ -27,17 +30,13 @@ module Raindown
     end
   end
 
-  def render_file(path:, metadata: {})
-    markdown = File.read(path)
-    markdown = BareDirectives.expand(markdown) if BareDirectives.file?(path)
-
-    render(markdown:, metadata:)
+  def render_file(path:, metadata: {}, bare: false)
+    render(markdown: File.read(path), metadata:, bare: bare || BareDirectives.file?(path))
   end
 
-  def render(markdown:, metadata: {})
-    template = markdown.gsub(INJECTED_TOC, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->')
-
-    doc = Commonmarker.parse(template.force_encoding('UTF-8'), options: { extension: { alerts: true } })
+  # Bare directives are also enabled by "bare: true" in the Markdown's front matter.
+  def render(markdown:, metadata: {}, bare: false)
+    doc = Commonmarker.parse(hide_directives(markdown:, bare:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)
 
     template = doc.to_html(options: { render: { unsafe: true } })
@@ -48,6 +47,13 @@ module Raindown
     ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :var, :prop, :slot, :if, :for] + Rain::Elements[:toc, :list])
 
     "#{Antlers.render(ast:, current_binding: binding, metadata:).chomp}\n"
+  end
+
+  # Commonmarker escapes directives, so they're hidden in HTML comments until it's done.
+  def hide_directives(markdown:, bare:)
+    markdown = BareDirectives.expand(markdown) if BareDirectives.enabled?(content: markdown, bare:)
+
+    markdown.gsub(INJECTED_TOC, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->').force_encoding('UTF-8')
   end
 
   # Restore directives in code and hide its braces from Antlers.

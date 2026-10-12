@@ -40,6 +40,25 @@ RSpec.describe Raindown::CLI do
       expect(File.read(path)).to include("\n:toc\n\n<!-- raindown:toc -->\n")
     end
 
+    it 'renders bare directives in Markdown files with --bare' do
+      path = write_markdown("# Title\n\n:toc\n\n## Section\n")
+
+      expect { described_class.run(['render', path]) }.not_to output(/Table of contents/).to_stdout
+      expect { described_class.run(['render', path, '--bare']) }.to output(/Table of contents/).to_stdout
+    end
+
+    it 'accepts --bare before or after the output flag' do
+      path = write_markdown("# Title\n\n:toc\n")
+      output = File.join(@dir, 'sample.html')
+
+      [['--bare', '-o', output], ['-o', output, '--bare'], ['--output', output, '--bare']].each do |args|
+        File.delete(output) if File.exist?(output)
+        described_class.run(['render', path, *args])
+
+        expect(File.read(output)).to include('Table of contents')
+      end
+    end
+
     it 'writes rendered output to the given path' do
       path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
       output = File.join(@dir, 'sample.html')

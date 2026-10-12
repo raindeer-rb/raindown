@@ -17,6 +17,24 @@ RSpec.describe Raindown do
       expect(html).not_to include('Table of contents')
     end
 
+    it 'leaves front matter out of the HTML' do
+      html = described_class.render(markdown: "---\ntitle: Notes\n---\n\n# Title\n")
+
+      expect(html).not_to include('title: Notes')
+      expect(html).not_to include('<hr')
+    end
+
+    it 'renders bare directives when asked' do
+      expect(described_class.render(markdown: "# Title\n\n:toc\n", bare: true)).to include('Table of contents')
+      expect(described_class.render(markdown: "# Title\n\n:toc\n")).not_to include('Table of contents')
+    end
+
+    it 'renders bare directives with bare front matter' do
+      html = described_class.render(markdown: "---\ndate: 2026-10-13\nbare: true\n---\n\n# Title\n\n:toc\n")
+
+      expect(html).to include('Table of contents')
+    end
+
     it 'keeps braces in code blocks' do
       html = described_class.render(markdown: "```ruby\nh = { a: 1 }\n```\n")
 
@@ -53,11 +71,11 @@ RSpec.describe Raindown do
   end
 
   describe '.render_file' do
-    def render_file(name, markdown)
+    def render_file(name, markdown, bare: false)
       Dir.mktmpdir do |dir|
         path = File.join(dir, name)
         File.write(path, markdown)
-        described_class.render_file(path:)
+        described_class.render_file(path:, bare:)
       end
     end
 
@@ -73,6 +91,17 @@ RSpec.describe Raindown do
       expect(html).to include('<p>:toc</p>')
     end
 
+    it 'renders bare directives in Markdown files when asked' do
+      expect(render_file('notes.md', "# Title\n\n:toc\n", bare: true)).to include('Table of contents')
+    end
+
+    it 'renders bare directives in Markdown files with bare front matter' do
+      html = render_file('notes.md', "---\nbare: true\n---\n\n# Title\n\n:toc\n")
+
+      expect(html).to include('Table of contents')
+      expect(html).not_to include('bare: true')
+    end
+
     it 'keeps bare directives in code as-is' do
       html = render_file('notes.rd', "# Title\n\n```\n:toc\n```\n")
 
@@ -82,6 +111,10 @@ RSpec.describe Raindown do
   end
 
   describe '.headings' do
+    it 'leaves out front matter' do
+      expect(described_class.headings(markdown: "---\ntitle: Notes\n---\n\n# Title\n").map { |h| h[:text] }).to eq(['Title'])
+    end
+
     it 'reads frozen Markdown without changing it' do
       markdown = "# Title\n".encode('ASCII-8BIT').freeze
 

@@ -8,17 +8,17 @@ module Raindown
     START_MARKER = '<!-- raindown:toc -->'
     END_MARKER = '<!-- /raindown:toc -->'
     DIRECTIVE = '<{ :toc }>'
-    # Raindown files also accept a bare :toc on its own line.
-    RAINDOWN_DIRECTIVE = Regexp.union(DIRECTIVE, /^ {0,3}:toc[ \t]*$/)
+    # Bare directives also accept :toc on its own line.
+    BARE_DIRECTIVE = Regexp.union(DIRECTIVE, /^ {0,3}:toc[ \t]*$/)
 
     # Formatter interface. Content without a TOC directive is returned unchanged.
-    def self.format(content:, path: nil)
-      new(content:, path:).call
+    def self.format(content:, path: nil, bare: false)
+      new(content:, path:, bare:).call
     end
 
-    def initialize(content:, path: nil)
+    def initialize(content:, path: nil, bare: false)
       @content = content
-      @directive = BareDirectives.file?(path) ? RAINDOWN_DIRECTIVE : DIRECTIVE
+      @directive = BareDirectives.enabled?(content:, path:, bare:) ? BARE_DIRECTIVE : DIRECTIVE
     end
 
     def call

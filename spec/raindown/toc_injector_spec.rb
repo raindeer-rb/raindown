@@ -68,6 +68,14 @@ RSpec.describe Raindown::TOCInjector do
       end
     end
 
+    it 'injects beneath a bare :toc in Markdown files when asked' do
+      content = markdown.sub('<{ :toc }>', ':toc')
+
+      expect(described_class.format(content:, path: 'notes.md', bare: true)).to include("\n:toc\n\n<!-- raindown:toc -->\n")
+      expect(described_class.format(content: "---\nbare: true\n---\n\n#{content}", path: 'notes.md'))
+        .to include("\n:toc\n\n<!-- raindown:toc -->\n")
+    end
+
     it 'ignores a bare :toc in Markdown files' do
       expect(described_class.format(content: markdown.sub('<{ :toc }>', ':toc'), path: 'notes.md'))
         .not_to include('raindown:toc')
