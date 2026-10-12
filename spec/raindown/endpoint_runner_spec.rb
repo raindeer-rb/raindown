@@ -22,6 +22,12 @@ RSpec.describe Raindown::EndpointRunner do
     expect(format("<{ endpoint: :x }>\n#{curl}<{ :endpoint }>\n")).to eq("<{ endpoint: :x }>\n#{curl}\n#{response}<{ :endpoint }>\n")
   end
 
+  it 'runs when the next block is another curl example' do
+    other = "```sh\ncurl https://api.example.com/other\n```\n"
+
+    expect(format("<{ endpoint: :x }>\n\n#{curl}\n#{other}")).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}\n#{other}")
+  end
+
   it 'accepts :execute' do
     expect(format("<{ endpoint: :execute }>\n\n#{curl}")).to eq("<{ endpoint: :execute }>\n\n#{curl}\n#{response}")
   end

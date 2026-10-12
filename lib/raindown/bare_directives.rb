@@ -10,9 +10,8 @@ module Raindown
     EXTENSIONS = %w[.rd .raindown].freeze
     # The directives that take no arguments. :list closes a <{ list: ... }> block.
     KEYWORDS = %w[:toc :list].freeze
-    # The block directives that take arguments, and how many code blocks below them they hold.
-    # An endpoint holds its curl snippet and the response.
-    BLOCK_KEYWORDS = { 'endpoint:' => 2 }.freeze
+    # The block directives that take arguments, and the CodeBlocks method that finds the code blocks they hold.
+    BLOCK_KEYWORDS = { 'endpoint:' => :endpoint }.freeze
     # Four spaces of indent would make the line a Markdown code block.
     LINE = /\A( {0,3})(#{KEYWORDS.join('|')}|(#{BLOCK_KEYWORDS.keys.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
 
@@ -63,7 +62,7 @@ module Raindown
 
     # Bare block directives have no end tag, so it goes after the code blocks they hold.
     def close_block(lines, index, indent:, keyword:)
-      last = CodeBlocks.following(lines, index + 1, limit: BLOCK_KEYWORDS[keyword]).last&.fetch(:close) || index
+      last = CodeBlocks.public_send(BLOCK_KEYWORDS[keyword], lines, index + 1).last&.fetch(:close) || index
       lines[last] = "#{lines[last]}\n" unless lines[last].end_with?("\n")
       lines.insert(last + 1, "#{indent}<{ :#{keyword.delete_suffix(':')} }>\n")
 

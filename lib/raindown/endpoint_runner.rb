@@ -51,7 +51,7 @@ module Raindown
 
     # Returns the index of the last line it handled.
     def fill(index, args)
-      curl, output = CodeBlocks.following(@lines, index, limit: 2)
+      curl, output = CodeBlocks.endpoint(@lines, index)
       return index - 1 unless curl&.dig(:body)&.lstrip&.start_with?('curl')
 
       return curl[:close] if (output && !output[:body].strip.empty?) || !execute?(args)

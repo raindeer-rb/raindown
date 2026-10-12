@@ -25,6 +25,12 @@ RSpec.describe Raindown::BareDirectives do
       expect(described_class.expand(content)).to eq("<{ endpoint: }>\n```sh\ncurl x\n```\n<{ :endpoint }>\nText\n```\nother\n```\n")
     end
 
+    it 'closes an endpoint before another curl example' do
+      content = "endpoint: :x\n\n```sh\ncurl x\n```\n\n```sh\ncurl y\n```\n"
+
+      expect(described_class.expand(content)).to eq("<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n<{ :endpoint }>\n\n```sh\ncurl y\n```\n")
+    end
+
     it 'closes block directives with nothing below them straight away' do
       expect(described_class.expand("endpoint:\n\nText")).to eq("<{ endpoint: }>\n<{ :endpoint }>\n\nText")
     end
