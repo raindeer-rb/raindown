@@ -10,6 +10,61 @@ RSpec.describe Raindown do
       CGI.unescapeHTML(Nokogiri::HTML(html).text)
     end
 
+    context 'with front matter variables' do
+      def render(front_matter, body)
+        described_class.render(markdown: "---\n#{front_matter}\n---\n\n#{body}\n")
+      end
+
+      it 'renders {var} escaped and <{ var }> raw' do
+        html = render('title: <b>Notes</b>', "{title}\n\n<{ title }>")
+
+        expect(html).to include('<p>&lt;b&gt;Notes&lt;/b&gt;</p>')
+        expect(html).to include('<b>Notes</b>')
+      end
+
+      it 'renders dates, numbers and nested values' do
+        html = render("date: 2026-10-13\ncount: 3\nauthor:\n  name: Mark", "{date}\n\n{count}\n\n{author.name}")
+
+        expect(html).to include('<p>2026-10-13</p>', '<p>3</p>', '<p>Mark</p>')
+      end
+
+      it 'renders variables in headings, their ids and the table of contents' do
+        html = render('name: Mark', "# Notes for {name}\n\n<{ :toc }>")
+
+        expect(html).to include('<h1 id="notes-for-mark">Notes for Mark')
+        expect(html).to include("<a href='#notes-for-mark'>Notes for Mark</a>")
+      end
+
+      it 'renders a raw variable that is not a string' do
+        expect(render("date: 2026-10-13\ncount: 3", '<{ date }> and <{ count }>')).to include('2026-10-13 and 3')
+      end
+
+      it 'keeps the spaces around a variable' do
+        expect(render('name: Mark', 'Hello {name}, welcome')).to include('<p>Hello Mark, welcome</p>')
+      end
+
+      it 'loops over lists and checks conditions' do
+        html = render("tags: [ruby, markdown]\ndraft: false\npublished: true",
+                      "<{ for: tag in: tags }>[{tag}]<{ :for }>\n\n<{ if: draft }>Draft<{ :if }><{ if: published }>Live<{ :if }>")
+
+        expect(text(html)).to include('[ruby][markdown]')
+        expect(text(html)).to include('Live')
+        expect(text(html)).not_to include('Draft')
+      end
+
+      it 'renders keys named like Ruby methods' do
+        expect(text(render('hash: abc', '{hash}'))).to include('abc')
+      end
+
+      it 'renders nothing for unknown variables and none of render itself' do
+        expect(text(render('title: Notes', '[{missing}{markdown}{metadata}{headings}]'))).to include('[]')
+      end
+
+      it 'renders nothing without front matter' do
+        expect(text(described_class.render(markdown: "[{title}]\n"))).to include('[]')
+      end
+    end
+
     it 'keeps directives in code blocks as-is' do
       html = described_class.render(markdown: "```\n<{ :toc }>\n```\n")
 

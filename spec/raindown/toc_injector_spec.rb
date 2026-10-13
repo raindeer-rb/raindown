@@ -34,6 +34,12 @@ RSpec.describe Raindown::TOCInjector do
       expect(content).to include('[New Section](#new-section)')
     end
 
+    it 'lists headings with their variables rendered' do
+      content = "---\nname: Mark\n---\n\n# Notes for {name}\n\n<{ :toc }>\n"
+
+      expect(described_class.format(content:)).to include('- [Notes for Mark](#notes-for-mark)')
+    end
+
     it 'leaves content without a :toc directive unchanged' do
       content = "# Title\n\n## Section\n"
 

@@ -42,6 +42,34 @@ Markdown files can opt in too, with the `--bare` flag:
 raindown README.md --bare
 ```
 
+### Variables
+
+Front matter keys are variables, which render with `{key}`, or `<{ key }>` to leave HTML unescaped:
+
+```md
+---
+title: Release notes
+author:
+  name: Mark
+tags: [ruby, markdown]
+draft: false
+---
+
+{title}
+
+{author.name}
+
+<{ for: tag in: tags }>
+- {tag}
+<{ :for }>
+
+<{ if: draft }>
+This is a draft.
+<{ :if }>
+```
+
+Unknown variables render nothing.
+
 ### Endpoints
 
 Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type:
