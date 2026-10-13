@@ -1,6 +1,7 @@
 <h1 id="raindown-example">Raindown Example<a href="#raindown-example" aria-label="Link to heading 'Raindown Example'" data-heading-content="Raindown Example" class="anchor"></a></h1>
 <p>Run <code>raindown examples/raindown.rd</code> and edit this file to see <code>examples/raindown.html</code> update on save.</p>
-<p>This is a Raindown file (<code>.rd</code>), so directives can be written bare on their own line.</p><div class="floating">
+<p>This is a Raindown file (<code>.rd</code>), so directives can be written bare on their own line.</p>
+<div class="floating">
   <details id="toc" open>
     <summary>Table of contents</summary>
     <ul>
@@ -13,18 +14,23 @@
     </ul>
   </details>
 </div>
+
 <h2 id="directives">Directives<a href="#directives" aria-label="Link to heading 'Directives'" data-heading-content="Directives" class="anchor"></a></h2>
 <p>In a <code>.rd</code> file a directive on its own line needs no delimiters. The table of contents above comes from:</p>
 <pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">:toc
 </span></code></pre>
 <p>It lists every heading in the file and stays in sync as you edit. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. <code>&lt;&#123; :toc &#125;&gt;</code> works too, and is the only form <code>.md</code> files understand.</p>
 <h2 id="endpoints">Endpoints<a href="#endpoints" aria-label="Link to heading 'Endpoints'" data-heading-content="Endpoints" class="anchor"></a></h2>
-<p>An <code>endpoint:</code> directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.</p><pre lang="sh" style="background-color:#2b303b;"><code><span style="color:#8fa1b3;">curl</span><span style="color:#c0c5ce;"> https://httpbin.org/uuid
+<p>An <code>endpoint:</code> directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.</p>
+
+<pre lang="sh" style="background-color:#2b303b;"><code><span style="color:#8fa1b3;">curl</span><span style="color:#c0c5ce;"> https://httpbin.org/uuid
 </span></code></pre>
 <pre lang="json" style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">&#123;
 </span><span style="color:#c0c5ce;">  &quot;</span><span style="color:#a3be8c;">uuid</span><span style="color:#c0c5ce;">&quot;: &quot;</span><span style="color:#a3be8c;">09808426-f717-497f-a2fb-5d25a8ba8761</span><span style="color:#c0c5ce;">&quot;
 </span><span style="color:#c0c5ce;">&#125;
-</span></code></pre><h2 id="alerts">Alerts<a href="#alerts" aria-label="Link to heading 'Alerts'" data-heading-content="Alerts" class="anchor"></a></h2>
+</span></code></pre>
+
+<h2 id="alerts">Alerts<a href="#alerts" aria-label="Link to heading 'Alerts'" data-heading-content="Alerts" class="anchor"></a></h2>
 <div class="markdown-alert markdown-alert-note">
 <p class="markdown-alert-title">Note</p>
 <p>GitHub-style alerts are enabled.</p>
