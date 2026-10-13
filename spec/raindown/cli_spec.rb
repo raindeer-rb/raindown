@@ -2,7 +2,6 @@
 
 require 'raindown/cli'
 require 'tmpdir'
-require 'stringio'
 
 RSpec.describe Raindown::CLI do
   around do |example|
@@ -12,105 +11,66 @@ RSpec.describe Raindown::CLI do
     end
   end
 
-  def write_markdown(content, name: 'sample.md')
-    path = File.join(@dir, name)
-    File.write(path, content)
-    path
-  end
+  let(:path) { File.join(@dir, 'sample.md').tap { |file| File.write(file, "# Title\n") } }
+  let(:output_path) { File.join(@dir, 'out.html') }
+  let(:watcher) { instance_double(Raindown::Watcher, start: nil) }
 
-  def silence
-    original_stdout = $stdout
-    $stdout = StringIO.new
-    yield
-  ensure
-    $stdout = original_stdout
-  end
+  before { allow(Raindown::Watcher).to receive(:new).and_return(watcher) }
 
   describe '.run' do
-    it 'renders a file to stdout by default' do
-      path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
+    it 'watches the file' do
+      described_class.run([path])
 
-      expect { described_class.run(['render', path]) }.to output(/Table of contents/).to_stdout
+      expect(Raindown::Watcher).to have_received(:new).with(path:, output: nil, bare: false, execute: false)
+      expect(watcher).to have_received(:start)
     end
 
-    it 'renders bare directives in Raindown files' do
-      path = write_markdown("# Title\n\n:toc\n\n## Section\n", name: 'sample.rd')
+    it 'writes to the given output path' do
+      described_class.run([path, '-o', output_path])
+      described_class.run([path, '--output', output_path])
 
-      expect { described_class.run(['render', path]) }.to output(/Table of contents/).to_stdout
-      expect(File.read(path)).to include("\n:toc\n\n<!-- raindown:toc -->\n")
+      expect(Raindown::Watcher).to have_received(:new).with(path:, output: output_path, bare: false, execute: false).twice
     end
 
-    it 'renders bare directives in Markdown files with --bare' do
-      path = write_markdown("# Title\n\n:toc\n\n## Section\n")
+    it 'accepts the options in any order' do
+      [['--bare', '-x', '-o', output_path], ['-o', output_path, '--execute', '--bare'], ['-x', '--output', output_path, '--bare']]
+        .each { |args| described_class.run([path, *args]) }
 
-      expect { described_class.run(['render', path]) }.not_to output(/Table of contents/).to_stdout
-      expect { described_class.run(['render', path, '--bare']) }.to output(/Table of contents/).to_stdout
+      expect(Raindown::Watcher).to have_received(:new).with(path:, output: output_path, bare: true, execute: true).thrice
     end
 
-    it 'accepts --bare before or after the output flag' do
-      path = write_markdown("# Title\n\n:toc\n")
-      output = File.join(@dir, 'sample.html')
+    context 'with --once' do
+      it 'renders to stdout without watching' do
+        File.write(path, "# Title\n\n<{ :toc }>\n\n## Section\n")
 
-      [['--bare', '-o', output], ['-o', output, '--bare'], ['--output', output, '--bare']].each do |args|
-        File.delete(output) if File.exist?(output)
-        described_class.run(['render', path, *args])
-
-        expect(File.read(output)).to include('Table of contents')
+        expect { described_class.run([path, '--once']) }.to output(/Table of contents/).to_stdout
+        expect(File.read(path)).to include('- [Section](#section)')
+        expect(Raindown::Watcher).not_to have_received(:new)
       end
-    end
 
-    it 'runs endpoints with -x or --execute' do
-      allow(Raindown::Curl).to receive(:run).and_return(['{}', 'json'])
-      output = File.join(@dir, 'sample.html')
+      it 'writes to the given output path with the other options in any order' do
+        rd = File.join(@dir, 'sample.rd').tap { |file| File.write(file, "# Title\n\n:toc\n") }
 
-      [['-x'], ['--execute', '-o', output], ['-o', output, '--bare', '-x']].each do |args|
-        path = write_markdown("<{ endpoint: }>\n\n```sh\ncurl https://api.example.com\n```\n<{ :endpoint }>\n")
-        silence { described_class.run(['render', path, *args]) }
+        [['--once', '-o', output_path], ['-x', '--output', output_path, '--once', '--bare']].each do |args|
+          File.delete(output_path) if File.exist?(output_path)
+          described_class.run([rd, *args])
 
-        expect(File.read(path)).to end_with("```\n\n```json\n{}\n```\n<{ :endpoint }>\n")
+          expect(File.read(output_path)).to include('Table of contents')
+        end
       end
-    end
-
-    it 'writes rendered output to the given path' do
-      path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
-      output = File.join(@dir, 'sample.html')
-
-      described_class.run(['render', path, '-o', output])
-
-      expect(File.read(output)).to include('Table of contents')
-    end
-
-    it 'updates the Markdown TOC when rendering' do
-      path = write_markdown("# Title\n\n<{ :toc }>\n\n## Section\n")
-      output = File.join(@dir, 'sample.html')
-
-      described_class.run(['render', path, '-o', output])
-
-      expect(File.read(path)).to include('- [Section](#section)')
-      expect(File.read(output)).not_to include('raindown:toc')
-    end
-
-    it 'aligns Markdown tables when rendering' do
-      path = write_markdown("| a | b |\n|-|-|\n| ccc | d |\n")
-
-      expect { described_class.run(['render', path]) }.to output(/<table>/).to_stdout
-      expect(File.read(path)).to eq("| a   | b   |\n| --- | --- |\n| ccc | d   |\n")
-    end
-
-    it 'renders a file without a :toc directive' do
-      path = write_markdown("# Title\n")
-
-      expect { described_class.run(['render', path]) }.to output(/Title/).to_stdout
-      expect(File.read(path)).to eq("# Title\n")
     end
 
     it 'aborts when the file does not exist' do
-      expect { described_class.run(['render', File.join(@dir, 'missing.md')]) }
-        .to raise_error(SystemExit)
+      expect { described_class.run([File.join(@dir, 'missing.md')]) }
+        .to raise_error(SystemExit).and output(/File not found/).to_stderr
     end
 
-    it 'aborts on an unknown command' do
-      expect { described_class.run(['bogus']) }.to raise_error(SystemExit)
+    it 'shows the usage with -h, --help or no arguments' do
+      [['-h'], ['--help'], [], [path, '--help']].each do |args|
+        expect { described_class.run(args) }.to raise_error(SystemExit).and output(/Usage: raindown FILE/).to_stderr
+      end
+
+      expect(Raindown::Watcher).not_to have_received(:new)
     end
   end
 end

@@ -6,17 +6,17 @@ Raindown is a templating layer for static site generation and an annotation fram
 
 ## CLI
 
-The gem ships a `raindown` executable for rendering a Markdown file (including directives like `<{ :toc }>`) to HTML from the command line.
+The gem ships a `raindown` executable that renders a Markdown file (including directives like `<{ :toc }>`) to HTML, then re-renders it every time the file is saved.
 
 ```sh
-# Render once and print to stdout:
-raindown render README.md
+# Write to README.html beside README.md:
+raindown README.md
 
-# Render once and write to a file:
-raindown render README.md -o README.html
+# Write to another path:
+raindown README.md -o site/index.html
 
-# Watch and render every time the file is saved:
-raindown watch README.md -o README.html
+# Render once without watching, to stdout or with -o to a file:
+raindown README.md --once
 ```
 
 ### Raindown files
@@ -34,7 +34,7 @@ Directives in prose or code are left as text, and `<{ :toc }>` still works.
 Markdown files can opt in too, with the `--bare` flag:
 
 ```sh
-raindown render README.md --bare
+raindown README.md --bare
 ```
 
 Or with `bare: true` in the front matter:
@@ -69,7 +69,7 @@ In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare and leav
 The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
 
 ```sh
-raindown render api.md -x
+raindown api.md -x
 ```
 
 To refresh a response, empty its code block. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported.
