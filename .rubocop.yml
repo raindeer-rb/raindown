@@ -37,3 +37,6 @@ Lint/Void:
 # Support Array[]/Hash[] syntax.
 Style/RedundantArrayConstructor:
   Enabled: false
+
+Metrics/ModuleLength:
+  Max: 150

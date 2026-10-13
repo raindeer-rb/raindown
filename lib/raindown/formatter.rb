@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'toc_injector'
-require_relative 'endpoint_runner'
+require_relative 'endpoint/endpoint_runner'
 require_relative 'table_aligner'
 
 module Raindown

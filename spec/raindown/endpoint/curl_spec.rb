@@ -1,14 +1,58 @@
 # frozen_string_literal: true
 
-require 'raindown/curl'
+require 'raindown/endpoint/curl'
 
 RSpec.describe Raindown::Curl do
   describe '.arguments' do
-    it 'splits the snippet like a shell would, without curl' do
+    it 'splits the snippet like a shell would, without curl, and spells options long' do
       snippet = "curl -X POST https://api.example.com/users \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"name\": \"rain\"}'\n"
 
+      expect(described_class.arguments(snippet)).to eq(
+        ['--request', 'POST', 'https://api.example.com/users', '--header', 'Content-Type: application/json',
+         '--data', '{"name": "rain"}']
+      )
+    end
+
+    it 'expands grouped short flags and attached values' do
+      expect(described_class.arguments('curl -sSL -XPUT https://api.example.com'))
+        .to eq(['--silent', '--show-error', '--location', '--request', 'PUT', 'https://api.example.com'])
+    end
+
+    it 'allows request options' do
+      snippet = "curl --json '{}' --data-urlencode 'q=a@b' -u me:pw --compressed --url https://api.example.com"
+
       expect(described_class.arguments(snippet))
-        .to eq(['-X', 'POST', 'https://api.example.com/users', '-H', 'Content-Type: application/json', '-d', '{"name": "rain"}'])
+        .to eq(['--json', '{}', '--data-urlencode', 'q=a@b', '--user', 'me:pw', '--compressed', '--url', 'https://api.example.com'])
+    end
+
+    it 'rejects options that write, upload or load files' do
+      ['-o out.json', '--output out.json', '-O', '-K evil.cfg', '--config evil.cfg', '-T secret', '-F file=@secret',
+       '-b cookies.txt', '-c jar.txt', '-D headers.txt', '--trace log', '-sSo out.json'].each do |options|
+        expect { described_class.arguments("curl #{options} https://api.example.com") }
+          .to raise_error(described_class::Error, /isn't allowed/), options
+      end
+    end
+
+    it 'rejects values that read a file' do
+      ['-d @secret', '--data-binary @secret', '--json @secret', '-H @headers.txt', '--data-urlencode @secret',
+       '--data-urlencode name@secret', '-d@secret'].each do |options|
+        expect { described_class.arguments("curl #{options} https://api.example.com") }
+          .to raise_error(described_class::Error, /can't read a file/), options
+      end
+    end
+
+    it 'rejects URLs that are not http(s)' do
+      ['file:///etc/passwd', 'ftp://example.com', '--url file:///etc/passwd', 'example.com'].each do |target|
+        expect { described_class.arguments("curl #{target}") }.to raise_error(described_class::Error, /http\(s\) URLs/), target
+      end
+    end
+
+    it 'rejects snippets without a URL' do
+      expect { described_class.arguments('curl -s') }.to raise_error(described_class::Error, /need a URL/)
+    end
+
+    it 'rejects options missing their value' do
+      expect { described_class.arguments('curl https://api.example.com -X') }.to raise_error(described_class::Error, /needs a value/)
     end
 
     it 'drops a leading prompt' do
@@ -39,7 +83,7 @@ RSpec.describe Raindown::Curl do
       stub_curl("{\"id\":1}#{described_class::TYPE_MARKER}application/json; charset=utf-8")
 
       expect(described_class.run('curl https://api.example.com')).to eq(["{\n  \"id\": 1\n}", 'json'])
-      expect(Open3).to have_received(:capture3).with('curl', '--silent', '--show-error', '--max-time', '30',
+      expect(Open3).to have_received(:capture3).with('curl', *described_class::SAFE_OPTIONS, '--silent', '--show-error', '--max-time', '30',
                                                      'https://api.example.com', '--write-out', anything)
     end
 

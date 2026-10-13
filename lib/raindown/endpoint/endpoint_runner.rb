@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative 'bare_directives'
-require_relative 'code_blocks'
+require_relative '../bare_directives'
+require_relative '../code_blocks'
 require_relative 'curl'
 
 module Raindown

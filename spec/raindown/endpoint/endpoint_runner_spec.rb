@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/endpoint_runner'
+require 'raindown/endpoint/endpoint_runner'
 
 RSpec.describe Raindown::EndpointRunner do
   def format(content, **options)
