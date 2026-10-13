@@ -1,0 +1,26 @@
+{
+  "$comment": "Antlers directives like <{ :toc }> and <{ endpoint: :x }> in Markdown and Raindown files, outside code and comments.",
+  "scopeName": "raindown.directive.injection",
+  "injectionSelector": "L:text.html.markdown -markup.fenced_code -markup.raw -markup.inline.raw -comment, L:text.html.raindown -markup.fenced_code -markup.raw -markup.inline.raw -comment",
+  "patterns": [{ "include": "#directive" }],
+  "repository": {
+    "directive": {
+      "name": "meta.embedded.directive.raindown",
+      "begin": "<\\{",
+      "end": "\\}>",
+      "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.raindown" } },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.raindown" } },
+      "patterns": [{ "include": "#arguments" }]
+    },
+    "arguments": {
+      "patterns": [
+        { "name": "string.quoted.double.raindown", "match": "\"(?:[^\"\\\\]|\\\\.)*\"" },
+        { "name": "string.quoted.single.raindown", "match": "'(?:[^'\\\\]|\\\\.)*'" },
+        { "name": "constant.numeric.raindown", "match": "(?<![\\w:])-?\\d+(?:\\.\\d+)?\\b" },
+        { "name": "keyword.control.directive.raindown", "match": "(?<![\\w:]):[A-Za-z_][\\w-]*" },
+        { "name": "entity.name.function.directive.raindown", "match": "[A-Za-z_][\\w-]*:(?![\\w:])" },
+        { "name": "variable.other.raindown", "match": "[A-Za-z_][\\w.-]*" }
+      ]
+    }
+  }
+}

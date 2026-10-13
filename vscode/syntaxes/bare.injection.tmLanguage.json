@@ -1,0 +1,19 @@
+{
+  "$comment": "Bare directives on their own line in Raindown files, matching Raindown::BareDirectives::LINE.",
+  "scopeName": "raindown.bare.injection",
+  "injectionSelector": "L:text.html.raindown -markup.fenced_code -markup.raw -markup.inline.raw -comment",
+  "patterns": [
+    {
+      "name": "meta.directive.bare.raindown",
+      "match": "^( {0,3})(:toc|:list)[ \\t]*$",
+      "captures": { "2": { "name": "keyword.control.directive.raindown" } }
+    },
+    {
+      "name": "meta.directive.bare.raindown",
+      "begin": "^( {0,3})(endpoint:)(?=[ \\t]*$|[ \\t]+\\S)",
+      "end": "$",
+      "beginCaptures": { "2": { "name": "entity.name.function.directive.raindown" } },
+      "patterns": [{ "include": "raindown.directive.injection#arguments" }]
+    }
+  ]
+}

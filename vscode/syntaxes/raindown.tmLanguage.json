@@ -1,0 +1,6 @@
+{
+  "$comment": "Raindown is a Markdown superset, so this is Markdown's grammar. Directives are added by the injection grammars.",
+  "name": "Raindown",
+  "scopeName": "text.html.raindown",
+  "patterns": [{ "include": "text.html.markdown" }]
+}

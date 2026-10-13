@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'bundler/setup'
-require 'raindown/cli'
+require_relative '../lib/raindown/cli'
 
 Raindown::CLI.run(ARGV)

@@ -1,0 +1,102 @@
+{
+  "name": "raindown",
+  "displayName": "Raindown",
+  "description": "Highlighting and live preview for Raindown directives in .rd and Markdown files",
+  "version": "0.1.0",
+  "publisher": "raindeer",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raindeer-rb/raindown"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Programming Languages"],
+  "main": "./extension.js",
+  "activationEvents": ["onWebviewPanel:raindown.preview"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "raindown",
+        "aliases": ["Raindown"],
+        "extensions": [".rd", ".raindown"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "raindown",
+        "scopeName": "text.html.raindown",
+        "path": "./syntaxes/raindown.tmLanguage.json"
+      },
+      {
+        "scopeName": "raindown.directive.injection",
+        "path": "./syntaxes/directive.injection.tmLanguage.json",
+        "injectTo": ["text.html.markdown", "text.html.raindown"]
+      },
+      {
+        "scopeName": "raindown.bare.injection",
+        "path": "./syntaxes/bare.injection.tmLanguage.json",
+        "injectTo": ["text.html.raindown"]
+      }
+    ],
+    "markdown.markdownItPlugins": true,
+    "commands": [
+      {
+        "command": "raindown.showPreview",
+        "title": "Open Preview",
+        "category": "Raindown",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "raindown.showPreviewToSide",
+        "title": "Open Preview to the Side",
+        "category": "Raindown",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "raindown.showPreviewToSide",
+          "when": "editorLangId == raindown",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        { "command": "raindown.showPreview", "when": "editorLangId == raindown" },
+        { "command": "raindown.showPreviewToSide", "when": "editorLangId == raindown" }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "raindown.showPreview",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "editorLangId == raindown"
+      },
+      {
+        "command": "raindown.showPreviewToSide",
+        "key": "ctrl+k v",
+        "mac": "cmd+k v",
+        "when": "editorLangId == raindown"
+      }
+    ],
+    "configuration": {
+      "title": "Raindown",
+      "properties": {
+        "raindown.path": {
+          "type": "string",
+          "default": "raindown",
+          "description": "The raindown executable, either a command on PATH or a full path to the gem's executable or a standalone binary."
+        },
+        "raindown.markdownPreview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Render <{ }> directives in the built-in Markdown preview with raindown."
+        }
+      }
+    }
+  }
+}

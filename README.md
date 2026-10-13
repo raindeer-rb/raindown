@@ -79,6 +79,10 @@ raindown api.md -x
 
 To refresh a response, empty its code block. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported.
 
+### VS Code
+
+The [VS Code extension](vscode/) highlights directives and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
+
 ### Standalone binaries
 
 Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed.

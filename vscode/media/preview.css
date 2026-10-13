@@ -1,0 +1,141 @@
+body {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 26px 40px;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  font-family: var(--markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, sans-serif);
+  font-size: var(--markdown-font-size, 14px);
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+a {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 1.4em 0 0.6em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1, h2 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+}
+
+h1 { font-size: 2em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.25em; }
+
+/* Heading anchors are empty links. */
+a.anchor { margin-left: 0.3em; }
+a.anchor::before { content: "#"; opacity: 0; }
+:is(h1, h2, h3, h4, h5, h6):hover a.anchor::before { opacity: 0.5; }
+
+code, pre {
+  font-family: var(--vscode-editor-font-family, "SF Mono", Monaco, Menlo, Consolas, monospace);
+  font-size: 0.9em;
+}
+
+:not(pre) > code {
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.15));
+}
+
+pre {
+  overflow: auto;
+  padding: 12px 16px;
+  border-radius: 6px;
+  background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.15));
+}
+
+blockquote {
+  margin: 0 0 1em;
+  padding: 0 1em;
+  border-left: 4px solid var(--vscode-textBlockQuote-border, rgba(128, 128, 128, 0.5));
+  color: var(--vscode-descriptionForeground);
+}
+
+table {
+  margin-bottom: 1em;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 6px 12px;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+}
+
+img { max-width: 100%; }
+
+hr {
+  height: 1px;
+  border: 0;
+  background: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+}
+
+/* The <{ :toc }> table of contents. */
+#toc {
+  margin: 1em 0;
+  padding: 8px 16px;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  border-radius: 6px;
+}
+
+#toc summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#toc ul {
+  margin: 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+#toc .h2 { padding-left: 1em; }
+#toc .h3 { padding-left: 2em; }
+#toc .h4 { padding-left: 3em; }
+#toc .h5 { padding-left: 4em; }
+#toc .h6 { padding-left: 5em; }
+
+/* GitHub style alerts like > [!NOTE]. */
+.markdown-alert {
+  margin-bottom: 1em;
+  padding: 0.5em 1em;
+  border-left: 4px solid var(--alert-color);
+}
+
+.markdown-alert-title {
+  margin: 0;
+  color: var(--alert-color);
+  font-weight: 600;
+}
+
+.markdown-alert > :last-child { margin-bottom: 0; }
+
+.markdown-alert-note { --alert-color: #4493f8; }
+.markdown-alert-tip { --alert-color: #3fb950; }
+.markdown-alert-important { --alert-color: #ab7df8; }
+.markdown-alert-warning { --alert-color: #d29922; }
+.markdown-alert-caution { --alert-color: #f85149; }
+
+#raindown-error {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 -26px 1em;
+  border-radius: 0;
+  white-space: pre-wrap;
+  color: var(--vscode-errorForeground);
+  background: var(--vscode-inputValidation-errorBackground, rgba(248, 81, 73, 0.15));
+}
