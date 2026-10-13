@@ -1,6 +1,6 @@
 # Raindown Example
 
-Run `raindown watch examples/example.md` and edit this file to see `examples/example.html` update on save.
+Run `raindown examples/markdown.md` and edit this file to see `examples/markdown.html` update on save.
 
 <{ :toc }>
 

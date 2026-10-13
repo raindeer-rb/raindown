@@ -1,6 +1,6 @@
 # Raindown Example
 
-Run `raindown watch examples/example.rd` and edit this file to see `examples/example.html` update on save.
+Run `raindown examples/raindown.rd` and edit this file to see `examples/raindown.html` update on save.
 
 This is a Raindown file (`.rd`), so directives can be written bare on their own line.
 
@@ -37,7 +37,7 @@ curl https://httpbin.org/uuid
 
 ```json
 {
-  "uuid": "18e0906c-1e4d-4432-9089-b408f847e1a6"
+  "uuid": "09808426-f717-497f-a2fb-5d25a8ba8761"
 }
 ```
 
