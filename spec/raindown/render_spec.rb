@@ -94,6 +94,12 @@ RSpec.describe Raindown do
       end
     end
 
+    it 'lists nothing for a list directive without metadata' do
+      html = described_class.render(markdown: "<{ list: page folder: 'notes' }>\n- {page.title}\n<{ :list }>\n\nAfter\n")
+
+      expect(html).to eq("<p>After</p>\n")
+    end
+
     it 'keeps directives in code blocks as-is' do
       html = described_class.render(markdown: "```\n<{ :toc }>\n```\n")
 
@@ -202,6 +208,12 @@ RSpec.describe Raindown do
   end
 
   describe '.headings' do
+    it 'lists nothing for a list directive' do
+      markdown = "# Title\n\n<{ list: page folder: 'notes' }>\n## {page.title}\n<{ :list }>\n"
+
+      expect(described_class.headings(markdown:).map { |h| h[:text] }).to eq(['Title'])
+    end
+
     it 'leaves out front matter' do
       expect(described_class.headings(markdown: "---\ntitle: Notes\n---\n\n# Title\n").map { |h| h[:text] }).to eq(['Title'])
     end

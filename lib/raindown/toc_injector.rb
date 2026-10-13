@@ -19,7 +19,8 @@ module Raindown
 
     def initialize(content:, path: nil, bare: false)
       @content = content
-      @directive = BareDirectives.enabled?(path:, bare:) ? BARE_DIRECTIVE : Regexp.union(DIRECTIVE)
+      @bare = BareDirectives.enabled?(path:, bare:)
+      @directive = @bare ? BARE_DIRECTIVE : Regexp.union(DIRECTIVE)
     end
 
     def call
@@ -53,7 +54,7 @@ module Raindown
     end
 
     def markdown_list
-      headings = Raindown.headings(markdown: @content)
+      headings = Raindown.headings(markdown: @content, bare: @bare)
       return '' if headings.empty?
 
       min_level = headings.map { |heading| heading[:level] }.min

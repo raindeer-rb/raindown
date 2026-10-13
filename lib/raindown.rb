@@ -25,36 +25,48 @@ module Raindown
   # Directives are HTML comments until Antlers renders them, and escaped characters like "\#" stay plain text.
   HTML_OPTIONS = { render: { unsafe: true, escaped_char_spans: false } }.freeze
 
+  # Stands in for an app's metadata when there isn't any, so a <{ list: }> lists nothing.
+  module NoMetadata
+    def self.list(**) = []
+  end
+
+  # Headings with an id, which are the ones a table of contents links to.
+  HEADINGS = 'h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]'
+
   module_function
 
-  def headings(markdown:)
-    markdown = PreRenderer.render(markdown.dup.force_encoding('UTF-8'), variables: variables(markdown:))
-    html = Commonmarker.parse(markdown, options: MARKDOWN_OPTIONS).to_html(options: HTML_OPTIONS)
+  def headings(markdown:, metadata: NoMetadata, bare: false)
+    html = html(markdown:, variables: variables(markdown:), metadata:, bare:)
 
-    Nokogiri::HTML(html).css('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').map do |heading|
-      { level: heading.name[1].to_i, text: heading.text.strip.gsub(/[\u{E000}\u{E001}]/, CODE_BRACES.invert), id: heading['id'] }
+    Nokogiri::HTML(html).css(HEADINGS).map do |heading|
+      { level: heading.name[1].to_i, text: heading.text.strip, id: heading['id'] }
     end
   end
 
-  def render_file(path:, metadata: {}, bare: false)
+  def render_file(path:, metadata: NoMetadata, bare: false)
     render(markdown: File.read(path), metadata:, bare: bare || BareDirectives.file?(path))
   end
 
   # Front matter keys are variables, like {title} or <{ title }>.
-  def render(markdown:, metadata: {}, bare: false)
+  def render(markdown:, metadata: NoMetadata, bare: false)
     variables = variables(markdown:)
-    markdown = PreRenderer.render(markdown, variables:, bare:)
+    template = html(markdown:, variables:, metadata:, bare:)
+    return template unless template.include?('<{')
+
+    # Directives whose output is HTML. The rest rendered before Commonmarker, in PreRenderer.
+    ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :prop, :slot] + Elements[:toc, :endpoint])
+
+    "#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n"
+  end
+
+  # The HTML from Commonmarker, after PreRenderer and before the directives whose output is HTML.
+  def html(markdown:, variables:, metadata:, bare:)
+    markdown = PreRenderer.render(markdown.dup.force_encoding('UTF-8'), variables:, metadata:, bare:)
     doc = Commonmarker.parse(hide_directives(markdown:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)
 
-    template = doc.to_html(options: HTML_OPTIONS)
-    template = template.gsub('<!-- ANTLERS', '<{').gsub('ANTLERS -->', '}>').gsub(/[\u{E000}\u{E001}]/, CODE_BRACE_ENTITIES)
-
-    return template unless template.include?('<{') || template.include?('{')
-
-    ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :var, :prop, :slot, :if, :for] + Elements[:toc, :list, :endpoint])
-
-    "#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n"
+    doc.to_html(options: HTML_OPTIONS).gsub('<!-- ANTLERS', '<{').gsub('ANTLERS -->', '}>')
+       .gsub(/[\u{E000}\u{E001}]/, CODE_BRACE_ENTITIES)
   end
 
   def variables(markdown:)

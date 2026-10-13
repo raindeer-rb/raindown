@@ -20,7 +20,7 @@ module Raindown
           <details id="toc" open>
             <summary>Table of contents</summary>
             <ul>
-              #{doc.css('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').map do |h|
+              #{doc.css(HEADINGS).map do |h|
                 "<li class='#{h.name}'><a href='\##{h['id']}'>#{ERB::Util.html_escape(h.text.strip)}</a></li>"
               end.join("\n")}
             </ul>

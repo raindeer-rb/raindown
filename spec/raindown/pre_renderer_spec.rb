@@ -62,10 +62,17 @@ RSpec.describe Raindown::PreRenderer do
       expect(render("<{ :toc }> {name}\n", name: 'Mark')).to eq("<{ :toc }> Mark\n")
     end
 
-    it 'leaves the content of other directives to render in the HTML' do
-      markdown = "<{ list: page folder: 'notes' }>\n- {page.title} by {name}\n<{ :list }>\n"
+    it 'renders the Markdown between the tags of other directives' do
+      expect(render("<{ Layout: }>\n{name}\n<{ :Layout }>\n", name: 'Mark')).to eq("<{ Layout: }>\nMark\n<{ :Layout }>\n")
+    end
 
-      expect(render(markdown, name: 'Mark')).to eq(markdown)
+    it 'renders a list of pages as one list' do
+      metadata = Class.new do
+        def list(folder:) = [{ title: "#{folder} 1" }, { title: "#{folder} 2" }].map { Raindown::Variables.new(it) }
+      end.new
+      markdown = "<{ list: page folder: 'notes' }>\n- {page.title}\n<{ :list }>\n"
+
+      expect(described_class.render(markdown, variables: Raindown::Variables.new({}), metadata:)).to eq("- notes 1\n- notes 2\n")
     end
   end
 end
