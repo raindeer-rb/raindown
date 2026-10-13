@@ -17,7 +17,7 @@ module Raindown
     EXECUTE_ARGS = %w[:x :execute].freeze
 
     def self.format(content:, path: nil, bare: false, execute: false)
-      new(content:, bare: BareDirectives.enabled?(content:, path:, bare:), execute:).format
+      new(content:, bare: BareDirectives.enabled?(path:, bare:), execute:).format
     end
 
     def initialize(content:, bare: false, execute: false)

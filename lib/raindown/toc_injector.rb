@@ -18,7 +18,7 @@ module Raindown
 
     def initialize(content:, path: nil, bare: false)
       @content = content
-      @directive = BareDirectives.enabled?(content:, path:, bare:) ? BARE_DIRECTIVE : DIRECTIVE
+      @directive = BareDirectives.enabled?(path:, bare:) ? BARE_DIRECTIVE : DIRECTIVE
     end
 
     def call

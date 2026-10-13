@@ -42,14 +42,6 @@ Markdown files can opt in too, with the `--bare` flag:
 raindown README.md --bare
 ```
 
-Or with `bare: true` in the front matter:
-
-```
----
-bare: true
----
-```
-
 ### Endpoints
 
 Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type:

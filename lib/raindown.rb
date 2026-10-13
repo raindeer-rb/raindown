@@ -34,7 +34,6 @@ module Raindown
     render(markdown: File.read(path), metadata:, bare: bare || BareDirectives.file?(path))
   end
 
-  # Bare directives are also enabled by "bare: true" in the Markdown's front matter.
   def render(markdown:, metadata: {}, bare: false)
     doc = Commonmarker.parse(hide_directives(markdown:, bare:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)
@@ -51,7 +50,7 @@ module Raindown
 
   # Commonmarker escapes directives, so they're hidden in HTML comments until it's done.
   def hide_directives(markdown:, bare:)
-    markdown = BareDirectives.expand(markdown) if BareDirectives.enabled?(content: markdown, bare:)
+    markdown = BareDirectives.expand(markdown) if bare
 
     markdown.gsub(INJECTED_TOC, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->').force_encoding('UTF-8')
   end
