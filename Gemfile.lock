@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     raindown (0.1.0)
-      antlers (>= 1.1)
+      antlers (>= 1.1.1)
       commonmarker
       listen
       nokogiri
@@ -13,7 +13,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    antlers (1.1.0)
+    antlers (1.1.1)
       erb
       lowkey
       plugs
@@ -146,7 +146,7 @@ DEPENDENCIES
   rubocop
 
 CHECKSUMS
-  antlers (1.1.0) sha256=d01ea01d1ef201e860f631aa3b2f4813075e6a9ae2ca67b22913b83147fd225c
+  antlers (1.1.1) sha256=407f38b50636ee85cdcf8025e90b483111a0cc2c95c799f17d398aa34d8ea402
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
   bundler (4.0.12) sha256=7f8b757d28dfb636e7b24fba2344ac6dd13b5b24f4b46d62573d483f211825ac
   commonmarker (2.10.0-aarch64-linux) sha256=eeb167dea203dee066eb0dd99b3fd2deb526c8b5e7297ad385f7a5d60f869478
