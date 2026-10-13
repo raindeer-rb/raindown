@@ -101,7 +101,7 @@ To refresh a response, empty its code block. The snippet runs with the `curl` bi
 
 ### VS Code
 
-The [VS Code extension](vscode/) highlights directives and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
+The [VS Code extension](vscode/) highlights syntax and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
 
 ### Standalone binaries
 
