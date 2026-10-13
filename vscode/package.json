@@ -1,7 +1,7 @@
 {
   "name": "raindown",
   "displayName": "Raindown",
-  "description": "Highlighting and live preview for Raindown directives in .rd and Markdown files",
+  "description": "Syntax highlighting and live preview for Raindown files (.md, .rd, .markdown, .raindown)",
   "version": "0.1.0",
   "publisher": "raindeer",
   "license": "MPL-2.0",
@@ -94,7 +94,7 @@
         "raindown.markdownPreview": {
           "type": "boolean",
           "default": true,
-          "description": "Render <{ }> directives in the built-in Markdown preview with raindown."
+          "description": "Highlight Raindown syntax in the built-in Markdown preview."
         }
       }
     }

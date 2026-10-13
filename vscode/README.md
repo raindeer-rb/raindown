@@ -6,7 +6,7 @@ Highlighting and live preview for [Raindown](https://github.com/raindeer-rb/rain
 | --- | --- | --- |
 | Highlights `<{ :toc }>` directives | ✓ | ✓ |
 | Highlights bare directives like `:toc` | | ✓ |
-| Preview | The built-in Markdown preview, rendered by raindown when the file has `<{ }>` directives | **Raindown: Open Preview** (`Cmd+Shift+V`) or **Open Preview to the Side** (`Cmd+K V`) |
+| Preview | The built-in Markdown preview, rendered by raindown when the file has `<{ }>` syntax | **Raindown: Open Preview** (`Cmd+Shift+V`) or **Open Preview to the Side** (`Cmd+K V`) |
 
 Directives in code and comments aren't highlighted, matching what Raindown renders.
 
@@ -14,14 +14,16 @@ The previews render the unsaved text with `raindown FILE --stdin`, so they updat
 
 ## Requirements
 
-The `raindown` executable, from the gem (`gem install raindown`) or a [standalone binary](https://github.com/raindeer-rb/raindown/releases). If it isn't on your PATH, set `raindown.path` to its full path.
+The `raindown` executable, from the [cross-platform binary](https://github.com/raindeer-rb/raindown/releases) or via `gem install raindown`. If `raindown` isn't on your PATH then set `raindown.path` to the full path of the executable.
 
 ## Settings
 
-| Setting | Default | |
-| --- | --- | --- |
-| `raindown.path` | `raindown` | The raindown executable. |
-| `raindown.markdownPreview` | `true` | Render `<{ }>` directives in the built-in Markdown preview. Turn it off to keep the plain preview, which also keeps its scroll sync. |
+| Setting                    | Default    |                                                             |
+|--------------------------- | ---------- | ----------------------------------------------------------- |
+| `raindown.path`            | `raindown` | The file path to the raindown executable                    |
+| `raindown.markdownPreview` | `true`     | Highlight Raindown syntax in the built-in Markdown preview. |
+
+Note: Turn off `markdownPreview` to keep the plain preview, which also keeps its scroll sync.
 
 ## Development
 
