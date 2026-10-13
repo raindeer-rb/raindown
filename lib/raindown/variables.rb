@@ -4,12 +4,14 @@ module Raindown
   # The front matter values that Antlers variables like {title} and <{ title }> render.
   # Antlers reads a variable from the binding's locals, then by sending it to the binding's receiver, which is this.
   # It's a BasicObject so a key like "hash" or "display" isn't shadowed by a method, and unknown names render nothing.
-  # Nested values work too, like {author.name} and <{ for: tag in tags }>.
+  # Nested values work too, like {author.name} and <{ for: tag in: tags }>.
   class Variables < BasicObject
+    # Braces in a value become the placeholders that render as braces, so Antlers doesn't read them as a variable.
     def self.wrap(value)
       case value
       when ::Hash then new(value)
       when ::Array then value.map { |item| wrap(item) }
+      when ::String then value.gsub(/[{}]/, CODE_BRACES)
       else value
       end
     end

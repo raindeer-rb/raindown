@@ -1,61 +1,54 @@
 # frozen_string_literal: true
 
 require 'antlers'
-require_relative 'code_blocks'
+require_relative 'bare_directives'
+require_relative 'code'
 require_relative 'front_matter'
 
 module Raindown
-  # Renders variables in headings before Commonmarker reads them, so a heading's id and its entry in a table of
-  # contents come from its text, like "# Notes for {name}" becoming "Notes for Mark" with the id "notes-for-mark".
+  # Renders front matter variables, loops and conditions in the Markdown, before Commonmarker reads it.
+  # So a loop's items become one Markdown list or table, and a heading's id and its entry in a table of contents
+  # come from its text, like "# Notes for {name}" becoming "Notes for Mark" with the id "notes-for-mark".
+  # Other directives, like <{ :toc }>, render in the HTML afterwards.
   module PreRenderer
-    HEADING = /\A {0,3}\#{1,6}(?:[ \t]|$)/
-    # A code span is left as-is, {var} is escaped and <{ var }> is raw.
-    TOKEN = /(`+).*?\1|<\{\s*([@\w.]+)\s*\}>|\{\s*([@\w.]+)\s*\}/
-    # Escaped as Markdown so a value like "C# *notes*" shows as written. Braces become the placeholders that code uses,
-    # so Antlers doesn't read them as another variable.
-    PUNCTUATION = %r{[!-/:-@\[-`|~]}
+    BLOCK_DIRECTIVES = %w[for if].freeze
+    # A variable like <{ title }> or a for or if directive, which render here.
+    DIRECTIVE = /<\{\s*(?:(?:#{BLOCK_DIRECTIVES.join('|')}):[^}]*|:(?:#{BLOCK_DIRECTIVES.join('|')})|[\w.]+)\s*\}>/
+    # A for or if directive alone on its line, which leaves no line behind, so a loop's list items stay together.
+    BLOCK_LINE = /^[ \t]*(<\{\s*:?(?:#{BLOCK_DIRECTIVES.join('|')})\b[^}]*\}>)[ \t]*\n/
+    # Directives that render in the HTML, with their content when they have a closing tag, like <{ endpoint: }>.
+    HTML_DIRECTIVE = /<\{\s*(?!(?:#{BLOCK_DIRECTIVES.join('|')}):)(\w+):(?!\w).*?\}>.*?<\{\s*:\1\s*\}>|<\{.*?\}>|<\{/m
+    HIDDEN = /\u{E002}(\d+)\u{E003}/
 
     module_function
 
-    def render(markdown, variables:)
+    def render(markdown, variables:, bare: false)
+      markdown = BareDirectives.expand(markdown) if bare
       return markdown unless markdown.include?('{')
 
-      markdown = markdown.dup.force_encoding('UTF-8')
+      markdown = Code.hide_braces(markdown.dup.force_encoding('UTF-8'))
       body = FrontMatter.parse(markdown).last
       "#{markdown.delete_suffix(body)}#{render_body(body, variables)}"
     end
 
     def render_body(body, variables)
-      lines = body.lines
-      index = 0
+      hidden = []
+      template = body.gsub(HTML_DIRECTIVE) { |directive| directive.match?(/\A#{DIRECTIVE}\z/) ? directive : hide(directive, hidden) }
+      template = template.gsub(BLOCK_LINE, '\1')
+      return body unless template.include?('{')
 
-      while index < lines.length
-        if (block = CodeBlocks.at(lines, index))
-          index = block[:close]
-        elsif lines[index].match?(HEADING)
-          lines[index] = render_heading(lines[index], variables)
-        end
+      # Antlers strips the whitespace around a template, which can be Markdown, like an indented code block.
+      leading = template[/\A\s*/]
+      trailing = template[/\s*\z/]
+      ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :var, :if, :for])
+      rendered = Antlers.render(ast:, current_binding: variables.binding)
 
-        index += 1
-      end
-
-      lines.join
+      "#{leading}#{rendered}#{trailing}".gsub(HIDDEN) { hidden[::Regexp.last_match(1).to_i] }
     end
 
-    def render_heading(line, variables)
-      line.gsub(TOKEN) do |token|
-        code, raw, escaped = ::Regexp.last_match.captures
-        next token if code
-
-        value = value(raw || escaped, variables).gsub(/[{}]/, CODE_BRACES)
-        raw ? value : value.gsub(PUNCTUATION) { "\\#{it}" }
-      end
-    end
-
-    def value(name, variables)
-      ast = Antlers.ast(template: "<{ #{name} }>", elements: Antlers::Elements[:var])
-
-      Antlers.render(ast:, current_binding: variables.binding)
+    def hide(directive, hidden)
+      hidden << directive
+      "\u{E002}#{hidden.length - 1}\u{E003}"
     end
   end
 end

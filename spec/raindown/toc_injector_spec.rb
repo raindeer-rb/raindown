@@ -46,6 +46,14 @@ RSpec.describe Raindown::TOCInjector do
       expect(described_class.format(content:)).to eq(content)
     end
 
+    it 'skips :toc directives in code' do
+      content = "# Café\n\nUse `<{ :toc }>` like this:\n\n```\n<{ :toc }>\n```\n"
+
+      expect(described_class.format(content:)).to eq(content)
+      expect(described_class.format(content: "#{content}\n<{ :toc }>\n"))
+        .to end_with("```\n\n<{ :toc }>\n\n<!-- raindown:toc -->\n- [Café](#café)\n<!-- /raindown:toc -->\n")
+    end
+
     context 'with a Raindown file' do
       let(:markdown) { "# Title\n\n:toc\n\n## Section\n" }
 

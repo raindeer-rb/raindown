@@ -6,6 +6,7 @@ require 'antlers/api'
 require 'nokogiri'
 require_relative 'elements'
 require_relative 'raindown/bare_directives'
+require_relative 'raindown/code'
 require_relative 'raindown/front_matter'
 require_relative 'raindown/pre_renderer'
 require_relative 'raindown/variables'
@@ -42,8 +43,8 @@ module Raindown
   # Front matter keys are variables, like {title} or <{ title }>.
   def render(markdown:, metadata: {}, bare: false)
     variables = variables(markdown:)
-    markdown = PreRenderer.render(markdown, variables:)
-    doc = Commonmarker.parse(hide_directives(markdown:, bare:), options: MARKDOWN_OPTIONS)
+    markdown = PreRenderer.render(markdown, variables:, bare:)
+    doc = Commonmarker.parse(hide_directives(markdown:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)
 
     template = doc.to_html(options: HTML_OPTIONS)
@@ -61,9 +62,7 @@ module Raindown
   end
 
   # Commonmarker escapes directives, so they're hidden in HTML comments until it's done.
-  def hide_directives(markdown:, bare:)
-    markdown = BareDirectives.expand(markdown) if bare
-
+  def hide_directives(markdown:)
     markdown.gsub(INJECTED_TOC, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->').force_encoding('UTF-8')
   end
 

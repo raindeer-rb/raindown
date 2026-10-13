@@ -52,6 +52,35 @@ RSpec.describe Raindown do
         expect(text(html)).not_to include('Draft')
       end
 
+      it 'renders a loop on its own lines as one list' do
+        html = render('tags: [ruby, markdown]', "<{ for: tag in: tags }>\n1. {tag}\n<{ :for }>")
+
+        expect(html).to include("<ol>\n<li>ruby</li>\n<li>markdown</li>\n</ol>")
+      end
+
+      it 'renders a loop as table rows' do
+        rows = "<{ for: person in: people }>\n| {person.name} |\n<{ :for }>"
+        html = render("people:\n  - name: Ann\n  - name: Bo", "| Name |\n| --- |\n#{rows}")
+
+        expect(html).to include("<tbody>\n<tr>\n<td>Ann</td>\n</tr>\n<tr>\n<td>Bo</td>\n</tr>\n</tbody>")
+      end
+
+      it 'renders Markdown in a condition at the start of a line' do
+        expect(render('draft: true', '<{ if: draft }>**Draft**<{ :if }> notes')).to include('<p><strong>Draft</strong> notes</p>')
+      end
+
+      it 'renders Markdown in values' do
+        expect(render('title: My *great* notes', '{title}')).to include('<p>My <em>great</em> notes</p>')
+      end
+
+      it 'renders variables in underlined headings' do
+        expect(render('name: Mark', "Notes for {name}\n===")).to include('<h1 id="notes-for-mark">Notes for Mark')
+      end
+
+      it 'renders braces in values as text' do
+        expect(text(render('title: "{x}"', '{title}'))).to include('{x}')
+      end
+
       it 'renders keys named like Ruby methods' do
         expect(text(render('hash: abc', '{hash}'))).to include('abc')
       end

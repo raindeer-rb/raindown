@@ -68,7 +68,7 @@ This is a draft.
 <{ :if }>
 ```
 
-Unknown variables render nothing.
+Variables, loops and conditions render before the Markdown does, like Liquid in Jekyll. So a loop's lines make one list or table, and a value can contain Markdown like `*emphasis*`. Unknown variables render nothing, and variables in code are left as text.
 
 ### Endpoints
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'strscan'
 require_relative '../raindown'
 require_relative 'bare_directives'
 
@@ -18,7 +19,7 @@ module Raindown
 
     def initialize(content:, path: nil, bare: false)
       @content = content
-      @directive = BareDirectives.enabled?(path:, bare:) ? BARE_DIRECTIVE : DIRECTIVE
+      @directive = BareDirectives.enabled?(path:, bare:) ? BARE_DIRECTIVE : Regexp.union(DIRECTIVE)
     end
 
     def call
@@ -26,14 +27,30 @@ module Raindown
 
       if @content.include?(START_MARKER) && @content.include?(END_MARKER)
         @content.sub(/#{Regexp.escape(START_MARKER)}.*?#{Regexp.escape(END_MARKER)}/m, block)
-      elsif @content.match?(@directive)
-        @content.sub(@directive) { |directive| "#{directive}\n\n#{block}" }
+      elsif (finish = directive_end)
+        "#{@content.byteslice(0, finish)}\n\n#{block}#{@content.byteslice(finish..)}"
       else
         @content
       end
     end
 
     private
+
+    # Where the first directive outside code ends, as a byte offset.
+    def directive_end
+      return unless @content.match?(@directive)
+
+      # Code ranges are in document order, so the one a directive could be in is found by binary search.
+      code = Code.ranges(@content)
+      scanner = StringScanner.new(@content)
+
+      while scanner.skip_until(@directive)
+        start = scanner.pos - scanner.matched_size
+        return scanner.pos unless code.bsearch { |range| range.end > start }&.cover?(start)
+      end
+
+      nil
+    end
 
     def markdown_list
       headings = Raindown.headings(markdown: @content)

@@ -7,34 +7,65 @@ RSpec.describe Raindown::PreRenderer do
     described_class.render(markdown, variables: Raindown::Variables.new(values))
   end
 
+  def braces(text)
+    text.gsub(/[{}]/, Raindown::CODE_BRACES)
+  end
+
   describe '.render' do
-    it 'renders {var} and <{ var }> in headings' do
-      expect(render("# Notes for {name}\n\n## <{ name }>\n", name: 'Mark')).to eq("# Notes for Mark\n\n## Mark\n")
+    it 'renders {var} and <{ var }> anywhere' do
+      expect(render("# Notes for {name}\n\n<{ name }> wrote this.\n", name: 'Mark')).to eq("# Notes for Mark\n\nMark wrote this.\n")
     end
 
-    it 'escapes {var} values as Markdown, but not <{ var }>' do
-      expect(render("# {title}\n# <{ title }>\n", title: 'C# *notes*'))
-        .to eq("# C\\# \\*notes\\*\n# C# *notes*\n")
+    it 'escapes {var} values as HTML, but not <{ var }>, and leaves Markdown in both' do
+      expect(render("{title}\n<{ title }>\n", title: '*Big* <notes>')).to eq("*Big* &lt;notes&gt;\n*Big* <notes>\n")
     end
 
     it 'hides braces in values from Antlers' do
-      expect(render("# {title}\n", title: '{x}')).to eq("# \u{E000}x\u{E001}\n")
+      expect(render("{title}\n", title: '{x}')).to eq("#{braces('{x}')}\n")
     end
 
     it 'renders nested values' do
-      expect(render("# By {author.name}\n", author: { name: 'Mark' })).to eq("# By Mark\n")
+      expect(render("By {author.name}\n", author: { name: 'Mark' })).to eq("By Mark\n")
+    end
+
+    it 'renders a loop on its own lines as one list' do
+      expect(render("<{ for: tag in: tags }>\n- {tag}\n<{ :for }>\n", tags: %w[ruby markdown])).to eq("- ruby\n- markdown\n")
+    end
+
+    it 'renders a condition' do
+      markdown = "<{ if: draft }>\n**Draft**\n<{ :if }>\nText\n"
+
+      expect(render(markdown, draft: true)).to eq("**Draft**\nText\n")
+      expect(render(markdown, draft: false)).to eq("Text\n")
+    end
+
+    it 'keeps the whitespace around the Markdown' do
+      expect(render("\n\n{name}\n\n", name: 'Mark')).to eq("\n\nMark\n\n")
+    end
+
+    it 'leaves front matter alone' do
+      expect(render("---\ntitle: '{name}'\n---\n\n{name}\n", name: 'Mark')).to eq("---\ntitle: '{name}'\n---\n\nMark\n")
     end
 
     {
-      'a paragraph' => "Notes for {name}\n",
-      'a code span in a heading' => "# The `{name}` variable\n",
+      'a code span' => "The `{name}` variable\n",
       'a fenced code block' => "```\n# {name}\n```\n",
-      'a directive' => "# Notes <{ :toc }>\n",
-      'front matter' => "---\n# {name}\n---\n"
+      'an indented code block' => "Text\n\n    {name}\n",
+      'a code block in a quote' => "> ```\n> {name}\n> ```\n"
     }.each do |description, markdown|
-      it "leaves #{description} alone" do
-        expect(render(markdown, name: 'Mark')).to eq(markdown)
+      it "leaves variables in #{description} alone" do
+        expect(render(markdown, name: 'Mark')).to eq(braces(markdown))
       end
+    end
+
+    it 'leaves other directives to render in the HTML' do
+      expect(render("<{ :toc }> {name}\n", name: 'Mark')).to eq("<{ :toc }> Mark\n")
+    end
+
+    it 'leaves the content of other directives to render in the HTML' do
+      markdown = "<{ list: page folder: 'notes' }>\n- {page.title} by {name}\n<{ :list }>\n"
+
+      expect(render(markdown, name: 'Mark')).to eq(markdown)
     end
   end
 end
