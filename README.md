@@ -17,7 +17,12 @@ raindown README.md -o site/index.html
 
 # Render once without watching, to stdout or with -o to a file:
 raindown README.md --once
+
+# Render Markdown from stdin without touching the file (for editor previews):
+cat draft.rd | raindown draft.rd --stdin
 ```
+
+With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
 
 ### Raindown files
 

@@ -17,13 +17,15 @@ module Raindown
       Options:
         -o, --output PATH   Write output to PATH instead of FILE.html beside FILE
         --once              Render once without watching, printing to stdout unless -o is given
+        --stdin             Render Markdown from stdin once, without formatting FILE, which only needs
+                            its extension (to allow bare directives) and can be unsaved
         --bare              Allow bare directives like :toc in Markdown files
         -x, --execute       Run endpoint curl snippets that have no output yet
         -h, --help          Show this message
     TEXT
 
     OPTIONS = { output: ['-o :output', '--output :output'], bare: ['--bare'], execute: ['-x', '--execute'],
-                once: ['--once'] }.freeze
+                once: ['--once'], stdin: ['--stdin'] }.freeze
 
     # Trees matches tokens in order, so there's a line for every order and spelling of the options.
     OPTION_LINES = (0..OPTIONS.size).flat_map { |count| OPTIONS.keys.permutation(count).to_a }.flat_map do |names|
@@ -31,7 +33,13 @@ module Raindown
     end
 
     OPTION_LINES.each do |names, flags|
-      command = names.include?(:once) ? :render : :watch
+      # Endpoints run while formatting, which --stdin skips.
+      next if names.include?(:stdin) && names.include?(:execute)
+
+      command = if names.include?(:stdin) then :render_stdin
+                elsif names.include?(:once) then :render
+                else :watch
+                end
       options = { bare: names.include?(:bare), execute: names.include?(:execute) }
       pattern = [':path', *flags].join(' ')
 
@@ -56,14 +64,21 @@ module Raindown
         ensure_exists(path)
 
         Formatter.update(path:, bare:, execute:)
-        html = Raindown.render_file(path:, bare:)
-        output ? File.write(output, html) : puts(html)
+        write(output, Raindown.render_file(path:, bare:))
+      end
+
+      def render_stdin(path, output = nil, bare: false, **)
+        write(output, Raindown.render(markdown: $stdin.read, bare: bare || BareDirectives.file?(path)))
       end
 
       def watch(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
 
         Watcher.new(path:, output:, bare:, execute:).start
+      end
+
+      def write(output, html)
+        output ? File.write(output, html) : puts(html)
       end
 
       def ensure_exists(path)
