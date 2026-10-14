@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'raindown/table_aligner'
+require 'raindown/table_formatter'
 
-RSpec.describe Raindown::TableAligner do
+RSpec.describe Raindown::TableFormatter do
   def rewrite(content)
     described_class.rewrite(content:, path: 'sample.md')
   end

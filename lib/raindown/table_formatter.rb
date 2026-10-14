@@ -4,7 +4,7 @@ require 'unicode/display_width'
 
 module Raindown
   # Pads every column of each Markdown table to the width of its widest cell.
-  class TableAligner
+  class TableFormatter
     DELIMITER_CELL = /\A:?-+:?\z/
     FENCE = /\A\s*(```|~~~)/
 
