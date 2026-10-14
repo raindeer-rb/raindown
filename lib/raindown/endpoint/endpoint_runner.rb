@@ -16,8 +16,8 @@ module Raindown
     DIRECTIVE = /\A {0,3}<\{\s*endpoint:(.*?)\}>[ \t]*$/
     EXECUTE_ARGS = %w[:x :execute].freeze
 
-    def self.format(content:, path: nil, bare: false, execute: false)
-      new(content:, bare: BareDirectives.enabled?(path:, bare:), execute:).format
+    def self.rewrite(content:, path: nil, bare: false, execute: false)
+      new(content:, bare: BareDirectives.enabled?(path:, bare:), execute:).rewrite
     end
 
     def initialize(content:, bare: false, execute: false)
@@ -26,7 +26,7 @@ module Raindown
       @execute = execute
     end
 
-    def format
+    def rewrite
       index = 0
 
       while index < @lines.length

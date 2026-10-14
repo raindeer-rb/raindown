@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'raindown/formatter'
+require 'raindown/rewriter'
 require 'tmpdir'
 
-RSpec.describe Raindown::Formatter do
+RSpec.describe Raindown::Rewriter do
   around do |example|
     Dir.mktmpdir do |dir|
       @path = File.join(dir, 'sample.md')
@@ -12,7 +12,7 @@ RSpec.describe Raindown::Formatter do
   end
 
   describe '.update' do
-    it 'runs every formatter over the file' do
+    it 'runs every rewriter over the file' do
       File.write(@path, "# Title\n\n<{ :toc }>\n\n| a | b |\n|-|-|\n| ccc | d |\n")
 
       expect(described_class.update(path: @path)).to be(true)

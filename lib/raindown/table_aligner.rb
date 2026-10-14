@@ -8,7 +8,7 @@ module Raindown
     DELIMITER_CELL = /\A:?-+:?\z/
     FENCE = /\A\s*(```|~~~)/
 
-    def self.format(content:, **)
+    def self.rewrite(content:, **)
       new(content:).format
     end
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../raindown'
-require_relative 'formatter'
+require_relative 'rewriter'
 
 module Raindown
   class Watcher
@@ -19,7 +19,7 @@ module Raindown
 
       $stdout.sync = true
 
-      Formatter.update(path:, bare:, execute:)
+      Rewriter.update(path:, bare:, execute:)
       render
       puts "Watching #{path} for changes (writing to #{output})..."
 
@@ -36,7 +36,7 @@ module Raindown
       Listen.to(directory) do |modified, added, _removed|
         next unless (modified + added).any? { |f| File.basename(f) == filename }
         # Formatting saves the file again, and that change triggers the render.
-        next if Formatter.update(path:, bare:, execute:)
+        next if Rewriter.update(path:, bare:, execute:)
 
         render
         puts "Re-rendered #{path} -> #{output}"

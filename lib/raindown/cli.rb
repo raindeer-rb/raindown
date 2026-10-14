@@ -2,7 +2,7 @@
 
 require 'trees'
 require_relative '../raindown'
-require_relative 'formatter'
+require_relative 'rewriter'
 require_relative 'watcher'
 
 module Raindown
@@ -63,7 +63,7 @@ module Raindown
       def render(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
 
-        Formatter.update(path:, bare:, execute:)
+        Rewriter.update(path:, bare:, execute:)
         write(output, Raindown.render_file(path:, bare:))
       end
 
