@@ -31,7 +31,9 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'antlers', '>= 1.2.0'
   spec.add_dependency 'commonmarker'
+  spec.add_dependency 'dirload'
   spec.add_dependency 'listen'
+  spec.add_dependency 'lownode'
   spec.add_dependency 'nokogiri'
   spec.add_dependency 'plugs'
   spec.add_dependency 'trees', '>= 0.3.5'

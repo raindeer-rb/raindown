@@ -62,17 +62,20 @@ module Raindown
 
       def render(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
+        Nodes.load(path)
 
         Rewriter.update(path:, bare:, execute:)
         write(output, Raindown.render_file(path:, bare:))
       end
 
       def render_stdin(path, output = nil, bare: false, **)
+        Nodes.load(path)
         write(output, Raindown.render(markdown: $stdin.read, bare: bare || BareDirectives.file?(path)))
       end
 
       def watch(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
+        Nodes.load(path)
 
         Watcher.new(path:, output:, bare:, execute:).start
       end

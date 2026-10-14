@@ -134,6 +134,15 @@ RSpec.describe Raindown do
       end
     end
 
+    it 'renders node blocks with their HTML, or their Markdown when they have no HTML' do
+      require 'helpers/nodes'
+      html = described_class.render(markdown: "SpecReleases: limit=1\n- old\n\nSpecHeading: title='Hi'\n\nText.\n", bare: true)
+
+      expect(html).to match(%r{\A<ol data-count="\d+"><li>1.2.0</li></ol>\n<h2 id="hi">Hi})
+      expect(html).not_to include('old')
+      expect(html).to include('<p>Text.</p>')
+    end
+
     it 'raises when an endpoint is not closed' do
       expect { described_class.render(markdown: "<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n") }
         .to raise_error(Antlers::Parser::ParserError, /Missing end tag/)

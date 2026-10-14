@@ -1,15 +1,16 @@
 # frozen_string_literal: true
 
+require_relative 'node_injector'
 require_relative 'toc_injector'
 require_relative 'endpoint/endpoint_runner'
 require_relative 'table_formatter'
 
 module Raindown
   # Rewrites the generated parts of a Markdown file in place before it's rendered:
-  # the TOC, endpoint responses and table alignment.
+  # node output, the TOC, endpoint responses and table alignment. Nodes go first, so the TOC lists their headings.
   # Each rewriter responds to rewrite(content:, path:, bare:, execute:) and returns the new content.
   module Rewriter
-    REWRITERS = [TOCInjector, EndpointRunner, TableFormatter].freeze
+    REWRITERS = [NodeInjector, TOCInjector, EndpointRunner, TableFormatter].freeze
 
     module_function
 

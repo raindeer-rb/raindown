@@ -134,6 +134,50 @@ raindown api.md -x
 
 To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Raindown also runs curl without your `~/.curlrc`.
 
+### Nodes
+
+Nodes are your own Ruby classes that write Markdown into the file and render HTML into the page. Put them in a `.raindown` folder beside your files, or in a folder above them, and Raindown loads them with [Dirload](https://github.com/low-rb/dirload):
+
+```ruby
+# .raindown/changelog.rb
+class Changelog < LowNode
+  def initialize(limit: 5)
+    @releases = Release.all.first(limit)
+  end
+
+  # Written into the Markdown.
+  def markdown
+    @releases.map { |release| "- **#{release.version}** #{release.summary}" }.join("\n")
+  end
+
+  # Rendered into the HTML. Without it, the HTML of the Markdown above is rendered.
+  def render
+    "<section class=\"changelog\">...</section>"
+  end
+end
+```
+
+A node block names the node and its props, and Raindown writes the node's Markdown into it whenever the file is rendered:
+
+```md
+<{ Changelog: limit=3 }>
+
+- **1.2.0** Bare directives close themselves
+- **1.1.0** Track fetched dates
+
+<{ :Changelog }>
+```
+
+In a [Raindown file](#raindown-files) it can also use bare syntax, with the Markdown straight below it up to the next blank line (a bare node block can't write blank new lines):
+
+```
+Changelog: limit=3
+- **1.2.0** Bare directives close themselves
+- **1.1.0** Track fetched dates
+```
+
+Props can be quoted text, numbers, `true`, `false` or front matter keys like `author.name`. Raindown keeps one instance of each node and its props while it runs, so `markdown` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded node, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+
 ### VS Code
 
 The [VS Code extension](vscode/) highlights syntax and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.

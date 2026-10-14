@@ -8,6 +8,7 @@ require_relative 'elements'
 require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'
 require_relative 'raindown/front_matter'
+require_relative 'raindown/node_blocks'
 require_relative 'raindown/pre_renderer'
 require_relative 'raindown/toc_blocks'
 require_relative 'raindown/variables'
@@ -49,17 +50,19 @@ module Raindown
   def render(markdown:, metadata: NoMetadata, bare: false)
     variables = variables(markdown:)
     template = html(markdown:, variables:, metadata:, bare:)
-    return template unless template.include?('<{')
+    return Nodes.render_placeholders(template) unless template.include?('<{')
 
     # Directives whose output is HTML. The rest rendered before Commonmarker, in PreRenderer.
     ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :prop, :slot] + Elements[:toc, :endpoint])
 
-    "#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n"
+    # Nodes render last, so their HTML isn't read as Markdown or directives.
+    Nodes.render_placeholders("#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n")
   end
 
   # The HTML from Commonmarker, after PreRenderer and before the directives whose output is HTML.
   def html(markdown:, variables:, metadata:, bare:)
-    markdown = TOCBlocks.to_directives(markdown.dup.force_encoding('UTF-8'), bare:)
+    markdown = NodeBlocks.to_rendered(markdown.dup.force_encoding('UTF-8'), bare:)
+    markdown = TOCBlocks.to_directives(markdown, bare:)
     markdown = PreRenderer.render(markdown, variables:, metadata:, bare:)
     doc = Commonmarker.parse(hide_directives(markdown:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)
