@@ -4,26 +4,24 @@ Run `raindown examples/raindown.rd` and edit this file to see `examples/raindown
 
 This is a Raindown file (`.rd`), so directives can be written bare on their own line.
 
-:toc
+toc:
 
-<!-- raindown:toc -->
 - [Raindown Example](#raindown-example)
   - [Directives](#directives)
   - [Endpoints](#endpoints)
   - [Alerts](#alerts)
   - [Markdown](#markdown)
     - [Nested heading](#nested-heading)
-<!-- /raindown:toc -->
 
 ## Directives
 
 In a `.rd` file a directive on its own line needs no delimiters. The table of contents above comes from:
 
 ```
-:toc
+toc:
 ```
 
-It lists every heading in the file and stays in sync as you edit. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. `<{ :toc }>` works too, and is the only form `.md` files understand.
+It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use `:toc` for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. `<{ toc: }>` works too, and is the only form `.md` files understand.
 
 ## Endpoints
 

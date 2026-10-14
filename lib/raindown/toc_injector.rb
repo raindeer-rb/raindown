@@ -1,18 +1,13 @@
 # frozen_string_literal: true
 
-require 'strscan'
 require_relative '../raindown'
 require_relative 'bare_directives'
+require_relative 'toc_blocks'
 
 module Raindown
+  # Writes a Markdown TOC into each toc: block, replacing the one already there.
   class TOCInjector
-    START_MARKER = '<!-- raindown:toc -->'
-    END_MARKER = '<!-- /raindown:toc -->'
-    DIRECTIVE = '<{ :toc }>'
-    # Bare directives also accept :toc on its own line.
-    BARE_DIRECTIVE = Regexp.union(DIRECTIVE, /^ {0,3}:toc[ \t]*$/)
-
-    # Rewriter interface. Content without a TOC directive is returned unchanged.
+    # Rewriter interface. Content without a toc: block is returned unchanged.
     def self.rewrite(content:, path: nil, bare: false, **)
       new(content:, path:, bare:).call
     end
@@ -20,49 +15,48 @@ module Raindown
     def initialize(content:, path: nil, bare: false)
       @content = content
       @bare = BareDirectives.enabled?(path:, bare:)
-      @directive = @bare ? BARE_DIRECTIVE : Regexp.union(DIRECTIVE)
     end
 
     def call
-      block = "#{START_MARKER}\n#{markdown_list}\n#{END_MARKER}"
+      lines = @content.lines
+      blocks = TOCBlocks.find(lines, bare: @bare)
+      return @content if blocks.empty?
 
-      if @content.include?(START_MARKER) && @content.include?(END_MARKER)
-        @content.sub(/#{Regexp.escape(START_MARKER)}.*?#{Regexp.escape(END_MARKER)}/m, block)
-      elsif (finish = directive_end)
-        "#{@content.byteslice(0, finish)}\n\n#{block}#{@content.byteslice(finish..)}"
-      else
-        @content
-      end
+      list = markdown_list
+      blocks.reverse_each { |block| lines[block[:open]..block[:last]] = block_lines(lines, block, list) }
+      lines.join
     end
 
     private
 
-    # Where the first directive outside code ends, as a byte offset.
-    def directive_end
-      return unless @content.match?(@directive)
+    # The directive, the TOC and the end tag, each separated by a blank line.
+    def block_lines(lines, block, list)
+      result = [line(lines[block[:open]])]
+      result.push("\n", *list) unless list.empty?
+      result.push("\n", line(lines[block[:close]])) if block[:close]
+      result.push("\n") if gap_after?(lines, block, list)
+      result
+    end
 
-      # Code ranges are in document order, so the one a directive could be in is found by binary search.
-      code = Code.ranges(@content)
-      scanner = StringScanner.new(@content)
+    # Without an end tag, a blank line after the TOC stops the text below from joining its last item.
+    def gap_after?(lines, block, list)
+      !block[:close] && !list.empty? && !lines[block[:last] + 1].to_s.strip.empty?
+    end
 
-      while scanner.skip_until(@directive)
-        start = scanner.pos - scanner.matched_size
-        return scanner.pos unless code.bsearch { |range| range.end > start }&.cover?(start)
-      end
-
-      nil
+    def line(line)
+      line.end_with?("\n") ? line : "#{line}\n"
     end
 
     def markdown_list
       headings = Raindown.headings(markdown: @content, bare: @bare)
-      return '' if headings.empty?
+      return [] if headings.empty?
 
       min_level = headings.map { |heading| heading[:level] }.min
 
       headings.map do |heading|
         indent = '  ' * (heading[:level] - min_level)
-        "#{indent}- [#{heading[:text]}](##{heading[:id]})"
-      end.join("\n")
+        "#{indent}- [#{heading[:text]}](##{heading[:id]})\n"
+      end
     end
   end
 end

@@ -5,7 +5,7 @@
   "patterns": [
     {
       "name": "meta.directive.bare.raindown",
-      "match": "^( {0,3})(:toc|:list)[ \\t]*$",
+      "match": "^( {0,3})(:toc|:list|toc:)[ \\t]*$",
       "captures": { "2": { "name": "keyword.control.directive.raindown" } }
     },
     {

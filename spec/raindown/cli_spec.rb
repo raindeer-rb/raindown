@@ -41,7 +41,7 @@ RSpec.describe Raindown::CLI do
 
     context 'with --once' do
       it 'renders to stdout without watching' do
-        File.write(path, "# Title\n\n<{ :toc }>\n\n## Section\n")
+        File.write(path, "# Title\n\n<{ toc: }>\n\n## Section\n")
 
         expect { described_class.run([path, '--once']) }.to output(/Table of contents/).to_stdout
         expect(File.read(path)).to include('- [Section](#section)')

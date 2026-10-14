@@ -43,7 +43,7 @@ RSpec.describe Raindown::Watcher do
     end
 
     it 'updates the Markdown TOC then renders on the change that update triggers' do
-      File.write(path, "# Title\n\n<{ :toc }>\n")
+      File.write(path, "# Title\n\n<{ toc: }>\n")
       expect { watcher.start }.to output.to_stdout
       File.write(path, "#{File.read(path)}\n## Added\n")
 
@@ -55,13 +55,13 @@ RSpec.describe Raindown::Watcher do
     end
 
     it 'renders bare directives when asked' do
-      File.write(path, "# Title\n\n:toc\n")
+      File.write(path, "# Title\n\ntoc:\n")
       bare_watcher = described_class.new(path:, output: output_path, bare: true)
       allow(bare_watcher).to receive(:sleep)
 
       expect { bare_watcher.start }.to output.to_stdout
 
-      expect(File.read(path)).to include('<!-- raindown:toc -->')
+      expect(File.read(path)).to include('- [Title](#title)')
       expect(File.read(output_path)).to include('Table of contents')
     end
 

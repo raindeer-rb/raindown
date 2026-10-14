@@ -42,6 +42,21 @@ Markdown files can opt in too, with the `--bare` flag:
 raindown README.md --bare
 ```
 
+### Table of contents
+
+`<{ :toc }>` renders a table of contents of the file's headings in the HTML.
+
+A `<{ toc: }>` block does that too, and also writes the table of contents into the Markdown below it as a list of links, updated whenever the file is rendered. That way people and agents reading the file see it as well:
+
+```md
+<{ toc: }>
+
+- [Notes](#notes)
+  - [Setup](#setup)
+```
+
+It can end with `<{ :toc }>` on the line after the list, or with nothing. In a [Raindown file](#raindown-files) they're `toc:` and `:toc`.
+
 ### Variables
 
 Front matter keys are variables, which render with `{key}`, or `<{ key }>` to leave HTML unescaped:

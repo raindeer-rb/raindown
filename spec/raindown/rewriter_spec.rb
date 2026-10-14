@@ -13,16 +13,16 @@ RSpec.describe Raindown::Rewriter do
 
   describe '.update' do
     it 'runs every rewriter over the file' do
-      File.write(@path, "# Title\n\n<{ :toc }>\n\n| a | b |\n|-|-|\n| ccc | d |\n")
+      File.write(@path, "# Title\n\n<{ toc: }>\n\n| a | b |\n|-|-|\n| ccc | d |\n")
 
       expect(described_class.update(path: @path)).to be(true)
 
       content = File.read(@path)
-      expect(content).to include("<!-- raindown:toc -->\n- [Title](#title)\n<!-- /raindown:toc -->")
+      expect(content).to include("<{ toc: }>\n\n- [Title](#title)\n")
       expect(content).to include("| a   | b   |\n| --- | --- |\n| ccc | d   |\n")
     end
 
-    it 'formats tables in files without a :toc directive' do
+    it 'formats tables in files without a toc: block' do
       File.write(@path, "| a | b |\n|-|-|\n| ccc | d |\n")
 
       described_class.update(path: @path)

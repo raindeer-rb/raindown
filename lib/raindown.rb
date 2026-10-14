@@ -9,6 +9,7 @@ require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'
 require_relative 'raindown/front_matter'
 require_relative 'raindown/pre_renderer'
+require_relative 'raindown/toc_blocks'
 require_relative 'raindown/variables'
 
 module Raindown
@@ -16,9 +17,6 @@ module Raindown
   # then HTML entities, which browsers still display as braces.
   CODE_BRACES = { '{' => "\u{E000}", '}' => "\u{E001}" }.freeze
   CODE_BRACE_ENTITIES = { "\u{E000}" => '&#123;', "\u{E001}" => '&#125;' }.freeze
-
-  # The Markdown TOC injected by TOCInjector, which the <{ :toc }> directive replaces in HTML.
-  INJECTED_TOC = %r{\n*<!-- raindown:toc -->.*?<!-- /raindown:toc -->}m
 
   # Front matter is metadata, so it's left out of the HTML and the headings.
   MARKDOWN_OPTIONS = { extension: { alerts: true, front_matter_delimiter: '---' } }.freeze
@@ -61,7 +59,8 @@ module Raindown
 
   # The HTML from Commonmarker, after PreRenderer and before the directives whose output is HTML.
   def html(markdown:, variables:, metadata:, bare:)
-    markdown = PreRenderer.render(markdown.dup.force_encoding('UTF-8'), variables:, metadata:, bare:)
+    markdown = TOCBlocks.to_directives(markdown.dup.force_encoding('UTF-8'), bare:)
+    markdown = PreRenderer.render(markdown, variables:, metadata:, bare:)
     doc = Commonmarker.parse(hide_directives(markdown:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)
 
@@ -75,7 +74,7 @@ module Raindown
 
   # Commonmarker escapes directives, so they're hidden in HTML comments until it's done.
   def hide_directives(markdown:)
-    markdown.gsub(INJECTED_TOC, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->').force_encoding('UTF-8')
+    markdown.gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->').force_encoding('UTF-8')
   end
 
   # Restore directives in code and hide its braces from Antlers.

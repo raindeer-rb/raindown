@@ -17,9 +17,9 @@
 
 <h2 id="directives">Directives<a href="#directives" aria-label="Link to heading 'Directives'" data-heading-content="Directives" class="anchor"></a></h2>
 <p>In a <code>.rd</code> file a directive on its own line needs no delimiters. The table of contents above comes from:</p>
-<pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">:toc
+<pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">toc:
 </span></code></pre>
-<p>It lists every heading in the file and stays in sync as you edit. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. <code>&lt;&#123; :toc &#125;&gt;</code> works too, and is the only form <code>.md</code> files understand.</p>
+<p>It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use <code>:toc</code> for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. <code>&lt;&#123; toc: &#125;&gt;</code> works too, and is the only form <code>.md</code> files understand.</p>
 <h2 id="endpoints">Endpoints<a href="#endpoints" aria-label="Link to heading 'Endpoints'" data-heading-content="Endpoints" class="anchor"></a></h2>
 <p>An <code>endpoint:</code> directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.</p>
 
