@@ -8,10 +8,12 @@ RSpec.describe Raindown::EndpointRunner do
   end
 
   let(:curl) { "```sh\ncurl https://api.example.com/users\n```\n" }
-  let(:response) { "```json\n{\n  \"id\": 1\n}\n```\n" }
+  let(:fetched) { "<!-- raindown:fetched 2026-10-14 -->\n" }
+  let(:response) { "```json\n{\n  \"id\": 1\n}\n```\n#{fetched}" }
 
   before do
     allow(Raindown::Curl).to receive(:run).and_return(["{\n  \"id\": 1\n}", 'json'])
+    allow(Date).to receive(:today).and_return(Date.new(2026, 10, 14))
   end
 
   it 'writes the response below the curl block when the directive has :x' do
@@ -47,6 +49,12 @@ RSpec.describe Raindown::EndpointRunner do
     expect(rewrite("<{ endpoint: :x }>\n\n#{curl}\n```\n```\n")).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}")
   end
 
+  it 'replaces the fetched date when an emptied block is fetched again' do
+    content = "<{ endpoint: :x }>\n\n#{curl}\n```json\n```\n<!-- raindown:fetched 2025-01-01 -->\n\nAfter.\n"
+
+    expect(rewrite(content)).to eq("<{ endpoint: :x }>\n\n#{curl}\n#{response}\nAfter.\n")
+  end
+
   it 'leaves existing output alone' do
     content = "<{ endpoint: :x }>\n\n#{curl}\n```json\n{}\n```\n"
 
@@ -80,7 +88,7 @@ RSpec.describe Raindown::EndpointRunner do
   it 'fences the response with more backticks than it contains' do
     allow(Raindown::Curl).to receive(:run).and_return(["```\ncode\n```", 'text'])
 
-    expect(rewrite("<{ endpoint: :x }>\n\n#{curl}")).to end_with("\n````text\n```\ncode\n```\n````\n")
+    expect(rewrite("<{ endpoint: :x }>\n\n#{curl}")).to end_with("\n````text\n```\ncode\n```\n````\n#{fetched}")
   end
 
   it 'warns and leaves the file alone when curl fails' do

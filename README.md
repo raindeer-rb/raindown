@@ -72,7 +72,7 @@ Variables, loops and conditions render before the Markdown does, like Liquid in 
 
 ### Endpoints
 
-Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type:
+Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched:
 
 ````md
 <{ endpoint: :x }>
@@ -86,6 +86,7 @@ curl https://httpbin.org/uuid
   "uuid": "4c9d6a2e-…"
 }
 ```
+<!-- raindown:fetched 2026-10-14 -->
 <{ :endpoint }>
 ````
 
@@ -97,7 +98,7 @@ The request only runs when the response block is missing or empty, and either th
 raindown api.md -x
 ```
 
-To refresh a response, empty its code block. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported. Curl is limited to HTTP request, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Raindown also runs curl without your `~/.curlrc`.
+To refresh a response, empty its code block, and its fetched date is updated too. The date stays out of the HTML, but anyone reading the file, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Raindown also runs curl without your `~/.curlrc`.
 
 ### VS Code
 

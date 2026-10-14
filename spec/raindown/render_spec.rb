@@ -134,6 +134,16 @@ RSpec.describe Raindown do
       end
     end
 
+    it 'leaves out the date an endpoint response was fetched' do
+      endpoint = "```sh\ncurl https://api.example.com\n```\n\n```json\n{}\n```\n<!-- raindown:fetched 2026-10-14 -->\n"
+
+      [described_class.render(markdown: "<{ endpoint: :x }>\n\n#{endpoint}<{ :endpoint }>\n"),
+       described_class.render(markdown: "endpoint: :x\n\n#{endpoint}\nAfter.\n", bare: true)].each do |html|
+        expect(html).not_to include('raindown:fetched')
+        expect(text(html)).to include('curl https://api.example.com')
+      end
+    end
+
     it 'raises when an endpoint is not closed' do
       expect { described_class.render(markdown: "<{ endpoint: :x }>\n\n```sh\ncurl x\n```\n") }
         .to raise_error(Antlers::Parser::ParserError, /Missing end tag/)

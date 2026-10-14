@@ -20,6 +20,9 @@ module Raindown
   # The Markdown TOC injected by TOCInjector, which the <{ :toc }> directive replaces in HTML.
   INJECTED_TOC = %r{\n*<!-- raindown:toc -->.*?<!-- /raindown:toc -->}m
 
+  # The date EndpointRunner fetched a response, on the line after it. Left out of the HTML.
+  FETCHED = /^ {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*(?:\n|\z)/
+
   # Front matter is metadata, so it's left out of the HTML and the headings.
   MARKDOWN_OPTIONS = { extension: { alerts: true, front_matter_delimiter: '---' } }.freeze
   # Directives are HTML comments until Antlers renders them, and escaped characters like "\#" stay plain text.
@@ -75,7 +78,7 @@ module Raindown
 
   # Commonmarker escapes directives, so they're hidden in HTML comments until it's done.
   def hide_directives(markdown:)
-    markdown.gsub(INJECTED_TOC, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->').force_encoding('UTF-8')
+    markdown.gsub(INJECTED_TOC, '').gsub(FETCHED, '').gsub('<{', '<!-- ANTLERS').gsub('}>', 'ANTLERS -->').force_encoding('UTF-8')
   end
 
   # Restore directives in code and hide its braces from Antlers.
