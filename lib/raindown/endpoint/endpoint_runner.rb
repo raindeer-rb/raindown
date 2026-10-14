@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'date'
-require_relative '../../raindown'
 require_relative '../bare_directives'
 require_relative '../code_blocks'
 require_relative 'curl'
@@ -22,6 +21,8 @@ module Raindown
   class EndpointRunner
     DIRECTIVE = /\A {0,3}<\{\s*endpoint:(.*?)\}>[ \t]*$/
     EXECUTE_ARGS = %w[:x :execute].freeze
+    # The date a response was fetched, on the line after it.
+    FETCHED = /\A {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*$/
 
     def self.rewrite(content:, path: nil, bare: false, execute: false)
       new(content:, bare: BareDirectives.enabled?(path:, bare:), execute:).rewrite
