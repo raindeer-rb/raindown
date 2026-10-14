@@ -8,8 +8,35 @@ RSpec.describe Raindown::BareDirectives do
       expect(described_class.expand("# Title\n\n:toc\n\nText.\n")).to eq("# Title\n\n<{ :toc }>\n\nText.\n")
     end
 
-    it 'wraps every keyword directive' do
-      expect(described_class.expand(":list\n")).to eq("<{ :list }>\n")
+    it 'closes for, if and list after the Markdown block below them' do
+      expect(described_class.expand("if: draft\nThis is a draft.\nStill a draft.\n\nAfter.\n"))
+        .to eq("<{ if: draft }>\nThis is a draft.\nStill a draft.\n<{ :if }>\n\nAfter.\n")
+      expect(described_class.expand("for: tag in: tags\n\n- {tag}\n\nAfter.\n"))
+        .to eq("<{ for: tag in: tags }>\n\n- {tag}\n<{ :for }>\n\nAfter.\n")
+      expect(described_class.expand("list: page folder: 'notes'\n## {page.title}\n"))
+        .to eq("<{ list: page folder: 'notes' }>\n## {page.title}\n<{ :list }>\n")
+    end
+
+    it 'keeps fenced code with blank lines in a block whole' do
+      content = "if: draft\n```\na\n\nb\n```\n\nAfter.\n"
+
+      expect(described_class.expand(content)).to eq("<{ if: draft }>\n```\na\n\nb\n```\n<{ :if }>\n\nAfter.\n")
+    end
+
+    it 'closes nested bare blocks inside out' do
+      expect(described_class.expand("for: x in: xs\nif: x.ok\n- {x.name}\n\nAfter.\n"))
+        .to eq("<{ for: x in: xs }>\n<{ if: x.ok }>\n- {x.name}\n<{ :if }>\n<{ :for }>\n\nAfter.\n")
+    end
+
+    it 'closes a bare block inside a delimited one before its end tag' do
+      expect(described_class.expand("<{ for: x in: xs }>\nif: x.ok\n- {x.name}\n<{ :for }>\n"))
+        .to eq("<{ for: x in: xs }>\n<{ if: x.ok }>\n- {x.name}\n<{ :if }>\n<{ :for }>\n")
+    end
+
+    it 'leaves front matter alone' do
+      content = "---\nlist: a\nif: b\n---\n\nText.\n"
+
+      expect(described_class.expand(content)).to eq(content)
     end
 
     it 'closes block directives after the code blocks they hold' do
@@ -53,6 +80,7 @@ RSpec.describe Raindown::BareDirectives do
       'in a backtick fence' => "```\n:toc\n```\n",
       'in a tilde fence' => "~~~\n:toc\n~~~\n",
       'an unknown keyword' => ":foo\n",
+      'an end tag, since bare directives have none' => ":list\n",
       'a keyword without a space before its arguments' => "endpoint:x\n",
       'a capitalised keyword' => "Endpoint: :x\n",
       'an emoji shortcode' => ":toc:\n",

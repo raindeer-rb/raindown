@@ -1,18 +1,29 @@
 # frozen_string_literal: true
 
 require_relative 'code_blocks'
+require_relative 'front_matter'
 
 module Raindown
   # Raindown files (.rd/.raindown) can write a directive like <{ :toc }> as a bare :toc on its own line.
   # Markdown files opt in with the --bare flag.
+  #
+  # Bare directives have no end tag. A bare block directive closes itself after the content it applies to,
+  # so where a block needs to wrap more than that, write it with delimiters and an end tag instead:
+  #   <{ if: draft }>
+  #   ...
+  #   <{ :if }>
   module BareDirectives
     EXTENSIONS = %w[.rd .raindown].freeze
-    # The directives that take no arguments. :list closes a <{ list: ... }> block.
-    KEYWORDS = %w[:toc :list].freeze
-    # The block directives that take arguments, and the CodeBlocks method that finds the code blocks they hold.
-    BLOCK_KEYWORDS = { 'endpoint:' => :endpoint }.freeze
+    # The directives that take no arguments.
+    KEYWORDS = %w[:toc].freeze
+    # The block directives that take arguments, and the method that finds the line their end tag goes after.
+    # toc: blocks are handled by TOCBlocks, before the rest.
+    BLOCK_KEYWORDS = { 'endpoint:' => :after_endpoint, 'for:' => :after_block, 'if:' => :after_block,
+                       'list:' => :after_block }.freeze
     # Four spaces of indent would make the line a Markdown code block.
     LINE = /\A( {0,3})(#{KEYWORDS.join('|')}|(#{BLOCK_KEYWORDS.keys.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
+    # An end tag on its own line, like one a bare block directive above added, ends a block.
+    END_TAG = /\A {0,3}<\{\s*:[a-z][\w-]*\s*\}>[ \t]*$/
 
     module_function
 
@@ -26,10 +37,10 @@ module Raindown
       EXTENSIONS.include?(File.extname(path).downcase)
     end
 
-    # Wrap each bare directive in Antlers delimiters, leaving fenced code as-is.
+    # Wrap each bare directive in Antlers delimiters and close its block, leaving code and front matter as-is.
     def expand(content)
       lines = content.lines
-      index = 0
+      index = FrontMatter.line_count(lines)
 
       while index < lines.length
         block = CodeBlocks.at(lines, index)
@@ -44,24 +55,40 @@ module Raindown
       line.sub(LINE) { "#{::Regexp.last_match(1)}<{ #{::Regexp.last_match(2)} }>" } if line.match?(LINE)
     end
 
-    # Returns the index of the last line it handled.
+    # Returns the index of the last line it handled. That's the directive itself, so the lines it holds
+    # are expanded too, and a bare directive inside it closes before it does.
     def expand_line(lines, index)
       match = lines[index].match(LINE)
       return index unless match
 
       lines[index] = wrap(lines[index])
-      return index unless match[3]
-
-      close_block(lines, index, indent: match[1], keyword: match[3])
+      close_block(lines, index, indent: match[1], keyword: match[3]) if match[3]
+      index
     end
 
-    # Bare block directives have no end tag, so it goes after the code blocks they hold.
     def close_block(lines, index, indent:, keyword:)
-      last = CodeBlocks.public_send(BLOCK_KEYWORDS[keyword], lines, index + 1).last&.fetch(:close) || index
+      last = public_send(BLOCK_KEYWORDS[keyword], lines, index + 1) || index
       lines[last] = "#{lines[last]}\n" unless lines[last].end_with?("\n")
       lines.insert(last + 1, "#{indent}<{ :#{keyword.delete_suffix(':')} }>\n")
+    end
 
-      last + 1
+    # The last line of the curl snippet and response below an endpoint.
+    def after_endpoint(lines, index)
+      CodeBlocks.endpoint(lines, index).last&.fetch(:close)
+    end
+
+    # The last line of the Markdown block below, after any blank lines: up to the next blank line or end tag,
+    # with fenced code kept whole. Nil when there's nothing below.
+    def after_block(lines, index)
+      index = CodeBlocks.skip_blank_lines(lines, index)
+      last = nil
+
+      while index < lines.length && !lines[index].strip.empty? && !lines[index].match?(END_TAG)
+        last = CodeBlocks.at(lines, index)&.fetch(:close) || index
+        index = last + 1
+      end
+
+      last
     end
   end
 end

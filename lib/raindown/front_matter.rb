@@ -18,5 +18,10 @@ module Raindown
       metadata = YAML.safe_load(match[1], permitted_classes: [Date, Time], symbolize_names: true)
       [metadata.is_a?(Hash) ? metadata : {}, match.post_match]
     end
+
+    # How many of the lines are front matter, so directives in its YAML are left alone.
+    def line_count(lines)
+      lines.join.match(PATTERN)&.then { |match| match[0].lines.length } || 0
+    end
   end
 end

@@ -43,7 +43,7 @@ RSpec.describe Raindown::Watcher do
     end
 
     it 'updates the Markdown TOC then renders on the change that update triggers' do
-      File.write(path, "# Title\n\n<{ toc: }>\n")
+      File.write(path, "# Title\n\n<{ toc: }>\n<{ :toc }>\n")
       expect { watcher.start }.to output.to_stdout
       File.write(path, "#{File.read(path)}\n## Added\n")
 

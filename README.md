@@ -34,7 +34,24 @@ Raindown is a superset of Markdown. Give a file the `.rd` or `.raindown` extensi
 :toc
 ```
 
-Directives in prose or code are left as text, and `<{ :toc }>` still works.
+Bare directives have no end tags. A block directive like `if:` or `for:` applies to the Markdown block below it, up to the next blank line:
+
+```
+if: draft
+This is a draft.
+```
+
+When a block needs to hold more than that, like several paragraphs, write it with delimiters and an end tag, which works in `.md` and `.rd`:
+
+```
+<{ if: draft }>
+This is a draft.
+
+It has two paragraphs.
+<{ :if }>
+```
+
+Directives in prose or code are left as text.
 
 Markdown files can opt in too, with the `--bare` flag:
 
@@ -53,9 +70,11 @@ A `<{ toc: }>` block does that too, and also writes the table of contents into t
 
 - [Notes](#notes)
   - [Setup](#setup)
+
+<{ :toc }>
 ```
 
-It can end with `<{ :toc }>` on the line after the list, or with nothing. In a [Raindown file](#raindown-files) they're `toc:` and `:toc`.
+The block holds only its table of contents, and needs `<{ :toc }>` after it. In a [Raindown file](#raindown-files) it's a bare `toc:`, which ends with the list, and `:toc` is always its own table of contents.
 
 ### Variables
 
@@ -105,7 +124,7 @@ curl https://httpbin.org/uuid
 <{ :endpoint }>
 ````
 
-In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare and leave out `<{ :endpoint }>`, which is added after the curl snippet and response.
+In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare, which ends after the curl snippet and response, so there's no `<{ :endpoint }>`.
 
 The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
 

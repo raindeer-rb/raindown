@@ -1,16 +1,16 @@
 {
-  "$comment": "Bare directives on their own line in Raindown files, matching Raindown::BareDirectives::LINE.",
+  "$comment": "Bare directives on their own line in Raindown files: a lowercase word ending in a colon with optional arguments, like toc: or endpoint: :x, and the self-closing :toc. Bare directives have no end tags.",
   "scopeName": "raindown.bare.injection",
-  "injectionSelector": "L:text.html.raindown -markup.fenced_code -markup.raw -markup.inline.raw -comment",
+  "injectionSelector": "L:text.html.raindown -markup.fenced_code -markup.raw -markup.inline.raw -comment -meta.embedded.block.frontmatter",
   "patterns": [
     {
-      "name": "meta.directive.bare.raindown",
-      "match": "^( {0,3})(:toc|:list|toc:)[ \\t]*$",
-      "captures": { "2": { "name": "keyword.control.directive.raindown" } }
+      "name": "meta.directive.bare.self-closing.raindown",
+      "match": "^( {0,3})(:toc)[ \\t]*$",
+      "captures": { "2": { "name": "entity.name.tag.directive.raindown" } }
     },
     {
       "name": "meta.directive.bare.raindown",
-      "begin": "^( {0,3})(endpoint:)(?=[ \\t]*$|[ \\t]+\\S)",
+      "begin": "^( {0,3})([a-z][\\w-]*:)(?=[ \\t]*$|[ \\t]+\\S)",
       "end": "$",
       "beginCaptures": { "2": { "name": "entity.name.function.directive.raindown" } },
       "patterns": [{ "include": "raindown.directive.injection#arguments" }]

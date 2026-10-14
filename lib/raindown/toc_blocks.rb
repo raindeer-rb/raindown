@@ -4,34 +4,34 @@ require_relative 'code_blocks'
 require_relative 'front_matter'
 
 module Raindown
-  # Finds toc: blocks in a file's lines: the directive, the Markdown TOC injected below it, and an optional end tag.
-  #   <{ toc: }>
+  # Finds toc: blocks in a file's lines: the directive and the Markdown TOC injected below it.
+  # With delimiters the block needs an end tag after the TOC, and without them it ends with the TOC:
+  #   <{ toc: }>           toc:
   #
-  #   - [Title](#title)
+  #   - [Title](#title)    - [Title](#title)
   #
   #   <{ :toc }>
-  # The end tag is optional, and only ends the block when it's the next line after the TOC that isn't blank.
-  # Anywhere else <{ :toc }> is its own directive. Both render a TOC in the HTML.
+  # A <{ :toc }> or :toc anywhere else is its own directive. Both render a TOC in the HTML.
   module TOCBlocks
+    class MissingEndTag < StandardError; end
+
     OPEN = /\A {0,3}<\{\s*toc:\s*\}>[ \t]*$/
     CLOSE = /\A {0,3}<\{\s*:toc\s*\}>[ \t]*$/
-    # Bare directives also accept toc: and :toc on their own lines.
     BARE_OPEN = /\A {0,3}toc:[ \t]*$/
-    BARE_CLOSE = /\A {0,3}:toc[ \t]*$/
     ENTRY = /\A[ \t]*- \[.*\]\(#.*\)[ \t]*$/
 
     module_function
 
-    # Each block outside code and front matter as { open:, close:, last: }, where close is nil without an end tag.
+    # Each block outside code and front matter as { open:, close:, last: }, where close is nil for a bare block.
     def find(lines, bare: false)
       blocks = []
-      index = front_matter_length(lines)
+      index = FrontMatter.line_count(lines)
 
       while index < lines.length
         if (code = CodeBlocks.at(lines, index))
           index = code[:close]
-        elsif open?(lines[index], bare:)
-          blocks << block(lines, index, bare:)
+        elsif lines[index].match?(OPEN) || (bare && lines[index].match?(BARE_OPEN))
+          blocks << block(lines, index)
           index = blocks.last[:last]
         end
 
@@ -48,12 +48,7 @@ module Raindown
       lines.join
     end
 
-    # Front matter is YAML, where toc: could be a key.
-    def front_matter_length(lines)
-      lines.join.match(FrontMatter::PATTERN)&.then { |match| match[0].lines.length } || 0
-    end
-
-    def block(lines, open, bare:)
+    def block(lines, open)
       last = open
       index = open + 1
 
@@ -62,16 +57,13 @@ module Raindown
         index += 1
       end
 
-      close = index if index < lines.length && close?(lines[index], bare:)
-      { open:, close:, last: close || last }
-    end
+      return { open:, close: nil, last: } unless lines[open].match?(OPEN)
 
-    def open?(line, bare:)
-      line.match?(OPEN) || (bare && line.match?(BARE_OPEN))
-    end
+      # The block can only hold its TOC, so the end tag has to come next.
+      raise MissingEndTag, "<{ toc: }> on line #{open + 1} needs <{ :toc }> after its table of contents" \
+        unless index < lines.length && lines[index].match?(CLOSE)
 
-    def close?(line, bare:)
-      line.match?(CLOSE) || (bare && line.match?(BARE_CLOSE))
+      { open:, close: index, last: index }
     end
   end
 end

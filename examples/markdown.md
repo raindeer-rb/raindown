@@ -10,15 +10,18 @@ Run `raindown examples/markdown.md` and edit this file to see `examples/markdown
   - [Markdown](#markdown)
     - [Nested heading](#nested-heading)
 
+<{ :toc }>
+
 ## Directives
 
 Raindown directives sit between `<{` and `}>`. The table of contents above comes from:
 
 ```
 <{ toc: }>
+<{ :toc }>
 ```
 
-It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use `<{ :toc }>` for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it.
+It writes a list of every heading into this file between the two, kept in sync as you edit, and renders a table of contents in the HTML. Use `<{ :toc }>` for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it.
 
 ## Alerts
 

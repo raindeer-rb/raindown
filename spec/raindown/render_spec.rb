@@ -190,6 +190,15 @@ RSpec.describe Raindown do
       expect(render_file('notes.raindown', "# Title\n\n:toc\n")).to include('Table of contents')
     end
 
+    it 'renders bare for and if directives around the Markdown block below them' do
+      markdown = "---\ntags: [a, b]\ndraft: false\n---\n\nfor: tag in: tags\n- {tag}\n\nif: draft\nA draft.\n\nAfter.\n"
+      html = render_file('notes.rd', markdown)
+
+      expect(html).to include("<ul>\n<li>a</li>\n<li>b</li>\n</ul>")
+      expect(html).not_to include('A draft.')
+      expect(html).to include('<p>After.</p>')
+    end
+
     it 'leaves bare directives as text in Markdown files' do
       html = render_file('notes.md', "# Title\n\n:toc\n")
 
