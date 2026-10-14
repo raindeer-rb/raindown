@@ -12,19 +12,25 @@ module Raindown
   #   - **1.2.0** Bare directives
   #
   #   <{ :Changelog }>
-  # A name only starts a block when it's a loaded node, so other text like "Note:" is left alone.
+  # A self-closing <{ :Changelog }> or bare :Changelog that doesn't end a block renders the node without writing it.
+  # toc: and files: are Raindown's own nodes. A name only starts a block when it's a loaded node,
+  # so other text like "Note:" is left alone.
   module NodeBlocks
     class MissingEndTag < StandardError; end
 
-    NAME = '[A-Z]\w*(?:::[A-Z]\w*)*'
+    NAME = "(?:#{Nodes::BUILT_INS.keys.join('|')}|[A-Z]\\w*(?:::[A-Z]\\w*)*)".freeze
     OPEN = /\A( {0,3})<\{\s*(#{NAME}):(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_OPEN = /\A( {0,3})(#{NAME}):(?:[ \t]+(.*?))?[ \t]*$/
-    # A prop is name=value, where the value is quoted text, a number, true, false or a front matter key like author.name.
-    PROP = /(\w+)=("[^"]*"|'[^']*'|\S+)/
+    SELF_CLOSING = /\A( {0,3})<\{\s*:(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
+    BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
+    # A prop is name=value or name: value, where the value is quoted text, a number, true, false
+    # or a front matter key like author.name.
+    PROP = /(\w+)(?:=|:[ \t]+)("[^"]*"|'[^']*'|\S+)/
 
     module_function
 
     # Each block outside code and front matter as { open:, close:, last:, node: }, where close is nil for a bare block.
+    # A self-closing node is a block of one line with self_closing: true.
     def find(lines, front_matter: {}, bare: false)
       blocks = []
       index = FrontMatter.line_count(lines)
@@ -44,24 +50,41 @@ module Raindown
     end
 
     # Swaps each block for its node's HTML, through a placeholder, or for its Markdown when it has no HTML of its own.
-    def to_rendered(markdown, bare: false)
+    def to_rendered(markdown, metadata: NoMetadata, bare: false)
       lines = markdown.lines
       find(lines, front_matter: FrontMatter.parse(markdown).first, bare:).reverse_each do |block|
         node = block[:node]
-        lines[block[:open]..block[:last]] = Nodes.html?(node) ? ["#{Nodes.placeholder(node)}\n"] : "#{node.markdown.to_s.chomp}\n".lines
+        lines[block[:open]..block[:last]] =
+          if Nodes.html?(node) then ["#{Nodes.placeholder(node)}\n"]
+          else "#{Nodes.call(node, :replace, document: markdown, metadata:, bare:).to_s.chomp}\n".lines
+          end
       end
       lines.join
     end
 
     def block_at(lines, index, front_matter:, bare:)
-      match = lines[index].match(OPEN) || (bare && lines[index].match(BARE_OPEN))
-      return unless match && (klass = Nodes.node_class(match[2]))
+      found, pattern = directive(lines[index], bare:)
+      return unless found && (klass = Nodes.node_class(found[2]))
 
-      node = Nodes.instance(klass, props(match[3].to_s, front_matter))
-      return bare_block(lines, index, node) unless lines[index].match?(OPEN)
+      node = Nodes.instance(klass, props(found[3].to_s, front_matter))
+      case pattern
+      when :open then end_tag(lines, index, found[2]).then { |close| { open: index, close:, last: close, node: } }
+      when :bare_open then bare_block(lines, index, node)
+      else { open: index, close: nil, last: index, node:, self_closing: true }
+      end
+    end
 
-      close = end_tag(lines, index, match[2])
-      { open: index, close:, last: close, node: }
+    # The directive on the line and which kind it is, or nil.
+    def directive(line, bare:)
+      patterns = { open: OPEN, self_closing: SELF_CLOSING }
+      patterns.merge!(bare_open: BARE_OPEN, bare_self_closing: BARE_SELF_CLOSING) if bare
+
+      patterns.each do |pattern, regexp|
+        match = line.match(regexp)
+        return [match, pattern] if match
+      end
+
+      nil
     end
 
     # A bare block holds the lines straight below it, up to the next blank line, with fenced code kept whole.

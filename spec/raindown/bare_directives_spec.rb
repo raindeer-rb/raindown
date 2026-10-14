@@ -4,8 +4,10 @@ require 'raindown/bare_directives'
 
 RSpec.describe Raindown::BareDirectives do
   describe '.expand' do
-    it 'wraps a directive on its own line' do
-      expect(described_class.expand("# Title\n\n:toc\n\nText.\n")).to eq("# Title\n\n<{ :toc }>\n\nText.\n")
+    it 'leaves nodes like toc:, :toc and files: to NodeBlocks' do
+      content = "toc:\n\n:toc\n\nfiles: folder: 'notes'\n"
+
+      expect(described_class.expand(content)).to eq(content)
     end
 
     it 'closes for, if and list after the Markdown block below them' do
@@ -67,11 +69,11 @@ RSpec.describe Raindown::BareDirectives do
     end
 
     it 'keeps up to three spaces of indent' do
-      expect(described_class.expand("   :toc  \n")).to eq("   <{ :toc }>\n")
+      expect(described_class.expand("   if: draft  \n   Text.\n")).to eq("   <{ if: draft }>\n   Text.\n   <{ :if }>\n")
     end
 
     it 'expands a directive on the last line without a newline' do
-      expect(described_class.expand("Text.\n\n:toc")).to eq("Text.\n\n<{ :toc }>")
+      expect(described_class.expand("Text.\n\nif: draft")).to eq("Text.\n\n<{ if: draft }>\n<{ :if }>\n")
     end
 
     {

@@ -6,6 +6,7 @@ require_relative 'node_blocks'
 
 module Raindown
   # Writes each node block's Markdown below its directive, replacing what it wrote before.
+  # Self-closing nodes only render, so they're left alone.
   class NodeInjector
     class BlankLine < StandardError; end
 
@@ -22,6 +23,7 @@ module Raindown
     def call
       lines = @content.lines
       blocks = NodeBlocks.find(lines, front_matter: FrontMatter.parse(@content).first, bare: @bare)
+                         .reject { |block| block[:self_closing] }
       return @content if blocks.empty?
 
       blocks.reverse_each { |block| lines[block[:open]..block[:last]] = block_lines(lines, block) }
@@ -31,7 +33,7 @@ module Raindown
     private
 
     def block_lines(lines, block)
-      markdown = block[:node].markdown.to_s.chomp
+      markdown = Nodes.call(block[:node], :replace, document: @content, metadata: NoMetadata, bare: @bare).to_s.chomp
       written = markdown.empty? ? [] : "#{markdown}\n".lines
       return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
 

@@ -1,11 +1,18 @@
 # frozen_string_literal: true
 
+require_relative 'files'
+require_relative 'node'
+require_relative 'toc'
+
 module Raindown
-  # Nodes are classes, usually LowNodes, that a node block writes into the Markdown and renders into the HTML.
+  # Nodes are LowNodes that a node block writes into the Markdown and renders into the HTML.
   # A project keeps them in a .raindown folder, which is loaded with Dirload.
-  # A node writes Markdown with #markdown, and HTML with #render if it has one.
+  # A node writes Markdown with #replace, and HTML with #render if it has one. Either can take the keywords
+  # document: (the Markdown being rendered), metadata: and bare:, and gets the ones it asks for.
   module Nodes
     FOLDER = '.raindown'
+    # Lowercase directives for Raindown's own nodes. A project's own TOC or Files node replaces Raindown's.
+    BUILT_INS = { 'toc' => 'TOC', 'files' => 'Files' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers.
     PLACEHOLDER = /<!-- raindown:node (\d+) -->/
 
@@ -38,12 +45,35 @@ module Raindown
       @loaded ||= []
     end
 
-    # The node class a block names, when it's loaded and writes Markdown.
+    # The node class a block names, when it's loaded.
     def node_class(name)
+      return loaded_class(name) unless BUILT_INS.key?(name)
+
+      loaded_class(BUILT_INS[name]) || Raindown.const_get(BUILT_INS[name])
+    end
+
+    def loaded_class(name)
       klass = Object.const_get(name)
-      klass if klass.is_a?(Class) && klass.method_defined?(:markdown)
+      klass if node?(klass)
     rescue NameError
       nil
+    end
+
+    # A LowNode, or one of Raindown's own nodes, that writes Markdown. In an app, LowNodes are also routes and pages,
+    # which don't have replace, so text like "Note:" only starts a block when the Note node writes something.
+    def node?(klass)
+      return false unless klass.is_a?(Class) && klass.method_defined?(:replace)
+
+      klass < Node || (defined?(::LowNode) && klass < ::LowNode) || false
+    end
+
+    # Calls a node's replace or render with the context keywords it takes.
+    def call(node, name, **context)
+      parameters = node.method(name).parameters
+      return node.public_send(name, **context) if parameters.any? { |type, _| type == :keyrest }
+
+      keys = parameters.filter_map { |type, key| key if %i[key keyreq].include?(type) }
+      node.public_send(name, **context.slice(*keys))
     end
 
     # One instance for each node and its props, kept for the whole process.
@@ -64,14 +94,14 @@ module Raindown
     end
 
     # Swaps each placeholder for its node's HTML.
-    def render_placeholders(html)
-      html.gsub(PLACEHOLDER) { html(list[::Regexp.last_match(1).to_i]) }
+    def render_placeholders(html, **context)
+      html.gsub(PLACEHOLDER) { html(list[::Regexp.last_match(1).to_i], **context) }
     end
 
-    def html(node)
+    def html(node, **context)
       return node.render_template(props: {}).to_s if node.class.respond_to?(:template) && node.class.template
 
-      node.render.to_s
+      call(node, :render, **context).to_s
     end
 
     # Whether the node renders its own HTML rather than the HTML of its Markdown.

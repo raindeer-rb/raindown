@@ -20,7 +20,7 @@ RSpec.describe Raindown::Nodes do
     it 'loads the nodes in the .raindown folder once' do
       Dir.mktmpdir do |dir|
         FileUtils.mkdir_p(File.join(dir, '.raindown'))
-        File.write(File.join(dir, '.raindown', 'spec_loaded.rb'), "class SpecLoaded < LowNode\n  def markdown = 'Loaded'\nend\n")
+        File.write(File.join(dir, '.raindown', 'spec_loaded.rb'), "class SpecLoaded < LowNode\n  def replace = 'Loaded'\nend\n")
 
         2.times { described_class.load(File.join(dir, 'notes.rd')) }
 
@@ -32,9 +32,25 @@ RSpec.describe Raindown::Nodes do
   end
 
   describe '.node_class' do
-    it 'is a loaded class that writes Markdown' do
+    it 'is a loaded node that writes Markdown' do
       expect(described_class.node_class('SpecReleases')).to eq(SpecReleases)
-      expect([described_class.node_class('String'), described_class.node_class('Missing')]).to all(be_nil)
+    end
+
+    it 'is a LowNode or Raindown node with replace' do
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, '.raindown'))
+        File.write(File.join(dir, '.raindown', 'spec_route.rb'), "class SpecRoute < LowNode\nend\n")
+        File.write(File.join(dir, '.raindown', 'spec_writer.rb'), "class SpecWriter < LowNode\n  def replace = 'x'\nend\n")
+        described_class.load(File.join(dir, 'notes.rd'))
+        stub_const('SpecPlain', Class.new { def replace = 'x' })
+
+        expect(%w[String Missing SpecPlain SpecRoute].map { described_class.node_class(it) }).to all(be_nil)
+        expect(described_class.node_class('SpecWriter')).to eq(SpecWriter)
+      end
+    end
+
+    it 'is the built-in TOC or Files for toc and files' do
+      expect([described_class.node_class('toc'), described_class.node_class('files')]).to eq([Raindown::TOC, Raindown::Files])
     end
   end
 

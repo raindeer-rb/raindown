@@ -74,7 +74,32 @@ A `<{ toc: }>` block does that too, and also writes the table of contents into t
 <{ :toc }>
 ```
 
-The block holds only its table of contents, and needs `<{ :toc }>` after it. In a [Raindown file](#raindown-files) it's a bare `toc:`, which ends with the list, and `:toc` is always its own table of contents.
+The block needs `<{ :toc }>` after it. In a [Raindown file](#raindown-files) it can be a bare `toc:` with the list straight below it, and `:toc` on its own is always the HTML table of contents.
+
+`toc:` and `:toc` are a [node](#nodes), so a project can change them with its own `TOC` node, like `class TOC < Raindown::TOC`.
+
+### Files and lists
+
+A `files:` block writes a link to each file in a folder, by its title, into the Markdown, and renders them as a list in the HTML:
+
+```md
+<{ files: folder: 'notes' }>
+
+- [Getting started](/notes/getting-started)
+- [Setup](/notes/setup)
+
+<{ :files }>
+```
+
+The files come from your app's metadata, like [Raindeer](https://github.com/raindeer-rb/raindeer)'s pages. `files:` is a [node](#nodes) too, so a project can list files its own way with a `Files` node that overrides `replace` or adds `render`, like `class Files < Raindown::Files`, where `files(metadata:)` gives each file's front matter, `path` and `content`.
+
+To render the files with your own template instead, use a `list:` block. Its template repeats for each file, and only renders in the HTML:
+
+```md
+<{ list: page folder: 'notes' }>
+## {page.title}
+<{ :list }>
+```
 
 ### Variables
 
@@ -136,7 +161,7 @@ To refresh a response, empty its code block, and its fetched date is updated too
 
 ### Nodes
 
-Nodes are your own Ruby classes that write Markdown into the file and render HTML into the page. Put them in a `.raindown` folder beside your files, or in a folder above them, and Raindown loads them with [Dirload](https://github.com/low-rb/dirload):
+Nodes are your own [LowNodes](https://github.com/low-rb/lownode) that write Markdown into the file with `replace`, and render HTML into the page with `render`. Put them in a `.raindown` folder beside your files, or in a folder above them, and Raindown loads them with [Dirload](https://github.com/low-rb/dirload):
 
 ```ruby
 # .raindown/changelog.rb
@@ -146,7 +171,7 @@ class Changelog < LowNode
   end
 
   # Written into the Markdown.
-  def markdown
+  def replace
     @releases.map { |release| "- **#{release.version}** #{release.summary}" }.join("\n")
   end
 
@@ -176,7 +201,7 @@ Changelog: limit=3
 - **1.1.0** Track fetched dates
 ```
 
-Props can be quoted text, numbers, `true`, `false` or front matter keys like `author.name`. Raindown keeps one instance of each node and its props while it runs, so `markdown` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded node, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+Props can be quoted text, numbers, `true`, `false` or front matter keys like `author.name`, written `limit=3` or `limit: 3`. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
 
 ### VS Code
 

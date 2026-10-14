@@ -10,7 +10,6 @@ require_relative 'raindown/code'
 require_relative 'raindown/front_matter'
 require_relative 'raindown/node_blocks'
 require_relative 'raindown/pre_renderer'
-require_relative 'raindown/toc_blocks'
 require_relative 'raindown/variables'
 
 module Raindown
@@ -24,7 +23,7 @@ module Raindown
   # Directives are HTML comments until Antlers renders them, and escaped characters like "\#" stay plain text.
   HTML_OPTIONS = { render: { unsafe: true, escaped_char_spans: false } }.freeze
 
-  # Stands in for an app's metadata when there isn't any, so a <{ list: }> lists nothing.
+  # Stands in for an app's metadata when there isn't any, so list: and files: list nothing.
   module NoMetadata
     def self.list(**) = []
   end
@@ -50,19 +49,19 @@ module Raindown
   def render(markdown:, metadata: NoMetadata, bare: false)
     variables = variables(markdown:)
     template = html(markdown:, variables:, metadata:, bare:)
-    return Nodes.render_placeholders(template) unless template.include?('<{')
+    context = { document: markdown, metadata:, bare: }
+    return Nodes.render_placeholders(template, **context) unless template.include?('<{')
 
     # Directives whose output is HTML. The rest rendered before Commonmarker, in PreRenderer.
-    ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :prop, :slot] + Elements[:toc, :endpoint])
+    ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :prop, :slot] + Elements[:endpoint])
 
     # Nodes render last, so their HTML isn't read as Markdown or directives.
-    Nodes.render_placeholders("#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n")
+    Nodes.render_placeholders("#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n", **context)
   end
 
   # The HTML from Commonmarker, after PreRenderer and before the directives whose output is HTML.
   def html(markdown:, variables:, metadata:, bare:)
-    markdown = NodeBlocks.to_rendered(markdown.dup.force_encoding('UTF-8'), bare:)
-    markdown = TOCBlocks.to_directives(markdown, bare:)
+    markdown = NodeBlocks.to_rendered(markdown.dup.force_encoding('UTF-8'), metadata:, bare:)
     markdown = PreRenderer.render(markdown, variables:, metadata:, bare:)
     doc = Commonmarker.parse(hide_directives(markdown:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)

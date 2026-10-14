@@ -4,8 +4,8 @@ require_relative 'code_blocks'
 require_relative 'front_matter'
 
 module Raindown
-  # Raindown files (.rd/.raindown) can write a directive like <{ :toc }> as a bare :toc on its own line.
-  # Markdown files opt in with the --bare flag.
+  # Raindown files (.rd/.raindown) can write a directive like <{ if: draft }> as a bare if: draft on its own line.
+  # Markdown files opt in with the --bare flag. Nodes like toc: and files: are handled by NodeBlocks, before the rest.
   #
   # Bare directives have no end tag. A bare block directive closes itself after the content it applies to,
   # so where a block needs to wrap more than that, write it with delimiters and an end tag instead:
@@ -14,14 +14,11 @@ module Raindown
   #   <{ :if }>
   module BareDirectives
     EXTENSIONS = %w[.rd .raindown].freeze
-    # The directives that take no arguments.
-    KEYWORDS = %w[:toc].freeze
-    # The block directives that take arguments, and the method that finds the line their end tag goes after.
-    # toc: blocks are handled by TOCBlocks, before the rest.
+    # The block directives, and the method that finds the line their end tag goes after.
     BLOCK_KEYWORDS = { 'endpoint:' => :after_endpoint, 'for:' => :after_block, 'if:' => :after_block,
                        'list:' => :after_block }.freeze
     # Four spaces of indent would make the line a Markdown code block.
-    LINE = /\A( {0,3})(#{KEYWORDS.join('|')}|(#{BLOCK_KEYWORDS.keys.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
+    LINE = /\A( {0,3})((#{BLOCK_KEYWORDS.keys.join('|')})(?:[ \t]+\S.*?)?)[ \t]*$/
     # An end tag on its own line, like one a bare block directive above added, ends a block.
     END_TAG = /\A {0,3}<\{\s*:[a-z][\w-]*\s*\}>[ \t]*$/
 
@@ -62,7 +59,7 @@ module Raindown
       return index unless match
 
       lines[index] = wrap(lines[index])
-      close_block(lines, index, indent: match[1], keyword: match[3]) if match[3]
+      close_block(lines, index, indent: match[1], keyword: match[3])
       index
     end
 

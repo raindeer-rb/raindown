@@ -5,7 +5,6 @@ Run `raindown examples/raindown.rd` and edit this file to see `examples/raindown
 This is a Raindown file (`.rd`), so directives can be written bare on their own line.
 
 toc:
-
 - [Raindown Example](#raindown-example)
   - [Directives](#directives)
   - [Endpoints](#endpoints)

@@ -10,7 +10,7 @@ module Raindown
   # Renders the directives whose output is Markdown, before Commonmarker reads it: variables, loops, conditions and lists.
   # So a loop's items become one Markdown list or table, and a heading's id and its entry in a table of contents
   # come from its text, like "# Notes for {name}" becoming "Notes for Mark" with the id "notes-for-mark".
-  # Directives whose output is HTML, like <{ :toc }>, render in the HTML afterwards.
+  # Nodes like toc: and files: render before this, and directives whose output is HTML render in the HTML afterwards.
   module PreRenderer
     BLOCK_DIRECTIVES = %w[for if list].freeze
     # A variable like <{ title }> or a for, if or list directive, which render here.

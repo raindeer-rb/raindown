@@ -169,7 +169,7 @@ RSpec.describe Raindown do
 
     it 'renders a toc: block as the HTML TOC in place of its Markdown one' do
       ["# Title\n\n<{ toc: }>\n\n- [Title](#title)\n\n<{ :toc }>\n\nText.\n",
-       "# Title\n\ntoc:\n\n- [Title](#title)\n\nText.\n"].each do |markdown|
+       "# Title\n\ntoc:\n- [Title](#title)\n\nText.\n"].each do |markdown|
         html = described_class.render(markdown:, bare: true)
 
         expect(html.scan('Table of contents').length).to eq(1)
