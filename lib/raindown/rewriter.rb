@@ -7,20 +7,22 @@ require_relative 'table_formatter'
 module Raindown
   # Rewrites the generated parts of a Markdown file in place before it's rendered:
   # node output, like the TOC, endpoint responses and table alignment.
-  # Each rewriter responds to rewrite(content:, path:, bare:, execute:) and returns the new content.
+  # Each rewriter responds to rewrite(content:, path:, bare:, execute:, metadata:) and returns the new content.
   module Rewriter
     REWRITERS = [NodeInjector, EndpointRunner, TableFormatter].freeze
 
     module_function
 
-    def rewrite(content:, path:, bare: false, execute: false)
-      REWRITERS.reduce(content) { |rewritten, rewriter| rewriter.rewrite(content: rewritten, path:, bare:, execute:) }
+    def rewrite(content:, path:, bare: false, execute: false, metadata: NoMetadata)
+      REWRITERS.reduce(content) do |rewritten, rewriter|
+        rewriter.rewrite(content: rewritten, path:, bare:, execute:, metadata:)
+      end
     end
 
     # Returns true when the file changed.
-    def update(path:, bare: false, execute: false)
+    def update(path:, bare: false, execute: false, metadata: NoMetadata)
       content = File.read(path)
-      rewritten = rewrite(content:, path:, bare:, execute:)
+      rewritten = rewrite(content:, path:, bare:, execute:, metadata:)
       return false if rewritten == content
 
       File.write(path, rewritten)

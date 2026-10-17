@@ -19,7 +19,7 @@ module Raindown
 
       $stdout.sync = true
 
-      Rewriter.update(path:, bare:, execute:)
+      rewrite
       render
       puts "Watching #{path} for changes (writing to #{output})..."
 
@@ -36,15 +36,20 @@ module Raindown
       Listen.to(directory) do |modified, added, _removed|
         next unless (modified + added).any? { |f| File.basename(f) == filename }
         # Formatting saves the file again, and that change triggers the render.
-        next if Rewriter.update(path:, bare:, execute:)
+        next if rewrite
 
         render
         puts "Re-rendered #{path} -> #{output}"
       end
     end
 
+    # The files' metadata is loaded again each time, so new and renamed files are listed.
+    def rewrite
+      Rewriter.update(path:, bare:, execute:, metadata: Pages.for(path))
+    end
+
     def render
-      File.write(output, Raindown.render_file(path:, bare:))
+      File.write(output, Raindown.render_file(path:, bare:, metadata: Pages.for(path)))
     end
 
     def default_output

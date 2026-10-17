@@ -24,7 +24,7 @@ module Raindown
     # The date a response was fetched, on the line after it.
     FETCHED = /\A {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*$/
 
-    def self.rewrite(content:, path: nil, bare: false, execute: false)
+    def self.rewrite(content:, path: nil, bare: false, execute: false, **)
       new(content:, bare: BareDirectives.enabled?(path:, bare:), execute:).rewrite
     end
 

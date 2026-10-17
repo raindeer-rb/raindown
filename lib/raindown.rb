@@ -9,6 +9,7 @@ require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'
 require_relative 'raindown/front_matter'
 require_relative 'raindown/node_blocks'
+require_relative 'raindown/pages'
 require_relative 'raindown/pre_renderer'
 require_relative 'raindown/variables'
 

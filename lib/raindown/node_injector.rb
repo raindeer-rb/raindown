@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../raindown'
 require_relative 'bare_directives'
 require_relative 'front_matter'
 require_relative 'node_blocks'
@@ -11,13 +12,14 @@ module Raindown
     class BlankLine < StandardError; end
 
     # Rewriter interface. Content without a node block is returned unchanged.
-    def self.rewrite(content:, path: nil, bare: false, **)
-      new(content:, path:, bare:).call
+    def self.rewrite(content:, path: nil, bare: false, metadata: NoMetadata, **)
+      new(content:, path:, bare:, metadata:).call
     end
 
-    def initialize(content:, path: nil, bare: false)
+    def initialize(content:, path: nil, bare: false, metadata: NoMetadata)
       @content = content
       @bare = BareDirectives.enabled?(path:, bare:)
+      @metadata = metadata
     end
 
     def call
@@ -33,7 +35,7 @@ module Raindown
     private
 
     def block_lines(lines, block)
-      markdown = Nodes.call(block[:node], :replace, document: @content, metadata: NoMetadata, bare: @bare).to_s.chomp
+      markdown = Nodes.call(block[:node], :replace, document: @content, metadata: @metadata, bare: @bare).to_s.chomp
       written = markdown.empty? ? [] : "#{markdown}\n".lines
       return [line(lines[block[:open]]), *bare(written, block)] unless block[:close]
 

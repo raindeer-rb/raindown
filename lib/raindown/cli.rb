@@ -64,13 +64,14 @@ module Raindown
         ensure_exists(path)
         Nodes.load(path)
 
-        Rewriter.update(path:, bare:, execute:)
-        write(output, Raindown.render_file(path:, bare:))
+        metadata = Pages.for(path)
+        Rewriter.update(path:, bare:, execute:, metadata:)
+        write(output, Raindown.render_file(path:, bare:, metadata:))
       end
 
       def render_stdin(path, output = nil, bare: false, **)
         Nodes.load(path)
-        write(output, Raindown.render(markdown: $stdin.read, bare: bare || BareDirectives.file?(path)))
+        write(output, Raindown.render(markdown: $stdin.read, metadata: Pages.for(path), bare: bare || BareDirectives.file?(path)))
       end
 
       def watch(path, output = nil, bare: false, execute: false)
