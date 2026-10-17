@@ -34,7 +34,6 @@ Directives sit between `<{` and `}>`, and come in two kinds:
 | What they do          | Shape how the Markdown around them renders             | Bring content into the page, written into the file, the HTML, or both   |
 | Who writes the output | You, as a template                                     | Raindown or your node, from your input                                  |
 | Where they sit        | Often inside paragraphs, tables and lists              | On their own lines, between blocks                                      |
-| In the HTML           | Invisible, since the content is all yours              | In bold, or as comments with `hide_directives`                          |
 | In the HTML           | Invisible, since the input is a template               | In bold, or as comments with `hide_directives`                          |
 
 #### Template directives
