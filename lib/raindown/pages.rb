@@ -11,7 +11,7 @@ module Raindown
   # where underscored folders are metadata: docs/_basics/_1-getting-started.md has
   #   folder: basics, order: 1, path: docs/_basics/_1-getting-started.md
   # Folder tags can share a folder name with "&", like docs/_1&_basics/getting-started.md.
-  # An app can add its own metadata, like Raindeer's URL paths.
+  # An app can add its own metadata by subclassing and overriding implicit_metadata, like Raindeer's URL paths.
   class Pages
     EXTENSIONS = %w[md rd markdown raindown].freeze
     SEGMENTS = Regexp.union(['/', '&', '-'])
@@ -60,6 +60,7 @@ module Raindown
     end
 
     # The path is relative to the root, like docs/_basics/_1-getting-started.md.
+    # A subclass can add or replace metadata here, like Raindeer's Rain::Pages replacing the path with a URL path.
     def implicit_metadata(file_path:)
       { folder: folders(file_path:).last, order: order(file_path:), path: relative(file_path).delete_prefix('/') }.compact
     end
