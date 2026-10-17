@@ -7,6 +7,8 @@ require 'nokogiri'
 require_relative 'elements'
 require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'
+require_relative 'raindown/config'
+require_relative 'raindown/directives'
 require_relative 'raindown/front_matter'
 require_relative 'raindown/node_blocks'
 require_relative 'raindown/pages'
@@ -42,22 +44,26 @@ module Raindown
     end
   end
 
-  def render_file(path:, metadata: NoMetadata, bare: false)
-    render(markdown: File.read(path), metadata:, bare: bare || BareDirectives.file?(path))
+  # Directives show in bold, unless the file's project hides them in .raindown/config.yml.
+  def render_file(path:, metadata: NoMetadata, bare: false, hide_directives: Config.for(path)[:hide_directives])
+    render(markdown: File.read(path), metadata:, bare: bare || BareDirectives.file?(path), hide_directives:)
   end
 
   # Front matter keys are variables, like {title} or <{ title }>.
-  def render(markdown:, metadata: NoMetadata, bare: false)
+  # Directives like a node's show in bold, or as HTML comments with hide_directives.
+  def render(markdown:, metadata: NoMetadata, bare: false, hide_directives: false)
     variables = variables(markdown:)
     template = html(markdown:, variables:, metadata:, bare:)
     context = { document: markdown, metadata:, bare: }
-    return Nodes.render_placeholders(template, **context) unless template.include?('<{')
 
-    # Directives whose output is HTML. The rest rendered before Commonmarker, in PreRenderer.
-    ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :prop, :slot] + Elements[:endpoint])
+    if template.include?('<{')
+      # Directives whose output is HTML. The rest rendered before Commonmarker, in PreRenderer.
+      ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :prop, :slot] + Elements[:endpoint])
+      template = "#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n"
+    end
 
-    # Nodes render last, so their HTML isn't read as Markdown or directives.
-    Nodes.render_placeholders("#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n", **context)
+    # Nodes and directives render last, so their HTML isn't read as Markdown or directives.
+    Directives.render(Nodes.render_placeholders(template, **context), hide: hide_directives)
   end
 
   # The HTML from Commonmarker, after PreRenderer and before the directives whose output is HTML.

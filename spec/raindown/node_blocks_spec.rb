@@ -56,11 +56,13 @@ RSpec.describe Raindown::NodeBlocks do
   end
 
   describe '.to_rendered' do
-    it 'swaps a node with HTML for a placeholder, and one without for its Markdown' do
+    it 'swaps a node with HTML for a placeholder, and one without for its Markdown, with directive markers' do
       markdown = "<{ SpecReleases: limit=1 }>\n- old\n<{ :SpecReleases }>\n\nSpecHeading: title='Hi'\n"
       rendered = described_class.to_rendered(markdown, bare: true)
 
-      expect(rendered).to match(/\A<!-- raindown:node \d+ -->\n\n## Hi\n\z/)
+      expect(rendered).to match(/\A<!-- raindown:directive SpecReleases: limit=1 -->\n<!-- raindown:node \d+ -->\n/)
+        .and include("<!-- raindown:directive :SpecReleases -->\n\n")
+        .and end_with("<!-- raindown:directive SpecHeading: title='Hi' -->\n## Hi\n")
     end
   end
 end

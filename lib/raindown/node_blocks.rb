@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'code_blocks'
+require_relative 'directives'
 require_relative 'front_matter'
 require_relative 'nodes'
 
@@ -50,16 +51,28 @@ module Raindown
     end
 
     # Swaps each block for its node's HTML, through a placeholder, or for its Markdown when it has no HTML of its own.
+    # The directive and end tag become Directives markers, which also keep the node's output from joining
+    # the Markdown around it, like two lists becoming one.
     def to_rendered(markdown, metadata: NoMetadata, bare: false)
       lines = markdown.lines
       find(lines, front_matter: FrontMatter.parse(markdown).first, bare:).reverse_each do |block|
-        node = block[:node]
-        lines[block[:open]..block[:last]] =
-          if Nodes.html?(node) then ["#{Nodes.placeholder(node)}\n"]
-          else "#{Nodes.call(node, :replace, document: markdown, metadata:, bare:).to_s.chomp}\n".lines
-          end
+        lines[block[:open]..block[:last]] = rendered_lines(lines, block, markdown:, metadata:, bare:)
       end
       lines.join
+    end
+
+    def rendered_lines(lines, block, markdown:, metadata:, bare:)
+      node = block[:node]
+      output = if Nodes.html?(node) then ["#{Nodes.placeholder(node)}\n"]
+               else "#{Nodes.call(node, :replace, document: markdown, metadata:, bare:).to_s.chomp}\n".lines
+               end
+      output = [] if output == ["\n"]
+
+      [marker(lines[block[:open]]), *output, *(marker(lines[block[:close]]) if block[:close])]
+    end
+
+    def marker(line)
+      "#{Directives.marker(line)}\n"
     end
 
     def block_at(lines, index, front_matter:, bare:)

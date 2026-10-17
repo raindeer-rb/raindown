@@ -1,6 +1,7 @@
 <h1 id="raindown-example">Raindown Example<a href="#raindown-example" aria-label="Link to heading 'Raindown Example'" data-heading-content="Raindown Example" class="anchor"></a></h1>
 <p>Run <code>raindown examples/raindown.rd</code> and edit this file to see <code>examples/raindown.html</code> update on save.</p>
 <p>This is a Raindown file (<code>.rd</code>), so directives can be written bare on their own line.</p>
+<p><strong>toc:</strong></p>
 <div class="floating">
   <details id="toc" open>
     <summary>Table of contents</summary>
@@ -22,14 +23,14 @@
 <p>It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use <code>:toc</code> for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. <code>&lt;&#123; toc: &#125;&gt;</code> works too with a <code>&lt;&#123; :toc &#125;&gt;</code> end tag, and is the only form <code>.md</code> files understand.</p>
 <h2 id="endpoints">Endpoints<a href="#endpoints" aria-label="Link to heading 'Endpoints'" data-heading-content="Endpoints" class="anchor"></a></h2>
 <p>An <code>endpoint:</code> directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.</p>
-
+<p><strong>endpoint: :x</strong></p>
 <pre lang="sh" style="background-color:#2b303b;"><code><span style="color:#8fa1b3;">curl</span><span style="color:#c0c5ce;"> https://httpbin.org/uuid
 </span></code></pre>
 <pre lang="json" style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">&#123;
 </span><span style="color:#c0c5ce;">  &quot;</span><span style="color:#a3be8c;">uuid</span><span style="color:#c0c5ce;">&quot;: &quot;</span><span style="color:#a3be8c;">1eefb9a5-442c-49cc-8bf8-63f55b6e5041</span><span style="color:#c0c5ce;">&quot;
 </span><span style="color:#c0c5ce;">&#125;
 </span></code></pre>
-
+<p><strong>:endpoint</strong></p>
 <!-- raindown:fetched 2026-10-14 -->
 <h2 id="alerts">Alerts<a href="#alerts" aria-label="Link to heading 'Alerts'" data-heading-content="Alerts" class="anchor"></a></h2>
 <div class="markdown-alert markdown-alert-note">

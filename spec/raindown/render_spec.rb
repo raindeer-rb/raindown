@@ -125,11 +125,11 @@ RSpec.describe Raindown do
       expect(html).not_to include('Table of contents')
     end
 
-    it 'renders an endpoint as its code blocks' do
-      ['<{ endpoint: :x }>', '<{ endpoint: }>'].each do |directive|
+    it 'renders an endpoint as its code blocks, between its directive and end tag in bold' do
+      { '<{ endpoint: :x }>' => 'endpoint: :x', '<{ endpoint: }>' => 'endpoint:' }.each do |directive, text|
         html = described_class.render(markdown: "#{directive}\n\n```sh\ncurl https://api.example.com\n```\n<{ :endpoint }>\n")
 
-        expect(html).not_to include('endpoint')
+        expect(html).to start_with("<p><strong>#{text}</strong></p>\n<pre").and end_with("</pre>\n<p><strong>:endpoint</strong></p>\n")
         expect(text(html)).to include('curl https://api.example.com')
       end
     end
@@ -138,9 +138,17 @@ RSpec.describe Raindown do
       require 'helpers/nodes'
       html = described_class.render(markdown: "SpecReleases: limit=1\n- old\n\nSpecHeading: title='Hi'\n\nText.\n", bare: true)
 
-      expect(html).to match(%r{\A<ol data-count="\d+"><li>1.2.0</li></ol>\n<h2 id="hi">Hi})
+      expect(html).to match(%r{\A<p><strong>SpecReleases: limit=1</strong></p>\n<ol data-count="\d+"><li>1.2.0</li></ol>\n})
+        .and include("<p><strong>SpecHeading: title=&#39;Hi&#39;</strong></p>\n<h2 id=\"hi\">Hi")
       expect(html).not_to include('old')
       expect(html).to include('<p>Text.</p>')
+    end
+
+    it 'renders directives as HTML comments with hide_directives' do
+      html = described_class.render(markdown: "<{ endpoint: }>\n\n```sh\ncurl x\n```\n<{ :endpoint }>\n", hide_directives: true)
+
+      expect(html).to start_with("<!-- endpoint: -->\n<pre").and end_with("</pre>\n<!-- :endpoint -->\n")
+      expect(html).not_to include('<strong>')
     end
 
     it 'raises when an endpoint is not closed' do

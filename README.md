@@ -234,6 +234,19 @@ Changelog: limit=3
 
 Props can be quoted text, numbers, `true`, `false` or front matter keys like `author.name`, written `limit=3` or `limit: 3`. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
 
+### Config
+
+A project can keep settings in `config.yml` in its [`.raindown`](#nodes) folder.
+
+[Content directives](#directives) like `toc:`, `files:`, a node's or an endpoint's show in bold in the HTML, so you can see where a page's content comes from. Hide them as HTML comments with:
+
+```yaml
+# .raindown/config.yml
+hide_directives: true
+```
+
+Template directives are always invisible in the HTML.
+
 ### VS Code
 
 The [VS Code extension](vscode/) highlights syntax and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.
