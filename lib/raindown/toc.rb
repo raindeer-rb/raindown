@@ -20,8 +20,9 @@ module Raindown
       end.join("\n")
     end
 
-    def render(document:, metadata: nil, bare: false)
-      items = headings(markdown: document, metadata:, bare:).map do |heading|
+    # With the document's final HTML, the headings include ones its components render.
+    def render(document:, html: nil, metadata: nil, bare: false)
+      items = headings(markdown: document, html:, metadata:, bare:).map do |heading|
         "<li class='h#{heading[:level]}'><a href='##{heading[:id]}'>#{ERB::Util.html_escape(heading[:text])}</a></li>"
       end
 
@@ -37,10 +38,9 @@ module Raindown
       HTML
     end
 
-    private
-
-    def headings(markdown:, metadata: nil, bare: false)
-      html = Raindown.html(markdown:, variables: variables(markdown:), metadata:, bare:)
+    # The document's headings, from its final HTML, or else by rendering it with its components.
+    def headings(markdown:, html: nil, metadata: nil, bare: false)
+      html ||= Fragments.collect { Raindown.assembled(markdown:, metadata: metadata || NoMetadata, bare:) }
 
       Nokogiri::HTML(html).css(HEADINGS).map do |heading|
         { level: heading.name[1].to_i, text: heading.text.strip, id: heading['id'] }
