@@ -6,16 +6,21 @@ module Raindown
   class Page
     attr_reader :file_path, :metadata
 
-    def initialize(file_path:, metadata:)
+    def initialize(file_path:, metadata:, render_options: {})
       @file_path = file_path
       @metadata = metadata
+      @render_options = render_options
     end
 
     # Rendered when asked for, so a file that lists itself doesn't render forever.
+    # The front matter is rendered with it, so its variables work, and a Raindown file's bare directives too.
     def content
       @content ||= begin
-        markdown = FrontMatter.parse(File.read(file_path)).last.strip
-        markdown.empty? ? '' : Raindown.render(markdown:)
+        markdown = File.read(file_path)
+
+        if FrontMatter.parse(markdown).last.strip.empty? then ''
+        else Raindown.render(markdown:, bare: BareDirectives.file?(file_path), **@render_options)
+        end
       end
     end
 

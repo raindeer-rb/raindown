@@ -3,7 +3,7 @@
 require 'commonmarker'
 require 'antlers'
 require 'antlers/api'
-require 'nokogiri'
+
 require_relative 'elements'
 require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'
@@ -36,21 +36,13 @@ module Raindown
 
   module_function
 
-  def headings(markdown:, metadata: NoMetadata, bare: false)
-    html = html(markdown:, variables: variables(markdown:), metadata:, bare:)
-
-    Nokogiri::HTML(html).css(HEADINGS).map do |heading|
-      { level: heading.name[1].to_i, text: heading.text.strip, id: heading['id'] }
-    end
-  end
-
   # Directives show in bold, unless the file's project hides them in .raindown/config.yml.
   def render_file(path:, metadata: NoMetadata, bare: false, hide_directives: Config.for(path)[:hide_directives])
     render(markdown: File.read(path), metadata:, bare: bare || BareDirectives.file?(path), hide_directives:)
   end
 
   # Front matter keys are variables, like {title} or <{ title }>.
-  # Directives like a node's show in bold, or as HTML comments with hide_directives.
+  # Directives like "toc:" export to HTML as bold or comments depending on hide_directives config.
   def render(markdown:, metadata: NoMetadata, bare: false, hide_directives: false)
     variables = variables(markdown:)
     template = html(markdown:, variables:, metadata:, bare:)
@@ -67,7 +59,7 @@ module Raindown
   end
 
   # The HTML from Commonmarker, after PreRenderer and before the directives whose output is HTML.
-  def html(markdown:, variables:, metadata:, bare:)
+  def html(markdown:, variables:, metadata: NoMetadata, bare: false)
     markdown = NodeBlocks.to_rendered(markdown.dup.force_encoding('UTF-8'), metadata:, bare:)
     markdown = PreRenderer.render(markdown, variables:, metadata:, bare:)
     doc = Commonmarker.parse(hide_directives(markdown:), options: MARKDOWN_OPTIONS)

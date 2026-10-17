@@ -22,6 +22,11 @@ RSpec.describe Raindown::Pages do
     described_class.load(root: @root)
   end
 
+  def pages_metadata
+    file_types = Dirload.file_paths(absolute_path: @root).group_by { Dirload.extension(file_path: it) }
+    Dirload::Metadata.new(loaded_paths: {}, missed_paths: [], file_types:)
+  end
+
   describe '#list' do
     before do
       write('docs/_basics/_2-setup.md', "---\ntitle: Setup\ntags: [ruby]\n---\n\n# Setup\n")
@@ -47,6 +52,16 @@ RSpec.describe Raindown::Pages do
         .to eq(['Getting started', 'basics', 1, 'docs/_basics/_1-getting-started.md', Date.new(2024, 1, 2)])
       expect(page.content).to eq("<p>Hi.</p>\n")
       expect(page.missing).to be_nil
+    end
+
+    it 'renders content with the render options, and bare directives in Raindown files' do
+      write('docs/_basics/_3-toc.rd', "---\ntitle: TOC\n---\n\n# TOC\n\n:toc\n")
+      hiding = described_class.new(metadata: pages_metadata, root: @root, render_options: { hide_directives: true })
+      shown = pages.list(folder: 'basics').find { it.title == 'TOC' }.content
+      hidden = hiding.list(folder: 'basics').find { it.title == 'TOC' }.content
+
+      expect(shown).to include('<p><strong>:toc</strong></p>', 'Table of contents')
+      expect(hidden).to include('<!-- :toc -->', 'Table of contents')
     end
 
     it 'reads folder tags joined by &' do

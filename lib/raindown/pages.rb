@@ -31,8 +31,10 @@ module Raindown
       end
     end
 
-    def initialize(metadata:, root:)
+    # Render options, like hide_directives: true, are for rendering each listed file's content.
+    def initialize(metadata:, root:, render_options: {})
       @root = root
+      @render_options = render_options
       @file_paths = metadata.file_types.values_at(*EXTENSIONS).flatten.compact
       @metadata = {}
       @tags = {}
@@ -44,7 +46,7 @@ module Raindown
     # Without tags, every file.
     def list(**tags)
       file_paths = tags.empty? ? @file_paths : tagged(**tags)
-      file_paths.sort_by { |file_path| sort_key(file_path) }.map { |file_path| Page.new(file_path:, metadata: @metadata[file_path]) }
+      file_paths.sort_by { |file_path| sort_key(file_path) }.map { |file_path| listed_page(file_path) }
     end
 
     def tagged(**tags)
@@ -52,6 +54,10 @@ module Raindown
     end
 
     private
+
+    def listed_page(file_path)
+      Page.new(file_path:, metadata: @metadata[file_path], render_options: @render_options)
+    end
 
     def process(file_path:)
       metadata = implicit_metadata(file_path:).merge(FrontMatter.parse(File.read(file_path)).first)
