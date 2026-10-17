@@ -239,17 +239,17 @@ RSpec.describe Raindown do
     it 'lists nothing for a list directive' do
       markdown = "# Title\n\n<{ list: page folder: 'notes' }>\n## {page.title}\n<{ :list }>\n"
 
-      expect(described_class.headings(markdown:).map { |h| h[:text] }).to eq(['Title'])
+      expect(Raindown::TOC.new.headings(markdown:).map { |h| h[:text] }).to eq(['Title'])
     end
 
     it 'leaves out front matter' do
-      expect(described_class.headings(markdown: "---\ntitle: Notes\n---\n\n# Title\n").map { |h| h[:text] }).to eq(['Title'])
+      expect(Raindown::TOC.new.headings(markdown: "---\ntitle: Notes\n---\n\n# Title\n").map { |h| h[:text] }).to eq(['Title'])
     end
 
     it 'reads frozen Markdown without changing it' do
       markdown = "# Title\n".encode('ASCII-8BIT').freeze
 
-      expect(described_class.headings(markdown:)).to eq([{ level: 1, text: 'Title', id: 'title' }])
+      expect(Raindown::TOC.new.headings(markdown:)).to eq([{ level: 1, text: 'Title', id: 'title' }])
       expect(markdown.encoding).to eq(Encoding::ASCII_8BIT)
     end
   end

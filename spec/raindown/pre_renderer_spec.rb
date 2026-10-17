@@ -58,12 +58,20 @@ RSpec.describe Raindown::PreRenderer do
       end
     end
 
-    it 'leaves other directives to render in the HTML' do
-      expect(render("<{ :toc }> {name}\n", name: 'Mark')).to eq("<{ :toc }> Mark\n")
-    end
+    it 'renders components as fragments, with loop variables in their props and slots' do
+      require 'helpers/components'
+      Raindown::Fragments.collect do
+        rendered = render("<{ for: n in: names }>\n<{ SpecCard: name=n }>\n**{n}**\n<{ :SpecCard }>\n<{ :for }>\n", names: %w[Ann Bob])
 
-    it 'renders the Markdown between the tags of other directives' do
-      expect(render("<{ Layout: }>\n{name}\n<{ :Layout }>\n", name: 'Mark')).to eq("<{ Layout: }>\nMark\n<{ :Layout }>\n")
+        expect(Raindown::Fragments.fill(rendered)).to eq(<<~HTML)
+          <section data-name="Ann"><p><strong>Ann</strong></p>
+          </section>
+
+          <section data-name="Bob"><p><strong>Bob</strong></p>
+          </section>
+
+        HTML
+      end
     end
 
     it 'renders a list of pages as one list' do
