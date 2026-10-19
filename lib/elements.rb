@@ -6,6 +6,31 @@ module Raindown
   class Elements
     include Plugs
 
+    # Antlers' prop and slot directives, rendered as components in the template pass.
+    plug(:prop_component) do
+      plug(:lexeme) do
+        require 'lexemes/prop_lexeme'
+        Antlers::PropLexeme
+      end
+
+      plug(:node) do
+        require_relative 'nodes/component_nodes'
+        PropComponentNode
+      end
+    end
+
+    plug(:slot_component) do
+      plug(:lexeme) do
+        require 'lexemes/slot_lexeme'
+        Antlers::SlotLexeme
+      end
+
+      plug(:node) do
+        require_relative 'nodes/component_nodes'
+        SlotComponentNode
+      end
+    end
+
     plug(:endpoint) do
       plug(:lexeme) do
         require_relative 'lexemes/endpoint_lexeme'

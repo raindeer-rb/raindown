@@ -9,7 +9,9 @@ require_relative 'raindown/bare_directives'
 require_relative 'raindown/code'
 require_relative 'raindown/config'
 require_relative 'raindown/directives'
+require_relative 'raindown/fragments'
 require_relative 'raindown/front_matter'
+require_relative 'raindown/heading_ids'
 require_relative 'raindown/node_blocks'
 require_relative 'raindown/pages'
 require_relative 'raindown/pre_renderer'
@@ -44,24 +46,28 @@ module Raindown
   # Front matter keys are variables, like {title} or <{ title }>.
   # Directives like "toc:" export to HTML as bold or comments depending on hide_directives config.
   def render(markdown:, metadata: NoMetadata, bare: false, hide_directives: false)
-    variables = variables(markdown:)
-    template = html(markdown:, variables:, metadata:, bare:)
-    context = { document: markdown, metadata:, bare: }
+    Fragments.collect do
+      # Components' HTML goes back in, then their headings get unique ids, before nodes like the TOC see it.
+      html = assembled(markdown:, metadata:, bare:)
+      html = Nodes.render_placeholders(html, document: markdown, metadata:, bare:, html:)
 
-    if template.include?('<{')
-      # Directives whose output is HTML. The rest rendered before Commonmarker, in PreRenderer.
-      ast = Antlers.ast(template:, elements: Antlers::Elements[:html, :prop, :slot] + Elements[:endpoint])
-      template = "#{Antlers.render(ast:, current_binding: variables.binding, metadata:).chomp}\n"
+      Directives.render("#{html.chomp}\n", hide: hide_directives)
     end
-
-    # Nodes and directives render last, so their HTML isn't read as Markdown or directives.
-    Directives.render(Nodes.render_placeholders(template, **context), hide: hide_directives)
   end
 
-  # The HTML from Commonmarker, after PreRenderer and before the directives whose output is HTML.
+  # The document's HTML with its components' HTML put back, and unique heading ids.
+  def assembled(markdown:, metadata: NoMetadata, bare: false)
+    HeadingIds.unique(Fragments.fill(html(markdown:, variables: variables(markdown:), metadata:, bare:)))
+  end
+
+  # The document's HTML from Commonmarker, after nodes and the template pass, with components as fragments.
   def html(markdown:, variables:, metadata: NoMetadata, bare: false)
     markdown = NodeBlocks.to_rendered(markdown.dup.force_encoding('UTF-8'), metadata:, bare:)
-    markdown = PreRenderer.render(markdown, variables:, metadata:, bare:)
+    commonmark(PreRenderer.render(markdown, variables:, metadata:, bare:))
+  end
+
+  # Markdown to HTML, like a document's or a component's slot.
+  def commonmark(markdown)
     doc = Commonmarker.parse(hide_directives(markdown:), options: MARKDOWN_OPTIONS)
     preserve_code(doc:)
 
