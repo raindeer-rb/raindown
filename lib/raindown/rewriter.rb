@@ -21,7 +21,7 @@ module Raindown
 
     # Returns true when the file changed.
     def update(path:, bare: false, execute: false, metadata: NoMetadata)
-      content = File.read(path)
+      content = File.read(path, encoding: Encoding::UTF_8)
       rewritten = rewrite(content:, path:, bare:, execute:, metadata:)
       return false if rewritten == content
 

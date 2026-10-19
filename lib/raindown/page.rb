@@ -16,7 +16,7 @@ module Raindown
     # The front matter is rendered with it, so its variables work, and a Raindown file's bare directives too.
     def content
       @content ||= begin
-        markdown = File.read(file_path)
+        markdown = File.read(file_path, encoding: Encoding::UTF_8)
 
         if FrontMatter.parse(markdown).last.strip.empty? then ''
         else Raindown.render(markdown:, bare: BareDirectives.file?(file_path), **@render_options)

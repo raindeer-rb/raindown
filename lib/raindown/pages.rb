@@ -60,7 +60,7 @@ module Raindown
     end
 
     def process(file_path:)
-      metadata = implicit_metadata(file_path:).merge(FrontMatter.parse(File.read(file_path)).first)
+      metadata = implicit_metadata(file_path:).merge(FrontMatter.parse(File.read(file_path, encoding: Encoding::UTF_8)).first)
       @metadata[file_path] = metadata
       metadata.each { |type, tag| Array(tag).each { |item| tag(type:, tag: item, file_path:) } }
     end

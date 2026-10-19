@@ -71,6 +71,17 @@ RSpec.describe Raindown::Pages do
     it 'lists every Markdown file without tags' do
       expect(pages.list.length).to eq(4)
     end
+
+    it 'reads files as UTF-8 when the locale is not' do
+      write('docs/_basics/_3-unicode.md', "---\ntitle: Café — ☕\n---\n\nNaïve.\n")
+      external = Encoding.default_external
+      Encoding.default_external = Encoding::US_ASCII
+
+      page = pages.list(folder: 'basics').find { it.title == 'Café — ☕' }
+      expect(page.content).to eq("<p>Naïve.</p>\n")
+    ensure
+      Encoding.default_external = external
+    end
   end
 
   describe '.for' do

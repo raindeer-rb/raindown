@@ -40,7 +40,7 @@ module Raindown
 
   # Directives show in bold, unless the file's project hides them in .raindown/config.yml.
   def render_file(path:, metadata: NoMetadata, bare: false, hide_directives: Config.for(path)[:hide_directives])
-    render(markdown: File.read(path), metadata:, bare: bare || BareDirectives.file?(path), hide_directives:)
+    render(markdown: File.read(path, encoding: Encoding::UTF_8), metadata:, bare: bare || BareDirectives.file?(path), hide_directives:)
   end
 
   # Front matter keys are variables, like {title} or <{ title }>.
