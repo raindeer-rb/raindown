@@ -39,7 +39,7 @@ PATH
 PATH
   remote: .
   specs:
-    raindown (0.2.1)
+    raindown (0.2.2)
       antlers (>= 1.2.0)
       commonmarker
       dirload
@@ -86,7 +86,7 @@ GEM
       json
     diff-lcs (1.6.2)
     erb (6.0.7)
-    expressions (0.1.0)
+    expressions (0.2.0)
     ffi (1.17.4)
     ffi (1.17.4-aarch64-linux-gnu)
     ffi (1.17.4-aarch64-linux-musl)
@@ -254,7 +254,7 @@ CHECKSUMS
   diff-lcs (1.6.2) sha256=9ae0d2cba7d4df3075fe8cd8602a8604993efc0dfa934cff568969efb1909962
   dirload (0.7.0)
   erb (6.0.7) sha256=c5ca6dc25b0ef974a44dc8f59fe847577122483b1968a38dec305c60bf91ee92
-  expressions (0.1.0) sha256=9fc860c824d4a62ba230fb6dc2676223641f3992a6ae66901bd95c7f37d42a31
+  expressions (0.2.0) sha256=beb5ef024fe05faba76734ec676ffc9d572e6c0335eaf9280d80b844e048aa25
   ffi (1.17.4) sha256=bcd1642e06f0d16fc9e09ac6d49c3a7298b9789bcb58127302f934e437d60acf
   ffi (1.17.4-aarch64-linux-gnu) sha256=b208f06f91ffd8f5e1193da3cae3d2ccfc27fc36fba577baf698d26d91c080df
   ffi (1.17.4-aarch64-linux-musl) sha256=9286b7a615f2676245283aef0a0a3b475ae3aae2bb5448baace630bb77b91f39
@@ -305,7 +305,7 @@ CHECKSUMS
   providers (0.6.1) sha256=2ec763368361a5c7bfd141ca6cda206419d5ec66ab9cdd647439cf4f12e88f4e
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rainbow (3.1.1) sha256=039491aa3a89f42efa1d6dec2fc4e62ede96eb6acd95e52f1ad581182b79bc6a
-  raindown (0.2.1)
+  raindown (0.2.2)
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   rb-fsevent (0.11.2) sha256=43900b972e7301d6570f64b850a5aa67833ee7d87b458ee92805d56b7318aefe
   rb-inotify (0.11.1) sha256=a0a700441239b0ff18eb65e3866236cd78613d6b9f78fea1f9ac47a85e47be6e
