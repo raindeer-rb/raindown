@@ -14,19 +14,24 @@ module Raindown
       # Float error, so a value of exactly 3 cells doesn't reach into a 4th.
       EPSILON = 1e-9
 
+      # Values go above zero or right of its line, and negative values below or left of it. With a minus column,
+      # each point is [label, value, minus], and its value goes above and its minus below, whatever their signs.
       def initialize(points, width:, height:)
         @labels = points.map { it.first.to_s }
-        @values = points.map(&:last)
+        @values = points.map { it[1] }
+        @minus = points.map { it[2] } if points.any? { it.length > 2 }
+        @above = @minus ? @values.map(&:abs) : @values.map { it.clamp(0..) }
+        @below = @minus ? @minus.map(&:abs) : @values.map { (-it).clamp(0..) }
         @width = width
         @height = height
       end
 
       private
 
-      # The lowest and highest values, which always include zero, so bars and columns start from it.
+      # How far below and above zero the chart goes, which always includes zero, so bars and columns start from it.
       def range
-        low = [@values.min, 0].min
-        high = [@values.max, 0].max
+        low = -@below.max
+        high = @above.max
 
         [low, low == high ? 1 : high]
       end
@@ -35,14 +40,14 @@ module Raindown
       def grid(scale, slot:, gap:)
         low, high = range
 
-        [grid_rows(cells(high * scale).downto(1), scale, LOWER, slot:, gap:),
-         grid_rows(1.upto(cells(-low * scale)), -scale, UPPER, slot:, gap:)]
+        [grid_rows(cells(high * scale).downto(1), @above, scale, LOWER, slot:, gap:),
+         grid_rows(1.upto(cells(-low * scale)), @below, scale, UPPER, slot:, gap:)]
       end
 
-      # Each row by how many cells it is from zero, where a negative scale draws the negative values.
-      def grid_rows(rows, scale, partials, slot:, gap:)
+      # Each row by how many cells it is from zero, for the values above it or below it.
+      def grid_rows(rows, values, scale, partials, slot:, gap:) # rubocop:disable Metrics/ParameterLists -- a row of the grid
         rows.map do |row|
-          @values.map { |value| center(cell((value * scale) - row + 1, partials) * [slot, 3].min, slot) }.join(' ' * gap)
+          values.map { |value| center(cell((value * scale) - row + 1, partials) * [slot, 3].min, slot) }.join(' ' * gap)
         end
       end
 

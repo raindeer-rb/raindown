@@ -17,13 +17,14 @@ module Raindown
   class Chart < Node
     FORMATS = { 'bars' => Bars, 'columns' => Columns, 'line' => Line, 'sparkline' => Sparkline }.freeze
 
-    # Label and value are the columns to chart, by name or index. Width is in characters, for bars and lines,
-    # and height in lines, for columns and lines.
-    def initialize(data = nil, format: nil, label: nil, value: nil, width: 40, height: 8) # rubocop:disable Metrics/ParameterLists -- each is a prop
+    # Label and value are the columns to chart, by name or index, and minus a column to chart against the values.
+    # Width is in characters, for bars and lines, and height in lines, for columns and lines.
+    def initialize(data = nil, format: nil, label: nil, value: nil, minus: nil, width: 40, height: 8) # rubocop:disable Metrics/ParameterLists -- each is a prop
       @data = data
       @format = format
       @label = label
       @value = value
+      @minus = minus
       @width = width
       @height = height
     end
@@ -41,7 +42,7 @@ module Raindown
     # Each value with its label, or nil for numbers alone.
     def points(metadata: NoMetadata)
       root = metadata.respond_to?(:root) ? metadata.root : Dir.pwd
-      Points.new(label: @label, value: @value, root:).from(@data)
+      Points.new(label: @label, value: @value, minus: @minus, root:).from(@data)
     end
 
     def draw(points)

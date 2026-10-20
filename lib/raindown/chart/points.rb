@@ -13,19 +13,22 @@ module Raindown
     # A chart's data as points, each value with its label, or with nil for numbers alone.
     # Label and value are the columns to chart, by name or index, which default to the first column
     # and the first column of numbers after it. Rows without a number are left out.
+    # Minus is a column of numbers to chart against the values, like lines deleted against lines added,
+    # which makes each point [label, value, minus].
     class Points
       NUMBER = /\A[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)?(?:\.\d+)?\z/
 
-      def initialize(label: nil, value: nil, root: Dir.pwd)
+      def initialize(label: nil, value: nil, minus: nil, root: Dir.pwd)
         @label = label
         @value = value
+        @minus = minus
         @root = root
       end
 
       def from(data)
         case data
         when String then from_string(data)
-        when Numeric then [[nil, data]]
+        when Numeric then numbers([data])
         when Hash then from_table(data.to_a, header: false)
         when Array then from_list(data)
         else raise Error, 'there is no data'
@@ -37,7 +40,7 @@ module Raindown
       # A file's path, relative to the root, or numbers like '3 5 -2 8' or '3, 5, -2, 8'.
       def from_string(string)
         numbers = string.strip.split(/[\s,]+/)
-        return numbers.map { [nil, number(it)] } if numbers.any? && numbers.all? { number(it) }
+        return numbers(numbers) if numbers.any? && numbers.all? { number(it) }
 
         path = File.expand_path(string, @root)
         raise Error, 'no such file' unless File.file?(path)
@@ -61,11 +64,18 @@ module Raindown
 
       # Numbers, rows of hashes like JSON or YAML, or rows of cells like CSV.
       def from_list(list)
-        return list.map { [nil, number(it)] } if list.all? { number(it) }
+        return numbers(list) if list.all? { number(it) }
         return from_table(hash_rows(list), header: true) if list.all?(Hash)
         return from_table(list, header: header?(list.first)) if list.all?(Array)
 
         raise Error, 'it needs numbers, or rows with a number in each'
+      end
+
+      # Numbers alone, which have no column to chart against them.
+      def numbers(list)
+        raise Error, 'minus: needs a table, with a column of numbers to chart against the values' if @minus
+
+        list.map { [nil, number(it)] }
       end
 
       # Rows of hashes as a table, with their keys as its header.
@@ -82,24 +92,34 @@ module Raindown
       def from_table(rows, header:)
         names = header ? rows.first.map(&:to_s) : []
         rows = rows.drop(1) if header
-        label, value = columns(rows, names)
+        label, value, minus = columns(rows, names)
 
         rows.filter_map do |row|
           number = number(row[value])
-          [label && row[label].to_s, number] if number
+          [label && row[label].to_s, number, *(number(row[minus]) || 0 if minus)] if number
         end
       end
 
-      # The label and value columns' indexes, where a single column of numbers has no labels.
+      # The label, value and minus columns' indexes, where a single column of numbers has no labels.
       def columns(rows, names)
-        count = rows.map(&:length).max.to_i
-        label = column(@label, names) if @label
+        minus = column(@minus, names) if @minus
         value = column(@value, names) if @value
-        label ||= (0...count).find { it != value } if count > 1
-        value ||= (0...count).find { |index| index != label && rows.any? { number(it[index]) } }
+        label = @label ? column(@label, names) : first_label(rows, [value, minus])
+        value ||= first_value(rows, [label, minus])
         raise Error, 'there is no column of numbers' unless value
 
-        [label, value]
+        [label, value, minus]
+      end
+
+      # The first column that isn't taken, when there's more than one.
+      def first_label(rows, taken)
+        count = rows.map(&:length).max.to_i
+        (0...count).find { !taken.include?(it) } if count > 1
+      end
+
+      # The first column of numbers that isn't taken.
+      def first_value(rows, taken)
+        (0...rows.map(&:length).max.to_i).find { |index| !taken.include?(index) && rows.any? { number(it[index]) } }
       end
 
       def column(name, names)
