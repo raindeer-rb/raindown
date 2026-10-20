@@ -9,7 +9,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  TEBAKO_VERSION: '2.8.27'
+  TEBAKO_VERSION: '2.8.45'
 
 jobs:
   build:
