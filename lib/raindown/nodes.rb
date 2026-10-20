@@ -78,11 +78,11 @@ module Raindown
 
     # One instance for each node and its props, kept for the whole process.
     # So a node can keep what its Markdown and HTML share, like a date, and both stay the same between renders.
-    def instance(klass, props)
-      key = [klass, props]
+    def instance(klass, props, args = [])
+      key = [klass, args, props]
       instances[key] ||= begin
         id = list.length
-        list << klass.new(**props)
+        list << klass.new(*args, **props)
         id
       end
 

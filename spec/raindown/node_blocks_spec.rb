@@ -48,10 +48,31 @@ RSpec.describe Raindown::NodeBlocks do
   end
 
   describe '.props' do
-    it 'reads quoted text, numbers, booleans and front matter keys' do
-      props = described_class.props(%(a='x y' b="z" c=3 d=1.5 e=true f=author.name g=missing), { author: { name: 'Mark' } })
+    it 'reads quoted text, numbers, booleans and variables' do
+      variables = Raindown::Variables.new(author: { name: 'Mark' })
+      props = described_class.props(%(a='x y' b="z" c=3 d=1.5 e=true f=author.name g=missing), variables)
 
       expect(props).to eq(a: 'x y', b: 'z', c: 3, d: 1.5, e: true, f: 'Mark', g: nil)
+    end
+
+    it 'reads variables as the data they are, with their braces' do
+      variables = Raindown::Variables.new(rows: [{ name: '{a}', count: 1 }], tags: %w[x y])
+
+      expect(described_class.props('a=rows b=tags.first', variables)).to eq(a: [{ name: '{a}', count: 1 }], b: 'x')
+    end
+  end
+
+  describe '.args' do
+    let(:none) { Raindown::Variables.new({}) }
+
+    it 'reads a value before the props as the argument' do
+      expect(described_class.args("'data.csv' format: 'columns'", none)).to eq([{ format: 'columns' }, ['data.csv']])
+      expect(described_class.args('stats', Raindown::Variables.new(stats: { a: 1 }))).to eq([{}, [{ a: 1 }]])
+    end
+
+    it 'has no argument when the props come first' do
+      expect(described_class.args('limit=2 b: 3', none)).to eq([{ limit: 2, b: 3 }])
+      expect(described_class.args('', none)).to eq([{}])
     end
   end
 

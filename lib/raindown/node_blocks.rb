@@ -4,6 +4,7 @@ require_relative 'code_blocks'
 require_relative 'directives'
 require_relative 'front_matter'
 require_relative 'nodes'
+require_relative 'variables'
 
 module Raindown
   # Finds node blocks in a file's lines: a node's directive and the Markdown it wrote below it.
@@ -25,8 +26,10 @@ module Raindown
     SELF_CLOSING = /\A( {0,3})<\{\s*:(#{NAME})(?:\s+(.*?))?\s*\}>[ \t]*$/
     BARE_SELF_CLOSING = /\A( {0,3}):(#{NAME})(?:[ \t]+(.*?))?[ \t]*$/
     # A prop is name=value or name: value, where the value is quoted text, a number, true, false
-    # or a front matter key like author.name.
+    # or a variable like author.name.
     PROP = /(\w+)(?:=|:[ \t]+)("[^"]*"|'[^']*'|\S+)/
+    # A value before the props is the node's argument.
+    ARG = /\A("[^"]*"|'[^']*'|[^\s"']\S*)(?:\s+|\z)/
 
     module_function
 
@@ -79,7 +82,7 @@ module Raindown
       found, pattern = directive(lines[index], bare:)
       return unless found && (klass = Nodes.node_class(found[2]))
 
-      node = Nodes.instance(klass, props(found[3].to_s, front_matter))
+      node = Nodes.instance(klass, *args(found[3].to_s, Variables.new(front_matter)))
       case pattern
       when :open then end_tag(lines, index, found[2]).then { |close| { open: index, close:, last: close, node: } }
       when :bare_open then bare_block(lines, index, node)
@@ -116,17 +119,25 @@ module Raindown
       close
     end
 
-    def props(text, front_matter)
-      text.scan(PROP).to_h { |name, value| [name.to_sym, value(value, front_matter)] }
+    # The props, after a value that's the node's argument when it comes first, like 'data.csv' in chart: 'data.csv'.
+    def args(text, variables)
+      arg = text.match(ARG) unless text.match?(/\A#{PROP}/)
+      return [props(text, variables)] unless arg
+
+      [props(arg.post_match, variables), [value(arg[1], variables)]]
     end
 
-    def value(value, front_matter)
+    def props(text, variables)
+      text.scan(PROP).to_h { |name, value| [name.to_sym, value(value, variables)] }
+    end
+
+    def value(value, variables)
       case value
       when /\A(["']).*\1\z/ then value[1..-2]
       when /\A-?\d+\z/ then value.to_i
       when /\A-?\d+\.\d+\z/ then value.to_f
       when 'true', 'false' then value == 'true'
-      else value.split('.').reduce(front_matter) { |data, key| data.is_a?(Hash) ? data[key.to_sym] : nil }
+      else Variables.value(variables, value)
       end
     end
   end

@@ -16,6 +16,21 @@ module Raindown
       end
     end
 
+    # A wrapped value as the data it was, so a variable in a node's props is a hash, list or text like any other.
+    def self.unwrap(value)
+      case value
+      when Variables then value.to_h
+      when ::Array then value.map { |item| unwrap(item) }
+      when ::String then value.tr(CODE_BRACES.values.join, CODE_BRACES.keys.join)
+      else value
+      end
+    end
+
+    # A variable's value, like author.name, read the way {author.name} reads it, unwrapped. Unknown names are nil.
+    def self.value(variables, name)
+      unwrap(name.split('.').reduce(variables) { |value, key| value.respond_to?(key) ? value.send(key) : nil })
+    end
+
     def initialize(values)
       @values = values.to_h { |key, value| [key.to_sym, Variables.wrap(value)] }
     end
@@ -30,6 +45,10 @@ module Raindown
 
     def binding
       ::Kernel.binding
+    end
+
+    def to_h
+      @values.transform_values { |value| Variables.unwrap(value) }
     end
 
     def to_s
