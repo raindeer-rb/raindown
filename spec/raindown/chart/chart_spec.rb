@@ -131,6 +131,42 @@ RSpec.describe Raindown::Chart do
     end
   end
 
+  describe 'minus' do
+    it 'reads a column to chart against the values, by name or index' do
+      expect(described_class.new([%w[sha added deleted], %w[a1 4 2], ['b2', '1', '']], minus: 'deleted').points)
+        .to eq([['a1', 4, 2], ['b2', 1, 0]])
+      expect(described_class.new([%w[x 1 2]], minus: 1).points).to eq([['x', 2, 1]])
+    end
+
+    it 'draws bars of the minus column left of the line, with its values beside them' do
+      expect(chart([%w[a 4 2], %w[b 2 0]], minus: 2, width: 6)).to eq("a  -2 ██│████ +4\nb  -0   │██   +2")
+    end
+
+    it 'draws columns of the minus column below the line' do
+      expect(chart([%w[a 2 1]], minus: 2, format: 'columns', height: 3)).to eq(<<~CHART.chomp)
+         2 ┤ ███
+           │ ███
+         0 ┼─────
+        -1 ┤ ███
+              a
+      CHART
+    end
+
+    it 'draws the minus column as a second line below zero' do
+      expect(chart([%w[a 3 1], %w[b 1 3]], minus: 2, format: 'line', width: 3, height: 3)).to eq(<<~CHART.chomp)
+         3 ┤ ⠑⠤⡀
+         0 ┼─⡀─⠈
+        -3 ┤ ⠈⠒⢄
+             a b
+      CHART
+    end
+
+    it 'needs a table' do
+      expect(chart('1 2', minus: 'deleted'))
+        .to eq(%(Can't chart "1 2": minus: needs a table, with a column of numbers to chart against the values))
+    end
+  end
+
   describe 'sparkline' do
     it 'draws numbers alone from lowest to highest' do
       expect(chart('1 2 3 4 5 6 7 8')).to eq('▁▂▃▄▅▆▇█')

@@ -227,6 +227,19 @@ chart: 'data/profit.csv' format: 'line' height: 6
          Jan      Feb       Mar      Apr      May
 ```
 
+`minus:` names a column to chart against the values, like lines deleted against lines added. It goes left of the line for bars, below it for columns and sparklines, and as a second line below zero for a line:
+
+```
+chart: 'data/commits.csv' minus: 'deleted' width: 30
+```
+```
+a8bb4fa  -44 ██│█████████▉                    +250
+d6114e0  -11  ▐│▍                              +11
+b12a47e   -4  ▕│▋                              +15
+35cfe8c  -11  ▐│██▌                            +62
+1f8ff0e   -5  ▕│████████████████████████████▎ +717
+```
+
 Bars and lines are 40 characters wide, and columns and lines 8 lines high, which `width:` and `height:` change.
 
 `chart:` is a [node](#nodes), so a project can draw charts its own way with a `Chart` node, like `class Chart < Raindown::Chart`. Raindown only watches the file being rendered, so after changing a chart's data, save the file to redraw it.

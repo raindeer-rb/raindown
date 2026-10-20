@@ -4,7 +4,8 @@ require_relative 'drawing'
 
 module Raindown
   class Chart < Node
-    # Vertical columns from a line at zero, with the largest and smallest values on the left and labels below.
+    # Vertical columns from a line at zero, with negative values or a minus column below it,
+    # the largest and smallest values on the left and labels below.
     #   2,210 ┤     ▄▄▄
     #         │ ███ ███
     #       0 ┼─────────
@@ -21,10 +22,10 @@ module Raindown
 
       private
 
-      # The largest value at the top, and the smallest at the bottom when it's negative.
+      # The largest value at the top, and the smallest at the bottom when it's below zero.
       def ticks
-        top = @values.max.positive? ? number_text(@values.max) : ''
-        bottom = @values.min.negative? ? number_text(@values.min) : ''
+        top = @above.max.positive? ? number_text(@above.max) : ''
+        bottom = @below.max.positive? ? number_text(-@below.max) : ''
         @tick_width = [top, bottom, '0'].map(&:length).max
 
         [top, bottom]

@@ -6,6 +6,7 @@ module Raindown
   class Chart < Node
     # A line through the values in braille, where each character is a grid of dots 2 wide and 4 high,
     # with the highest and lowest values on the left, labels below and negative values below a line at zero.
+    # With a minus column, its values are a second line below zero.
     #    4 ┤ ⠑⡄     ⢀⠎
     #    0 ┼──⠈⠢⡀──⡰⠁─
     #   -4 ┤    ⠘⢄⠎
@@ -16,20 +17,25 @@ module Raindown
       DOTS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]].freeze
 
       def lines
+        @series = @minus ? [@above, @below.map(&:-@)] : [@values]
         @low, @high = bounds
         @cells = Array.new(@height) { Array.new(@width, 0) }
-        dots = @values.each_index.map { |index| [x(index), y(@values[index])] }
-        dots.each_cons(2) { |from, to| plot_line(*from, *to) }
-        plot(*dots.first) if dots.one?
+        @series.each { plot_series(it) }
 
         [*axis, *label_line]
       end
 
       private
 
+      def plot_series(values)
+        dots = values.each_index.map { |index| [x(index), y(values[index])] }
+        dots.each_cons(2) { |from, to| plot_line(*from, *to) }
+        plot(*dots.first) if dots.one?
+      end
+
       # The lowest and highest values, which include zero when there are negative values, so they go below its line.
       def bounds
-        low, high = @values.minmax
+        low, high = @series.flatten.minmax
         high = [high, 0].max if low.negative?
 
         [low, high]
