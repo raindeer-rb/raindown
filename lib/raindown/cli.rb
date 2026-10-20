@@ -72,7 +72,7 @@ module Raindown
       def render_stdin(path, output = nil, bare: false, **)
         Nodes.load(path)
         write(output, Raindown.render(markdown: $stdin.read, metadata: Pages.for(path), bare: bare || BareDirectives.file?(path),
-                                      hide_directives: Config.for(path)[:hide_directives]))
+                                      **Config.render_options(path)))
       end
 
       def watch(path, output = nil, bare: false, execute: false)

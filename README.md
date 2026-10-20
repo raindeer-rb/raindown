@@ -267,6 +267,13 @@ hide_directives: true
 
 Template directives are always invisible in the HTML.
 
+Code blocks are highlighted in the HTML. For a site that highlights code in the browser instead, like with [Prism](https://prismjs.com), turn it off and each code block gets a language class, like `<pre><code class="language-ruby">`:
+
+```yaml
+# .raindown/config.yml
+highlight_code: false
+```
+
 ### VS Code
 
 The [VS Code extension](vscode/) highlights syntax and previews Raindown files with `--stdin`, rendering as you type. In Markdown files it highlights `<{ }>` directives and renders them in the built-in Markdown preview.

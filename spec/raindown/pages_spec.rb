@@ -64,6 +64,15 @@ RSpec.describe Raindown::Pages do
       expect(hidden).to include('<!-- :toc -->', 'Table of contents')
     end
 
+    it "renders content with the project's config, unless the render options say otherwise" do
+      write('.raindown/config.yml', "highlight_code: false\n")
+      write('docs/_basics/_3-code.md', "---\ntitle: Code\n---\n\n```ruby\nputs 1\n```\n")
+      highlighting = described_class.new(metadata: pages_metadata, root: @root, render_options: { highlight_code: true })
+
+      expect(pages.list(folder: 'basics').find { it.title == 'Code' }.content).to include('<pre><code class="language-ruby">')
+      expect(highlighting.list(folder: 'basics').find { it.title == 'Code' }.content).to include('<pre lang="ruby" style=')
+    end
+
     it 'reads folder tags joined by &' do
       expect(pages.list(folder: 'guides').map(&:path)).to eq(['docs/_1&_guides/deploy.rd'])
     end

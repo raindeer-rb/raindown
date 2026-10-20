@@ -168,6 +168,25 @@ RSpec.describe Raindown do
       expect(text(html)).to include('Use <{ and }> around x = { b: 2 }.')
     end
 
+    it 'highlights code blocks' do
+      expect(described_class.render(markdown: "```ruby\nputs 1\n```\n")).to include('<pre lang="ruby" style=')
+    end
+
+    it 'leaves code blocks unhighlighted with a language class when asked, for highlighting in the browser' do
+      html = described_class.render(markdown: "```ruby\nh = { a: 1 }\n```\n", highlight_code: false)
+
+      expect(html).to include('<pre><code class="language-ruby">')
+      expect(html).not_to include('style=')
+      expect(text(html)).to include('h = { a: 1 }')
+    end
+
+    it "leaves an endpoint's code unhighlighted when asked" do
+      html = described_class.render(markdown: "<{ endpoint: }>\n\n```sh\ncurl x\n```\n<{ :endpoint }>\n", highlight_code: false)
+
+      expect(html).to include('<pre><code class="language-sh">')
+      expect(html).not_to include('style=')
+    end
+
     it 'ends with a single newline' do
       plain = described_class.render(markdown: "# Title\n")
       directive = described_class.render(markdown: "# Title\n\n<{ :toc }>\n\nText.\n")

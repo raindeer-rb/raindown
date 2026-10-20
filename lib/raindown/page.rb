@@ -14,12 +14,13 @@ module Raindown
 
     # Rendered when asked for, so a file that lists itself doesn't render forever.
     # The front matter is rendered with it, so its variables work, and a Raindown file's bare directives too.
+    # It follows the file's project config, like render_file, unless the render options say otherwise.
     def content
       @content ||= begin
         markdown = File.read(file_path, encoding: Encoding::UTF_8)
 
         if FrontMatter.parse(markdown).last.strip.empty? then ''
-        else Raindown.render(markdown:, bare: BareDirectives.file?(file_path), **@render_options)
+        else Raindown.render(markdown:, bare: BareDirectives.file?(file_path), **Config.render_options(file_path).merge(@render_options))
         end
       end
     end
