@@ -75,16 +75,14 @@ jobs:
         run: |
           set -euo pipefail
           bin="pkg/raindown-*-$TEBAKO_PLATFORM${{ matrix.exe }}"
+          # Commonmarker's musl extension needs libgcc, which bare Alpine doesn't include.
           run() {
             if [ "${{ matrix.alpine }}" = "true" ]; then
-              docker run --rm -v "$PWD:/work" -w /work alpine:3.22 $bin "$@"
+              docker run --rm -v "$PWD:/work" -w /work alpine:3.22 sh -c 'apk add --no-cache -q libgcc && "$@"' sh $bin "$@"
             else
               $bin "$@"
             fi
           }
-          if [ "${{ matrix.alpine }}" = "true" ]; then
-            docker run --rm -v "$PWD:/work" -w /work alpine:3.22 ldd $bin || true
-          fi
           # Help prints the usage and exits with an error.
           help=$(run -h 2>&1 || true)
           echo "$help"
