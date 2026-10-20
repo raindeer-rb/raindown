@@ -61,7 +61,8 @@ jobs:
       - name: Build (Alpine)
         if: ${{ matrix.alpine }}
         run: |
-          docker run --rm -v "$PWD:/work" -w /work -e TEBAKO_PLATFORM alpine:3.22 sh -euc '
+          # Ruby's configure, which tebako runs to build native extensions, needs bash, not busybox's sh.
+          docker run --rm -v "$PWD:/work" -w /work -e TEBAKO_PLATFORM -e CONFIG_SHELL=/bin/bash alpine:3.22 sh -euc '
             apk add --no-cache bash build-base curl git linux-headers openssl-dev ruby ruby-dev yaml-dev
             git config --global --add safe.directory /work
             gem install bundler --no-document
