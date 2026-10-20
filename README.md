@@ -30,7 +30,7 @@ Directives sit between `<{` and `}>`, and come in two kinds:
 
 |                       | Template directives                                    | Content directives                                                      |
 | --------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
-| Examples            | `for:`, `if:`, `list:` and variables like `{title}`    | `toc:`, `:toc`, `files:`, `endpoint:` and your own nodes                |
+| Examples            | `for:`, `if:`, `list:` and variables like `{title}`    | `toc:`, `:toc`, `files:`, `chart:`, `endpoint:` and your own nodes      |
 | What they do          | Shape how the Markdown around them renders             | Bring content into the page, written into the file, the HTML, or both   |
 | Who writes the output | You, as a template                                     | Raindown or your node, from your input                                  |
 | Where they sit        | Often inside paragraphs, tables and lists              | On their own lines, between blocks                                      |
@@ -42,7 +42,7 @@ Shape how the Markdown around them renders, like Liquid or Jinja: [variables](#v
 
 #### Content directives
 
-Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [files](#files-and-lists) with `files:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks, and show in bold in the HTML, so you can see where a page's content comes from, unless you [hide them](#config).
+Bring content into the page: a [table of contents](#table-of-contents) with `toc:` and `:toc`, [files](#files-and-lists) with `files:`, [charts](#charts) with `chart:`, [endpoints](#endpoints) with `endpoint:` and your own [nodes](#nodes). Raindown or your node writes their output, and you only give them input, like `folder: 'notes'` or an endpoint's curl snippet. Most also write their content into the Markdown below them, so it's there for people and agents reading the file. They sit on their own lines between content blocks, and show in bold in the HTML, so you can see where a page's content comes from, unless you [hide them](#config).
 
 ### Raindown files
 
@@ -180,6 +180,57 @@ This is a draft.
 
 Variables, loops and conditions render before the Markdown does, like Liquid in Jekyll. So a loop's lines make one list or table, and a value can contain Markdown like `*emphasis*`. Unknown variables render nothing, and variables in code are left as text.
 
+### Charts
+
+A `chart:` block draws its data as a chart in block characters, and writes it into the Markdown below it as a code block, redrawn whenever the file is rendered:
+
+````md
+<{ chart: 'data/downloads.csv' }>
+
+```
+Jan  ██████████████████████▌                  1,240
+Feb  ███████████████████████████████████▉     1,980
+Mar  ████████████████████████████████████████ 2,210
+Apr  ███████████████▊                           870
+```
+
+<{ :chart }>
+````
+
+Its data can be a CSV, TSV, JSON or YAML file relative to the project, numbers like `chart: '3 5 -2 8'`, or a [variable](#variables) like `chart: stats`. A variable can hold either of those, or data of its own like a list of numbers or a hash of labels and values. A table's labels come from its first column and its values from the first column of numbers after it, or name them with `label:` and `value:`, like `value: 'sales'`.
+
+`format:` draws it as `'bars'`, `'columns'`, a `'line'` or a `'sparkline'` (`▂▄▁▇▅█▃`). Without it, labeled data draws as bars and numbers alone as a sparkline. Negative values go below the line, or left of it for bars:
+
+```
+chart: 'data/profit.csv' width: 30
+```
+```
+Jan              │██████████▉          1,200
+Feb         ▕████│                      -450
+Mar              │███████▎               800
+Apr  ████████████│                    -1,300
+May              │██████████████████▏  2,000
+```
+
+A line is drawn in braille, where each character has dots 2 across and 4 down, and shows the labels that fit below it:
+
+```
+chart: 'data/profit.csv' format: 'line' height: 6
+```
+```
+ 2,000 ┤                                       ⡠⠊
+       │ ⢄⡀                                  ⢀⠔⠁
+       │  ⠈⠑⠢⢄           ⢀⡠⠔⠊⠑⠤⡀           ⢀⠔⠁
+     0 ┼──────⠉⠒⠤⣀───⣀⠤⠒⠉⠁─────⠈⠢⢄────────⡠⠊─────
+       │          ⠉⠒⠉             ⠑⠢⡀   ⡠⠊
+-1,300 ┤                            ⠈⠒⢄⠔⠁
+         Jan      Feb       Mar      Apr      May
+```
+
+Bars and lines are 40 characters wide, and columns and lines 8 lines high, which `width:` and `height:` change.
+
+`chart:` is a [node](#nodes), so a project can draw charts its own way with a `Chart` node, like `class Chart < Raindown::Chart`. Raindown only watches the file being rendered, so after changing a chart's data, save the file to redraw it.
+
 ### Endpoints
 
 Put an `endpoint:` directive above a curl snippet and Raindown writes the response in a code block below it, typed by its content type, followed by the date it was fetched:
@@ -252,7 +303,7 @@ Changelog: limit=3
 - **1.1.0** Track fetched dates
 ```
 
-Props can be quoted text, numbers, `true`, `false` or front matter keys like `author.name`, written `limit=3` or `limit: 3`. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
+Props can be quoted text, numbers, `true`, `false` or [variables](#variables) like `author.name`, written `limit=3` or `limit: 3`. A variable is the data it holds, so a list stays a list. A value before the props, like `'data.csv'` in `chart: 'data.csv' format: 'columns'`, is passed to the node's `initialize` as its argument. `replace` and `render` can also take the keywords `document:` (the Markdown being rendered), `metadata:` and `bare:`, and get the ones they ask for. A self-closing `<{ :Changelog }>`, or a bare `:Changelog`, renders the node into the HTML without writing it into the file. Raindown keeps one instance of each node and its props while it runs, so `replace` and `render` can share what they work out, like the releases above. A name only starts a node block when it's a loaded LowNode with a `replace` method, so other text like `Note:` is left alone. Nodes run your project's code whenever Raindown renders the file.
 
 ### Config
 

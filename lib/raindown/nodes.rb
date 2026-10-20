@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'chart/chart'
 require_relative 'files'
 require_relative 'node'
 require_relative 'toc'
@@ -11,8 +12,8 @@ module Raindown
   # document: (the Markdown being rendered), metadata: and bare:, and gets the ones it asks for.
   module Nodes
     FOLDER = '.raindown'
-    # Lowercase directives for Raindown's own nodes. A project's own TOC or Files node replaces Raindown's.
-    BUILT_INS = { 'toc' => 'TOC', 'files' => 'Files' }.freeze
+    # Lowercase directives for Raindown's own nodes. A project's own TOC, Files or Chart node replaces Raindown's.
+    BUILT_INS = { 'toc' => 'TOC', 'files' => 'Files', 'chart' => 'Chart' }.freeze
     # A placeholder for a node's HTML, which stays as it is through Commonmarker and Antlers.
     PLACEHOLDER = /<!-- raindown:node (\d+) -->/
 
