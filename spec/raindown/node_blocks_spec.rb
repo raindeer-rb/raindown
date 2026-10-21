@@ -55,6 +55,12 @@ RSpec.describe Raindown::NodeBlocks do
       expect(props).to eq(a: 'x y', b: 'z', c: 3, d: 1.5, e: true, f: 'Mark', g: nil)
     end
 
+    it 'reads nil, false, negative numbers and symbols as values' do
+      props = described_class.props('a=nil b=false c=-2 d=:draft', Raindown::Variables.new(nil: 'x'))
+
+      expect(props).to eq(a: nil, b: false, c: -2, d: :draft)
+    end
+
     it 'reads variables as the data they are, with their braces' do
       variables = Raindown::Variables.new(rows: [{ name: '{a}', count: 1 }], tags: %w[x y])
 

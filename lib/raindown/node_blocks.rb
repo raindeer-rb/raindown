@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'lowkey'
+
 require_relative 'code_blocks'
 require_relative 'directives'
 require_relative 'front_matter'
@@ -131,13 +133,12 @@ module Raindown
       text.scan(PROP).to_h { |name, value| [name.to_sym, value(value, variables)] }
     end
 
+    # A value, like 'text', 3, true, nil or :draft, or else a variable, like author.name.
     def value(value, variables)
-      case value
-      when /\A(["']).*\1\z/ then value[1..-2]
-      when /\A-?\d+\z/ then value.to_i
-      when /\A-?\d+\.\d+\z/ then value.to_f
-      when 'true', 'false' then value == 'true'
-      else Variables.value(variables, value)
+      Lowkey::ValueParser.parse(value) do
+        next value[1..-2] if value.match?(/\A(["']).*\1\z/)
+
+        Variables.value(variables, value)
       end
     end
   end
