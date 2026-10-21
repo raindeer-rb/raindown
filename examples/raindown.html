@@ -8,9 +8,10 @@
     <ul>
       <li class='h1'><a href='#raindown-example'>Raindown Example</a></li>
 <li class='h2'><a href='#directives'>Directives</a></li>
+<li class='h2'><a href='#charts'>Charts</a></li>
+<li class='h3'><a href='#commits'>Commits</a></li>
 <li class='h2'><a href='#endpoints'>Endpoints</a></li>
-<li class='h2'><a href='#alerts'>Alerts</a></li>
-<li class='h2'><a href='#markdown'>Markdown</a></li>
+<li class='h2'><a href='#tables'>Tables</a></li>
 <li class='h3'><a href='#nested-heading'>Nested heading</a></li>
     </ul>
   </details>
@@ -21,6 +22,28 @@
 <pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">toc:
 </span></code></pre>
 <p>It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use <code>:toc</code> for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. <code>&lt;&#123; toc: &#125;&gt;</code> works too with a <code>&lt;&#123; :toc &#125;&gt;</code> end tag, and is the only form <code>.md</code> files understand.</p>
+<h2 id="charts">Charts<a href="#charts" aria-label="Link to heading 'Charts'" data-heading-content="Charts" class="anchor"></a></h2>
+<p>A <code>chart:</code> directive draws its data in block characters, and writes the chart below it, redrawn whenever the file is rendered. Labeled data like <code>data/downloads.csv</code> draws as bars:</p>
+<p><strong>chart: &#39;data/downloads.csv&#39; width: 30</strong></p>
+<pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">Jun  ██████▊                          640
+</span><span style="color:#c0c5ce;">Jul  █████████████                  1,240
+</span><span style="color:#c0c5ce;">Aug  ████████████████████▊          1,980
+</span><span style="color:#c0c5ce;">Sep  ███████████████████████▏       2,210
+</span><span style="color:#c0c5ce;">Oct  ██████████████████████████████ 2,870
+</span></code></pre>
+<p>Numbers alone draw as a sparkline:</p>
+<p><strong>chart: &#39;3 5 2 8 6 9 4 7&#39;</strong></p>
+<pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">▂▄▁▇▅█▃▆
+</span></code></pre>
+<h3 id="commits">Commits<a href="#commits" aria-label="Link to heading 'Commits'" data-heading-content="Commits" class="anchor"></a></h3>
+<p><code>minus:</code> charts a column against the values, like the lines each commit deleted against the lines it added:</p>
+<p><strong>chart: &#39;data/commits.csv&#39; minus: &#39;deleted&#39; width: 30</strong></p>
+<pre style="background-color:#2b303b;"><code><span style="color:#c0c5ce;">c2f98fc  -18  █│███▊                           +96
+</span><span style="color:#c0c5ce;">b1a573a   -0   │▏                               +1
+</span><span style="color:#c0c5ce;">b737205  -11  ▐│██▍                            +62
+</span><span style="color:#c0c5ce;">1cd92fb   -5  ▕│████████████████████████████▏ +717
+</span><span style="color:#c0c5ce;">69ce897  -47 ██│█████▊                        +146
+</span></code></pre>
 <h2 id="endpoints">Endpoints<a href="#endpoints" aria-label="Link to heading 'Endpoints'" data-heading-content="Endpoints" class="anchor"></a></h2>
 <p>An <code>endpoint:</code> directive runs the curl snippet below it and writes the response in the code block below that. Empty the response block and save to fetch a new one.</p>
 <p><strong>endpoint: :x</strong></p>
@@ -32,21 +55,8 @@
 </span></code></pre>
 <p><strong>:endpoint</strong></p>
 <!-- raindown:fetched 2026-10-14 -->
-<h2 id="alerts">Alerts<a href="#alerts" aria-label="Link to heading 'Alerts'" data-heading-content="Alerts" class="anchor"></a></h2>
-<div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title">Note</p>
-<p>GitHub-style alerts are enabled.</p>
-</div>
-<div class="markdown-alert markdown-alert-warning">
-<p class="markdown-alert-title">Warning</p>
-<p>Headings will appear in the table of contents.</p>
-</div>
-<h2 id="markdown">Markdown<a href="#markdown" aria-label="Link to heading 'Markdown'" data-heading-content="Markdown" class="anchor"></a></h2>
-<p>Regular Markdown works as usual:</p>
-<ul>
-<li><strong>Bold</strong>, <em>italic</em> and <code>code</code></li>
-<li><a href="https://github.com/raindeer-rb/raindown">Links</a></li>
-</ul>
+<h2 id="tables">Tables<a href="#tables" aria-label="Link to heading 'Tables'" data-heading-content="Tables" class="anchor"></a></h2>
+<p>Tables auto-expand their column widths on save to match the content.</p>
 <table>
 <thead>
 <tr>

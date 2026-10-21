@@ -7,9 +7,10 @@ This is a Raindown file (`.rd`), so directives can be written bare on their own 
 toc:
 - [Raindown Example](#raindown-example)
   - [Directives](#directives)
+  - [Charts](#charts)
+    - [Commits](#commits)
   - [Endpoints](#endpoints)
-  - [Alerts](#alerts)
-  - [Markdown](#markdown)
+  - [Tables](#tables)
     - [Nested heading](#nested-heading)
 
 ## Directives
@@ -21,6 +22,39 @@ toc:
 ```
 
 It writes a list of every heading into this file, kept in sync as you edit, and renders a table of contents in the HTML. Use `:toc` for the HTML one alone. Directives inside code are left as-is, so the block above shows the directive instead of rendering it. `<{ toc: }>` works too with a `<{ :toc }>` end tag, and is the only form `.md` files understand.
+
+## Charts
+
+A `chart:` directive draws its data in block characters, and writes the chart below it, redrawn whenever the file is rendered. Labeled data like `data/downloads.csv` draws as bars:
+
+chart: 'data/downloads.csv' width: 30
+```
+Jun  ██████▊                          640
+Jul  █████████████                  1,240
+Aug  ████████████████████▊          1,980
+Sep  ███████████████████████▏       2,210
+Oct  ██████████████████████████████ 2,870
+```
+
+Numbers alone draw as a sparkline:
+
+chart: '3 5 2 8 6 9 4 7'
+```
+▂▄▁▇▅█▃▆
+```
+
+### Commits
+
+`minus:` charts a column against the values, like the lines each commit deleted against the lines it added:
+
+chart: 'data/commits.csv' minus: 'deleted' width: 30
+```
+c2f98fc  -18  █│███▊                           +96
+b1a573a   -0   │▏                               +1
+b737205  -11  ▐│██▍                            +62
+1cd92fb   -5  ▕│████████████████████████████▏ +717
+69ce897  -47 ██│█████▊                        +146
+```
 
 ## Endpoints
 
@@ -39,20 +73,9 @@ curl https://httpbin.org/uuid
 ```
 <!-- raindown:fetched 2026-10-14 -->
 
-## Alerts
+## Tables
 
-> [!NOTE]
-> GitHub-style alerts are enabled.
-
-> [!WARNING]
-> Headings will appear in the table of contents.
-
-## Markdown
-
-Regular Markdown works as usual:
-
-- **Bold**, *italic* and `code`
-- [Links](https://github.com/raindeer-rb/raindown)
+Tables auto-expand their column widths on save to match the content.
 
 | Command | Description       |
 | ------- | ----------------- |
