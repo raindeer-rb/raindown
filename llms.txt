@@ -1,0 +1,163 @@
+# Raindown
+
+> Raindown is a superset of Markdown: a templating layer for static sites and an annotation framework for Markdown files. Directives between `<{` and `}>` add variables, loops, conditions, tables of contents, file lists, charts, HTTP examples and custom nodes. Many directives write their output back into the Markdown file itself, so the file stays readable as plain Markdown by people and agents.
+
+Raindown renders a `.md`, `.rd` or `.raindown` file to HTML, and on each render it may also rewrite the source file: filling in generated blocks (TOC lists, file lists, charts, endpoint responses, node output) and widening table columns. When editing a Raindown file, edit the directive, not the generated content below it, since that content is replaced on the next render.
+
+## Rules for writing Raindown
+
+- Directives are `<{ ... }>`. Inside them, `name:` opens a block and `:name` closes it, like `<{ if: draft }>` ... `<{ :if }>`. A self-closing `<{ :name }>` with no opener renders HTML only, like `<{ :toc }>`.
+- Variables are `{key}` (HTML-escaped) or `<{ key }>` (unescaped). Dotted paths work: `{author.name}`. Unknown variables render nothing.
+- Directives and variables inside inline code or code blocks are left as literal text.
+- Arguments: an optional first value, then props written `key=value` or `key: value`. Values are quoted strings (`'notes'`), numbers, `true`, `false`, or unquoted variable names (`tags`, `author.name`). Quote literal strings, since unquoted words are variables.
+- Template directives (`for:`, `if:`, `list:`, variables) are invisible in the HTML and may sit inside paragraphs, lists and tables.
+- Content directives (`toc:`, `files:`, `chart:`, `endpoint:`, custom nodes) sit on their own lines with blank lines around them. They show in bold in the HTML unless `hide_directives: true` is set.
+- Capitalised content directives a likely custom nodes. If there is a custom node in the .raindown folder of the same name then it's a custom class, it not it's just manually entered text.
+
+## Bare directives (.rd and .raindown files only)
+
+In a `.rd` or `.raindown` file (or a `.md` file rendered with `--bare`), a directive alone on its line needs no delimiters and no end tag. A bare block directive covers the Markdown block below it, up to the next blank line:
+
+```
+:toc
+
+if: draft
+This is a draft.
+
+chart: '3 5 2 8'
+```
+
+Use delimiters and an end tag when a block spans blank lines, like several paragraphs. Delimited syntax works in every file type; bare syntax does not work in plain `.md` files.
+
+## Front matter and variables
+
+YAML front matter holds the page's variables and metadata:
+
+```md
+---
+title: Release notes
+author:
+  name: Mark
+tags: [ruby, markdown]
+draft: false
+---
+
+# {title}
+
+By {author.name}
+
+<{ for: tag in: tags }>
+- {tag}
+<{ :for }>
+
+<{ if: draft }>
+This is a draft.
+<{ :if }>
+```
+
+Templates render before Markdown, like Liquid in Jekyll, so a loop's lines join into one list or table, and values may contain Markdown. `if:` tests truthiness; there is no `else`.
+
+## Table of contents
+
+- `<{ :toc }>` (bare: `:toc`): renders a TOC of the file's headings in the HTML only.
+- `<{ toc: }>` ... `<{ :toc }>` (bare: `toc:` with the list directly below): also writes the TOC into the file as a nested list of `[Heading](#id)` links, regenerated on every render.
+
+## Files and lists
+
+Files in the project are listed by their metadata: front matter keys, plus underscored folders in the path. `docs/_basics/_1-getting-started.md` has `folder: basics`, `order: 1` and `path: docs/_basics/_1-getting-started.md`. Several folder tags in one segment are separated with `&`, like `_1&_basics`. A front matter list like `tags: [ruby, intro]` tags the file with each item. Files sort by `order`. The project root is the folder holding the `.raindown` folder, or else the rendered file's folder.
+
+- `<{ files: folder: 'notes' }>` ... `<{ :files }>`: writes a link to each matching file, by title, into the Markdown and renders it as a list.
+- `<{ list: page folder: 'notes' }>` ... `<{ :list }>`: repeats its template for each matching file, with the file bound to `page` (`{page.title}`). HTML only, nothing is written to the file.
+
+Filter values must be quoted: `files: tags: 'intro'`.
+
+## Charts
+
+`<{ chart: SOURCE ... }>` ... `<{ :chart }>` draws data in block characters and writes it into the file as a code block, redrawn on every render.
+
+- SOURCE: a CSV, TSV, JSON or YAML path relative to the project (`'data/sales.csv'`), inline numbers (`'3 5 -2 8'`), or a variable holding any of those, a list of numbers, or a hash of labels to values.
+- `format:` `'bars'`, `'columns'`, `'line'` or `'sparkline'`. Default: bars for labeled data, sparkline for bare numbers.
+- `label:` and `value:` name the columns to use. Default: first column for labels, first numeric column after it for values.
+- `minus:` names a column charted against the values (left of the axis for bars, below it otherwise).
+- `width:` (default 40) and `height:` (default 8).
+
+## Endpoints
+
+`endpoint:` goes above a `curl` snippet in a fenced `sh` block. Raindown runs it and writes the response in a code block below, typed by content type, followed by `<!-- raindown:fetched YYYY-MM-DD -->`.
+
+````md
+<{ endpoint: :x }>
+
+```sh
+curl https://httpbin.org/uuid
+```
+
+```json
+{ "uuid": "..." }
+```
+<!-- raindown:fetched 2026-10-14 -->
+<{ :endpoint }>
+````
+
+- The request runs only when the response block is missing or empty, and the directive has `:x` / `:execute` or the CLI gets `-x` / `--execute`. Empty the response block to refresh it.
+- In bare form, `endpoint: :x` ends after the response, with no end tag.
+- Curl runs without a shell and without `~/.curlrc`: no pipes, redirects, `$VARIABLES`, `@file` values, or options like `-o`, `-F`, `-K`.
+
+## Custom nodes
+
+Nodes are Ruby classes (LowNode subclasses) in a `.raindown/` folder at or above the file. `replace` returns Markdown written into the file; optional `render` returns HTML for the page.
+
+```ruby
+# .raindown/changelog.rb
+class Changelog < LowNode
+  def initialize(limit: 5)
+    @releases = Release.all.first(limit)
+  end
+
+  def replace
+    @releases.map { |r| "- **#{r.version}** #{r.summary}" }.join("\n")
+  end
+end
+```
+
+```md
+<{ Changelog: limit=3 }>
+
+- **1.2.0** Bare directives close themselves
+
+<{ :Changelog }>
+```
+
+- Bare form: `Changelog: limit=3` with the output directly below, up to the next blank line (so the output can't contain blank lines).
+- `<{ :Changelog }>` or bare `:Changelog` renders the HTML without writing to the file.
+- A leading value (like `'data.csv'` in `chart: 'data.csv'`) is passed as the positional argument to `initialize`; props are keyword arguments.
+- `replace` and `render` may accept the keywords `document:`, `metadata:` and `bare:`.
+- A capitalized `Name:` only starts a node block if a loaded LowNode by that name has `replace`, so prose like `Note:` is safe.
+- Built-in `toc:`, `files:` and `chart:` are nodes too, and can be overridden: `class TOC < Raindown::TOC`, `class Files < Raindown::Files`, `class Chart < Raindown::Chart`.
+
+## Config
+
+`.raindown/config.yml`:
+
+```yaml
+hide_directives: true   # content directives become HTML comments instead of bold text
+highlight_code: false   # no server-side highlighting; code gets class="language-x" instead
+```
+
+## CLI
+
+```sh
+raindown FILE                 # write FILE.html beside FILE and re-render on save
+raindown FILE -o out.html     # write to another path
+raindown FILE --once          # render once, to stdout unless -o is given
+cat FILE | raindown FILE --stdin   # render stdin, without rewriting FILE
+raindown FILE --bare          # allow bare directives in a .md file
+raindown FILE -x              # run endpoint snippets that have no response yet
+```
+
+## Docs
+
+- [README](README.md): full guide with examples
+- [Markdown example](examples/markdown.md): delimited syntax in a `.md` file
+- [Raindown example](examples/raindown.rd): bare syntax in a `.rd` file
+- [Changelog](CHANGELOG.md)
