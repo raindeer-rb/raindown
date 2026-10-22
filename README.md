@@ -2,7 +2,19 @@
 
 # Raindown
 
-Raindown is a templating layer for static site generation and an annotation framework for Markdown files.
+Raindown is a Markdown superset for AI, APIs, Docs and humans.
+
+<{ Commits: limit=5 }>
+
+```
+ecf65be   -6        █│█▊                       +14
+3e2c2ab   -0         │████████████████████    +163
+5021033  -60 ▐███████│██████████████████████▋ +184
+913fa60   -1        ▕│█                         +8
+69ce897  -47   ██████│██████████████████      +146
+```
+
+<{ :Commits }>
 
 ## CLI
 
@@ -28,13 +40,13 @@ With `--stdin`, FILE only decides whether bare directives are allowed (by its ex
 
 Directives sit between `<{` and `}>`, and come in two kinds:
 
-|                       | Template directives                                    | Content directives                                                      |
-| --------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
-| Examples            | `for:`, `if:`, `list:` and variables like `{title}`    | `toc:`, `:toc`, `files:`, `chart:`, `endpoint:` and your own nodes      |
-| What they do          | Shape how the Markdown around them renders             | Bring content into the page, written into the file, the HTML, or both   |
-| Who writes the output | You, as a template                                     | Raindown or your node, from your input                                  |
-| Where they sit        | Often inside paragraphs, tables and lists              | On their own lines, between blocks                                      |
-| In the HTML           | Invisible, since the input is a template               | In bold, or as comments with `hide_directives`                          |
+|                       | Template directives                                 | Content directives                                                    |
+| --------------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
+| Examples              | `for:`, `if:`, `list:` and variables like `{title}` | `toc:`, `:toc`, `files:`, `chart:`, `endpoint:` and your own nodes    |
+| What they do          | Shape how the Markdown around them renders          | Bring content into the page, written into the file, the HTML, or both |
+| Who writes the output | You, as a template                                  | Raindown or your node, from your input                                |
+| Where they sit        | Often inside paragraphs, tables and lists           | On their own lines, between blocks                                    |
+| In the HTML           | Invisible, since the input is a template            | In bold, or as comments with `hide_directives`                        |
 
 #### Template directives
 

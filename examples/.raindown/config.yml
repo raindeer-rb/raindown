@@ -1,0 +1,1 @@
+# Makes examples/ its own project, so data/ paths resolve from here rather than from the repo's .raindown folder.
