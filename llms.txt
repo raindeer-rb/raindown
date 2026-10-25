@@ -12,7 +12,7 @@ Raindown renders a `.md`, `.rd` or `.raindown` file to HTML, and on each render 
 - Arguments: an optional first value, then props written `key=value` or `key: value`. Values are quoted strings (`'notes'`), numbers, `true`, `false`, or unquoted variable names (`tags`, `author.name`). Quote literal strings, since unquoted words are variables.
 - Template directives (`for:`, `if:`, `list:`, variables) are invisible in the HTML and may sit inside paragraphs, lists and tables.
 - Content directives (`toc:`, `files:`, `chart:`, `endpoint:`, custom nodes) sit on their own lines with blank lines around them. They show in bold in the HTML unless `hide_directives: true` is set.
-- Capitalised content directives a likely custom nodes. If there is a custom node in the .raindown folder of the same name then it's a custom class, it not it's just manually entered text.
+- Capitalised content directives are likely custom nodes. If there is a custom node in the .raindown folder of the same name then it's a custom class, if not it's just manually entered text.
 
 ## Bare directives (.rd and .raindown files only)
 
