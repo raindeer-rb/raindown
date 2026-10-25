@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown'
-require 'cgi'
+require 'cgi/escape'
 require 'tmpdir'
 
 RSpec.describe Raindown do

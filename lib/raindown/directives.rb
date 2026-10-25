@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'erb'
+require 'cgi/escape'
 
 module Raindown
   # Content directives, like a node's directive and end tag or an endpoint's, are kept in the HTML:
@@ -22,7 +22,7 @@ module Raindown
     def render(html, hide: false)
       html.gsub(MARKER) do
         text = ::Regexp.last_match(1)
-        hide ? "<!-- #{text} -->" : "<p><strong>#{ERB::Util.html_escape(text)}</strong></p>"
+        hide ? "<!-- #{text} -->" : "<p><strong>#{CGI.escapeHTML(text.to_s)}</strong></p>"
       end
     end
   end

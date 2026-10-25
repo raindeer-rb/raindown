@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require 'cgi'
-require 'erb'
+require 'cgi/escape'
 
 require_relative 'node'
 
@@ -29,7 +28,7 @@ module Raindown
     # With the document's final HTML, the headings include ones its components render.
     def render(document:, html: nil, metadata: nil, bare: false)
       items = headings(markdown: document, html:, metadata:, bare:).map do |heading|
-        "<li class='h#{heading[:level]}'><a href='##{heading[:id]}'>#{ERB::Util.html_escape(heading[:text])}</a></li>"
+        "<li class='h#{heading[:level]}'><a href='##{heading[:id]}'>#{CGI.escapeHTML(heading[:text])}</a></li>"
       end
 
       <<~HTML
