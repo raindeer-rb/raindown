@@ -18,23 +18,27 @@ ecf65be   -6        █│█▊                       +14
 
 ## CLI
 
-The gem ships a `raindown` executable that renders a Markdown file (including directives like `<{ :toc }>`) to HTML, then re-renders it every time the file is saved.
+The gem ships a `raindown` executable that watches Markdown files and writes back to them as they're saved, like their tables of contents, tables and endpoint responses.
 
 ```sh
-# Write to README.html beside README.md:
+# Watch every project with a .raindown folder in the current directory, or in another one:
+raindown
+raindown ~/dev
+
+# Watch one file:
 raindown README.md
 
-# Write to another path:
-raindown README.md -o site/index.html
-
-# Render once without watching, to stdout or with -o to a file:
+# Render to HTML once, to stdout or with -o to a file:
 raindown README.md --once
+raindown README.md --once -o site/index.html
 
 # Render Markdown from stdin without touching the file (for editor previews):
 cat draft.rd | raindown draft.rd --stdin
 ```
 
 With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
+
+Watching a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
 
 ### Directives
 

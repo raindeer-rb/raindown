@@ -5,6 +5,7 @@ require 'trees'
 require_relative '../raindown'
 require_relative '../version'
 require_relative 'rewriter'
+require_relative 'supervisor'
 require_relative 'watcher'
 
 module Raindown
@@ -12,17 +13,19 @@ module Raindown
     extend Trees
 
     USAGE = <<~TEXT
-      Usage: raindown FILE [options]
+      Usage: raindown [PATH] [options]
+             raindown FILE --once [-o OUTPUT]
              raindown init [DIRECTORY]
 
-      Renders FILE to HTML, then re-renders it every time it is saved.
+      Watches PATH and writes back to its Markdown files as they're saved, like their tables of contents and tables.
+      PATH is a file, or a directory (default: current directory) whose projects with a .raindown folder are watched.
 
       Commands:
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
 
       Options:
-        -o, --output PATH   Write output to PATH instead of FILE.html beside FILE
-        --once              Render once without watching, printing to stdout unless -o is given
+        --once              Render FILE to HTML once, printing to stdout unless -o is given
+        -o, --output PATH   Write the HTML from --once or --stdin to PATH
         --stdin             Render Markdown from stdin once, without formatting FILE, which only needs
                             its extension (to allow bare directives) and can be unsaved
         --bare              Allow bare directives like :toc in Markdown files
@@ -71,9 +74,12 @@ module Raindown
 
     # The :path line would match help, version and init as the file, so they're checked first.
     def self.run(argv)
-      abort(USAGE) if argv.empty? || argv.intersect?(%w[-h --help])
+      abort(USAGE) if argv.intersect?(%w[-h --help])
       return puts(VERSION) if argv.intersect?(%w[-v --version])
       return init(argv[1]) if argv.first == 'init' && argv.size <= 2
+
+      # Without a path, like "raindown" or "raindown -x", the current directory is watched.
+      argv = ['.', *argv] if argv.empty? || argv.first.start_with?('-')
 
       super || abort("Unknown arguments: #{argv.join(' ')}\n\n#{USAGE}")
     rescue StandardError => e
@@ -104,6 +110,7 @@ module Raindown
 
       def render(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
+        abort('--once renders a file, not a directory') if File.directory?(path)
         Nodes.load(path)
 
         metadata = Pages.for(path)
@@ -117,11 +124,14 @@ module Raindown
                                       **Config.render_options(path)))
       end
 
+      # Watching only writes back to the files, so -o is for --once and --stdin, which render HTML.
       def watch(path, output = nil, bare: false, execute: false)
+        abort('-o only works with --once or --stdin, as watching writes back to the files') if output
         ensure_exists(path)
-        Nodes.load(path)
+        return Supervisor.new(directory: path, bare:, execute:).start if File.directory?(path)
 
-        Watcher.new(path:, output:, bare:, execute:).start
+        Nodes.load(path)
+        Watcher.new(path:, bare:, execute:).start
       end
 
       def write(output, html)

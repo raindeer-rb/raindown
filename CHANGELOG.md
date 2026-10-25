@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- `raindown DIRECTORY`, or `raindown` for the current directory, watches every project in it with a `.raindown` folder
+- Each project's nodes load in a process of their own, and reload when they change
+
+### Changed
+
+- Watching only writes back to files, without writing HTML, so `-o` is for `--once` and `--stdin`
+
 ## 0.4.0
 
 ### Added
