@@ -52,16 +52,32 @@ module TebakoBuild
   # Bundler can't set up inside a package yet: it chdirs into path and git gems, and chdir into the package fails
   # (tamatebako/tebako#734, fixed after 2.8.27). The gems are already installed, so put the path gem (raindown) on the
   # load path and let RubyGems load the rest.
-  ENTRY_POINT = <<~RUBY
-    #!/usr/bin/env ruby
-    # frozen_string_literal: true
-
-    $LOAD_PATH.unshift(File.expand_path('../raindown/lib', __dir__))
-
-    require 'raindown/cli'
-
-    Raindown::CLI.run(ARGV)
   RUBY
+  #
+  # Tebako unpacks each release's payload into ~/.tebako/payloads, named after the package, so the entry point removes
+  # earlier releases'. An older binary that runs again serves its payload from inside itself.
+  def entry_point
+    <<~RUBY
+      #!/usr/bin/env ruby
+      # frozen_string_literal: true
+
+      require 'fileutils'
+
+      begin
+        Dir.glob(File.join(Dir.home, '.tebako', 'payloads', 'raindown-*')).each do |payload|
+          FileUtils.rm_rf(payload) unless File.basename(payload) == #{payload_name.inspect}
+        end
+      rescue StandardError
+        nil # Removing old payloads is a nicety, never a reason to fail.
+      end
+
+      $LOAD_PATH.unshift(File.expand_path('../raindown/lib', __dir__))
+
+      require 'raindown/cli'
+
+      Raindown::CLI.run(ARGV)
+    RUBY
+  end
 
   # Keep the locked versions and platforms, but point at the staged gem and leave out development gems.
   def stage_bundle
@@ -82,9 +98,15 @@ module TebakoBuild
     end
   end
 
+  # Tebako caches a payload by the package's name, up to its last dot, so a version like 0.3.1 would be cached as
+  # "raindown-0.3", shared with 0.3.0 and warning on every run. Underscores keep each release apart.
+  def payload_name
+    "raindown-#{Raindown::VERSION.tr('.', '_')}-#{ENV.fetch('TEBAKO_PLATFORM', platform)}"
+  end
+
   # Tebako adds .exe to the output on Windows.
   def output
-    "pkg/raindown-#{Raindown::VERSION}-#{ENV.fetch('TEBAKO_PLATFORM', platform)}"
+    "pkg/#{payload_name}"
   end
 
   def platform
