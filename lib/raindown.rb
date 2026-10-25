@@ -35,9 +35,6 @@ module Raindown
     def self.list(**) = []
   end
 
-  # Headings with an id, which are the ones a table of contents links to.
-  HEADINGS = 'h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]'
-
   module_function
 
   # Directives show in bold and code is highlighted, unless the file's project changes them in .raindown/config.yml.

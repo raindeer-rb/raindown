@@ -22,6 +22,17 @@ module TebakoBuild
   GEM_DIR = "#{ROOT}/raindown".freeze
   GEM_FILES = ['bin/raindown', 'lib/', 'raindown.gemspec'].freeze
 
+  # Gems are installed in the package for Ruby's ABI version, which is 3.4.0 for every Ruby 3.4.
+  GEMS_DIR = "lib/ruby/gems/#{RUBY_VERSION.sub(/\.\d+\z/, '.0')}".freeze
+  # Precompiled native gems like commonmarker ship a build for each Ruby, of which the package only runs one.
+  OTHER_RUBIES = %w[3.1 3.2 3.3 3.4 3.5 4.0 4.1] - [RUBY_VERSION[/\A\d+\.\d+/]]
+  # Files in the package that are never loaded: about a fifth of the binary.
+  EXCLUDES = [
+    "#{GEMS_DIR}/cache/*.gem", # The gem archives, kept after the gems are installed.
+    *OTHER_RUBIES.map { "#{GEMS_DIR}/gems/*/lib/*/#{it}" },
+    *%w[ext spec test].map { "#{GEMS_DIR}/gems/*/#{it}" } # Native sources (compiled into lib) and tests.
+  ].freeze
+
   module_function
 
   def stage
@@ -102,5 +113,6 @@ task :tebako do
      '--tebako-version', TebakoBuild::RUNTIME_VERSION,
      '--mode', 'self-contained',
      '--quiet-notices',
+     *TebakoBuild::EXCLUDES.flat_map { ['--exclude', it] },
      '--output', TebakoBuild.output
 end

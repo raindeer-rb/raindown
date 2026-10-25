@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require 'cgi'
 require 'erb'
-require 'nokogiri'
 
 require_relative 'node'
 
@@ -9,6 +9,12 @@ module Raindown
   # The node behind toc: and :toc, a table of contents of the document's headings.
   # A project can replace it with its own TOC node in .raindown, like "class TOC < Raindown::TOC".
   class TOC < Node
+    # A heading with an id, in the HTML that Commonmarker and Raindown's components write, like <h2 id="setup">.
+    HEADING = %r{<h([1-6])\b[^>]*?\bid=(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>(.*?)</h\1\s*>}mi
+    # Comments and scripts can hold heading tags that aren't in the page.
+    IGNORED = %r{<!--.*?-->|<script\b.*?</script\s*>}mi
+    TAG = /<[^>]*>/
+
     def replace(document:, metadata: nil, bare: false)
       headings = headings(markdown: document, metadata:, bare:)
       return '' if headings.empty?
@@ -42,8 +48,8 @@ module Raindown
     def headings(markdown:, html: nil, metadata: nil, bare: false)
       html ||= Fragments.collect { Raindown.assembled(markdown:, metadata: metadata || NoMetadata, bare:) }
 
-      Nokogiri::HTML(html).css(HEADINGS).map do |heading|
-        { level: heading.name[1].to_i, text: heading.text.strip, id: heading['id'] }
+      html.gsub(IGNORED, '').scan(HEADING).map do |level, *ids, content|
+        { level: level.to_i, text: CGI.unescapeHTML(content.gsub(TAG, '')).strip, id: CGI.unescapeHTML(ids.compact.first) }
       end
     end
   end

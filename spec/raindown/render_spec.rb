@@ -7,7 +7,7 @@ require 'tmpdir'
 RSpec.describe Raindown do
   describe '.render' do
     def text(html)
-      CGI.unescapeHTML(Nokogiri::HTML(html).text)
+      CGI.unescapeHTML(html.gsub(/<[^>]*>/, ''))
     end
 
     context 'with front matter variables' do
