@@ -135,6 +135,8 @@ task :tebako do
      '--tebako-version', TebakoBuild::RUNTIME_VERSION,
      '--mode', 'self-contained',
      '--quiet-notices',
+     # DwarFS compresses the package about 15% smaller than the default, for a slower first run while it unpacks.
+     '--format', 'dwarfs',
      *TebakoBuild::EXCLUDES.flat_map { ['--exclude', it] },
      '--output', TebakoBuild.output
 end
