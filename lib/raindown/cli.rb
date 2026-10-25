@@ -55,6 +55,16 @@ module Raindown
       abort(USAGE) if argv.empty? || argv.intersect?(%w[-h --help])
 
       super || abort("Unknown arguments: #{argv.join(' ')}\n\n#{USAGE}")
+    rescue StandardError => e
+      report(e, path: argv.first)
+    end
+
+    # Shows an error in a file as one line, rather than a backtrace, unless RAINDOWN_DEBUG is set.
+    def self.report(error, path:)
+      raise error if ENV['RAINDOWN_DEBUG']
+
+      abort("raindown: #{path}: #{error.message}")
+    end
     end
 
     class << self

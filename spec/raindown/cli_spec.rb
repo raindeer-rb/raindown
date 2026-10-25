@@ -100,6 +100,25 @@ RSpec.describe Raindown::CLI do
         .to raise_error(SystemExit).and output(/File not found/).to_stderr
     end
 
+    it 'shows an error in the file as one line' do
+      File.write(path, "# Title\n\n<{ toc: }>\n")
+
+      expect { described_class.run([path, '--once']) }
+        .to raise_error(SystemExit).and output("raindown: #{path}: <{ toc: }> on line 3 needs <{ :toc }>\n").to_stderr
+    end
+
+    it 'shows where an error happened with RAINDOWN_DEBUG' do
+      File.write(path, "# Title\n\n<{ toc: }>\n")
+      stub_const('ENV', ENV.to_h.merge('RAINDOWN_DEBUG' => '1'))
+
+      expect { described_class.run([path, '--once']) }.to raise_error(Raindown::NodeBlocks::MissingEndTag)
+    end
+
+    it 'shows the version with -v or --version' do
+      [['-v'], ['--version']].each do |args|
+        expect { described_class.run(args) }.to output("#{Raindown::VERSION}\n").to_stdout
+      end
+    end
     it 'shows the usage with -h, --help or no arguments' do
       [['-h'], ['--help'], [], [path, '--help']].each do |args|
         expect { described_class.run(args) }.to raise_error(SystemExit).and output(/Usage: raindown FILE/).to_stderr

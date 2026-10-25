@@ -19,8 +19,10 @@ module Raindown
 
       $stdout.sync = true
 
-      rewrite
-      render
+      safely do
+        rewrite
+        render
+      end
       puts "Watching #{path} for changes (writing to #{output})..."
 
       listener.start
@@ -35,12 +37,24 @@ module Raindown
 
       Listen.to(directory) do |modified, added, _removed|
         next unless (modified + added).any? { |f| File.basename(f) == filename }
-        # Formatting saves the file again, and that change triggers the render.
-        next if rewrite
 
-        render
-        puts "Re-rendered #{path} -> #{output}"
+        safely do
+          # Formatting saves the file again, and that change triggers the render.
+          next if rewrite
+
+          render
+          puts "Re-rendered #{path} -> #{output}"
+        end
       end
+    end
+
+    # An error in the file is shown rather than stopping the watcher, so it can be fixed and saved again.
+    def safely
+      yield
+    rescue StandardError => e
+      raise if ENV['RAINDOWN_DEBUG']
+
+      warn "raindown: #{path}: #{e.message}"
     end
 
     # The files' metadata is loaded again each time, so new and renamed files are listed.

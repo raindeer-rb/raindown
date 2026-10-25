@@ -54,6 +54,16 @@ RSpec.describe Raindown::Watcher do
       expect(File.read(output_path)).to include('Added')
     end
 
+    it 'shows an error in the file and keeps watching' do
+      File.write(path, "# Title\n\n<{ toc: }>\n")
+
+      expect { watcher.start }.to output(/needs <\{ :toc \}>/).to_stderr.and output(/Watching/).to_stdout
+
+      File.write(path, "# Fixed\n")
+      expect { on_change.first.call([path], [], []) }.to output(/Re-rendered/).to_stdout
+      expect(File.read(output_path)).to include('Fixed')
+    end
+
     it 'renders bare directives when asked' do
       File.write(path, "# Title\n\ntoc:\n")
       bare_watcher = described_class.new(path:, output: output_path, bare: true)
