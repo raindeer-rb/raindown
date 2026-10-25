@@ -119,6 +119,32 @@ RSpec.describe Raindown::CLI do
         expect { described_class.run(args) }.to output("#{Raindown::VERSION}\n").to_stdout
       end
     end
+
+    describe 'init' do
+      let(:config) { File.join(@dir, '.raindown', 'config.yml') }
+
+      it 'creates a .raindown folder with a config file in the current directory' do
+        Dir.chdir(@dir) { expect { described_class.run(['init']) }.to output(/Created .*config\.yml/).to_stdout }
+
+        expect(File.read(config)).to include('# hide_directives: true')
+        expect(Raindown::Config.for(path)).to eq(Raindown::Config::DEFAULTS)
+      end
+
+      it 'creates it in the given directory' do
+        expect { described_class.run(['init', @dir]) }.to output(/Created/).to_stdout
+
+        expect(File).to exist(config)
+      end
+
+      it 'keeps an existing config file' do
+        FileUtils.mkdir_p(File.dirname(config))
+        File.write(config, "hide_directives: true\n")
+
+        expect { described_class.run(['init', @dir]) }.to output(/already exists/).to_stdout
+        expect(File.read(config)).to eq("hide_directives: true\n")
+      end
+    end
+
     it 'shows the usage with -h, --help or no arguments' do
       [['-h'], ['--help'], [], [path, '--help']].each do |args|
         expect { described_class.run(args) }.to raise_error(SystemExit).and output(/Usage: raindown FILE/).to_stderr
