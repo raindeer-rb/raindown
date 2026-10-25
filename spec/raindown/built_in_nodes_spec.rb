@@ -2,7 +2,6 @@
 
 require 'raindown'
 require 'raindown/node_injector'
-require 'ostruct'
 
 RSpec.describe 'Raindown built-in nodes' do
   def rewrite(content, path: 'notes.md')
@@ -49,7 +48,10 @@ RSpec.describe 'Raindown built-in nodes' do
   describe Raindown::Files do
     let(:metadata) do
       Class.new do
-        def list(folder:) = [{ title: "#{folder} 1", path: "/#{folder}/1" }, { path: "/#{folder}/2" }].map { OpenStruct.new(it) }
+        def list(folder:)
+          page = Struct.new(:title, :path, keyword_init: true)
+          [{ title: "#{folder} 1", path: "/#{folder}/1" }, { path: "/#{folder}/2" }].map { page.new(**it) }
+        end
       end.new
     end
 
