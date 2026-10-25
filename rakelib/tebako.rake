@@ -26,11 +26,12 @@ module TebakoBuild
   GEMS_DIR = "lib/ruby/gems/#{RUBY_VERSION.sub(/\.\d+\z/, '.0')}".freeze
   # Precompiled native gems like commonmarker ship a build for each Ruby, of which the package only runs one.
   OTHER_RUBIES = %w[3.1 3.2 3.3 3.4 3.5 4.0 4.1] - [RUBY_VERSION[/\A\d+\.\d+/]]
-  # Files in the package that are never loaded: about a fifth of the binary.
+  # Files in the package that are never loaded.
   EXCLUDES = [
     "#{GEMS_DIR}/cache/*.gem", # The gem archives, kept after the gems are installed.
     *OTHER_RUBIES.map { "#{GEMS_DIR}/gems/*/lib/*/#{it}" },
-    *%w[ext spec test].map { "#{GEMS_DIR}/gems/*/#{it}" } # Native sources (compiled into lib) and tests.
+    # Native sources and headers (compiled into lib), type signatures and tests.
+    *%w[ext src include sig rbi spec test].map { "#{GEMS_DIR}/gems/*/#{it}" }
   ].freeze
 
   module_function
@@ -44,7 +45,7 @@ module TebakoBuild
     end
 
     FileUtils.mkdir_p("#{ROOT}/bin")
-    File.write("#{ROOT}/bin/raindown", ENTRY_POINT)
+    File.write("#{ROOT}/bin/raindown", entry_point)
 
     stage_bundle
   end
@@ -52,7 +53,6 @@ module TebakoBuild
   # Bundler can't set up inside a package yet: it chdirs into path and git gems, and chdir into the package fails
   # (tamatebako/tebako#734, fixed after 2.8.27). The gems are already installed, so put the path gem (raindown) on the
   # load path and let RubyGems load the rest.
-  RUBY
   #
   # Tebako unpacks each release's payload into ~/.tebako/payloads, named after the package, so the entry point removes
   # earlier releases'. An older binary that runs again serves its payload from inside itself.
