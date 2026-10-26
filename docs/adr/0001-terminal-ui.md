@@ -53,11 +53,11 @@ The VS Code extension could call the same actions later, for example as an Execu
 
 `raindown tui [PATH]` starts it. The layers are:
 
-| Layer | Files | Knows about the terminal? |
-| --- | --- | --- |
-| `Navigator`: focus, events, and the effect of each one. Its `Commands` run actions and set the status. `FileTree` and `Outline` produce each pane's rows. `Pane` holds a cursor and scroll position | `lib/raindown/tui/navigator.rb`, `commands.rb`, `file_tree.rb`, `outline.rb`, `pane.rb`, `row.rb` | No |
-| `Layout`: the screen as lines of styled segments, each line exactly the terminal's width, where a segment with an event is clickable | `lib/raindown/tui/layout.rb` | No |
-| `Screen`, `Input`, `Styles`: paint the segments with curses, and turn keys and clicks into events | `lib/raindown/tui/screen.rb`, `input.rb`, `styles.rb` | Yes |
+| Layer                                                                                                                                                                                               | Files                                                                                             | Knows about the terminal? |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------- |
+| `Navigator`: focus, events, and the effect of each one. Its `Commands` run actions and set the status. `FileTree` and `Outline` produce each pane's rows. `Pane` holds a cursor and scroll position | `lib/raindown/tui/navigator.rb`, `commands.rb`, `file_tree.rb`, `outline.rb`, `pane.rb`, `row.rb` | No                        |
+| `Layout`: the screen as lines of styled segments, each line exactly the terminal's width, where a segment with an event is clickable                                                                | `lib/raindown/tui/layout.rb`                                                                      | No                        |
+| `Screen`, `Input`, `Styles`: paint the segments with curses, and turn keys and clicks into events                                                                                                   | `lib/raindown/tui/screen.rb`, `input.rb`, `styles.rb`                                             | Yes                       |
 
 `Navigator#handle(event)` returns what the screen does next:
 - `nil`: draw again.
@@ -73,15 +73,15 @@ Everything above the screen layer has specs that need no terminal. The file is r
 
 Measured on an Intel Mac (x86_64-darwin) with Ruby 4.0.3, in October 2026.
 
-| | curses | ratatui_ruby | Charm (bubbletea, lipgloss, bubblezone) | tty-cursor, tty-reader, tty-screen |
-| --- | --- | --- | --- | --- |
-| Native code | C, against the system's ncurses | Rust | Go, as C archives | None |
-| Installing on this Mac | Built in seconds | Needs Rust: no build for x86_64-darwin | Precompiled | Pure Ruby |
-| Precompiled for | Nothing: it compiles everywhere | arm64-darwin, x86_64-linux, Windows | Intel and ARM macOS, Linux (gnu and musl), 32-bit Linux. No Windows | Not needed |
-| Native size | Tens of KB | 1.9 MB on macOS, 24 MB unstripped on Linux | About 10 MB: three bundles, each with a Go runtime | None |
-| Load time | 0.05 s | Not measured | 0.07 s for all three | Not measured |
-| Gives us | Keys, mouse, resize events, colours, minimal redraws | The same, plus layout and widgets (list, table, tabs, chart) | The same, plus the Elm architecture, styling, a tree renderer and click zones | Cursor and clear sequences, and key decoding. No mouse |
-| Maturity | ncurses is decades old, and the gem is maintained by the Ruby core team (1.7.0, August 2026) | 1.5.x, active, small community | 0.1.x since December 2025, one maintainer, last release March 2026 | No releases since 2020 (tty-screen 2023) |
+|                        | curses                                                                                       | ratatui_ruby                                                 | Charm (bubbletea, lipgloss, bubblezone)                                       | tty-cursor, tty-reader, tty-screen                     |
+| ---------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Native code            | C, against the system's ncurses                                                              | Rust                                                         | Go, as C archives                                                             | None                                                   |
+| Installing on this Mac | Built in seconds                                                                             | Needs Rust: no build for x86_64-darwin                       | Precompiled                                                                   | Pure Ruby                                              |
+| Precompiled for        | Nothing: it compiles everywhere                                                              | arm64-darwin, x86_64-linux, Windows                          | Intel and ARM macOS, Linux (gnu and musl), 32-bit Linux. No Windows           | Not needed                                             |
+| Native size            | Tens of KB                                                                                   | 1.9 MB on macOS, 24 MB unstripped on Linux                   | About 10 MB: three bundles, each with a Go runtime                            | None                                                   |
+| Load time              | 0.05 s                                                                                       | Not measured                                                 | 0.07 s for all three                                                          | Not measured                                           |
+| Gives us               | Keys, mouse, resize events, colours, minimal redraws                                         | The same, plus layout and widgets (list, table, tabs, chart) | The same, plus the Elm architecture, styling, a tree renderer and click zones | Cursor and clear sequences, and key decoding. No mouse |
+| Maturity               | ncurses is decades old, and the gem is maintained by the Ruby core team (1.7.0, August 2026) | 1.5.x, active, small community                               | 0.1.x since December 2025, one maintainer, last release March 2026            | No releases since 2020 (tty-screen 2023)               |
 
 We chose curses for these reasons:
 
