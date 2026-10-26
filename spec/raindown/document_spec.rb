@@ -73,6 +73,7 @@ RSpec.describe Raindown::Document do
          { name: 'toc', args: '', line: 6, end_line: 6, output: nil, writes: false }]
       )
       expect(directives(markdown)).to be_empty
+      expect(directives("---\nraindown: true\n---\n\n:toc\n").length).to eq(1)
     end
 
     it "reads an endpoint, whose output is its response and the date it was fetched, not the author's snippet" do

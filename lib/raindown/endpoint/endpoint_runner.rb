@@ -26,7 +26,7 @@ module Raindown
     FETCHED = /\A {0,3}<!-- raindown:fetched [^\n]*? -->[ \t]*$/
 
     def self.rewrite(content:, path: nil, bare: false, execute: false, **)
-      new(content:, bare: BareDirectives.enabled?(path:, bare:), execute:).rewrite
+      new(content:, bare: BareDirectives.enabled?(path:, content:, bare:), execute:).rewrite
     end
 
     def initialize(content:, bare: false, execute: false, only: nil)

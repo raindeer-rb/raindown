@@ -5,9 +5,9 @@ require 'raindown/front_matter'
 RSpec.describe Raindown::FrontMatter do
   describe '.parse' do
     it 'splits the metadata from the Markdown' do
-      metadata, markdown = described_class.parse("---\ntitle: Notes\nbare: true\n---\n\n# Notes\n")
+      metadata, markdown = described_class.parse("---\ntitle: Notes\nraindown: true\n---\n\n# Notes\n")
 
-      expect(metadata).to eq(title: 'Notes', bare: true)
+      expect(metadata).to eq(title: 'Notes', raindown: true)
       expect(markdown).to eq("\n# Notes\n")
     end
 

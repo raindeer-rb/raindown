@@ -95,7 +95,19 @@ It has two paragraphs.
 
 Directives in prose or code are left as text.
 
-Markdown files can opt in too, with the `--bare` flag:
+Markdown files can opt in too, with `raindown: true` in their front matter:
+
+```md
+---
+raindown: true
+---
+
+# Notes
+
+:toc
+```
+
+Or with the `--bare` flag:
 
 ```sh
 raindown README.md --bare

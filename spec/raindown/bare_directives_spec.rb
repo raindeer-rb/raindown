@@ -114,4 +114,37 @@ RSpec.describe Raindown::BareDirectives do
       expect([described_class.file?('notes.md'), described_class.file?(nil)]).to all(be(false))
     end
   end
+
+  describe '.enabled?' do
+    it 'is true for Raindown files, raindown: true front matter and --bare' do
+      expect(described_class.enabled?(path: 'notes.rd')).to be(true)
+      expect(described_class.enabled?(path: 'notes.md', content: "---\nraindown: true\n---\n")).to be(true)
+      expect(described_class.enabled?(path: 'notes.md', bare: true)).to be(true)
+    end
+
+    it 'is false for other Markdown files' do
+      expect(described_class.enabled?(path: 'notes.md', content: "# Notes\n")).to be(false)
+    end
+  end
+
+  describe '.front_matter?' do
+    it 'is true when the front matter sets raindown: true' do
+      expect(described_class.front_matter?("---\ntitle: Notes\ndate: 2026-10-13\nraindown: true\n---\n\n# Notes\n")).to be(true)
+    end
+
+    {
+      'raindown: false' => "---\nraindown: false\n---\n",
+      'a string' => "---\nraindown: 'yes'\n---\n",
+      'no raindown key' => "---\ntitle: Notes\n---\n",
+      'a nested raindown key' => "---\nsite:\n  raindown: true\n---\n",
+      'raindown: true outside front matter' => "# Notes\n\nraindown: true\n",
+      'front matter that is not at the start' => "# Notes\n\n---\nraindown: true\n---\n",
+      'unclosed front matter' => "---\nraindown: true\n",
+      'front matter that is not YAML' => "---\nraindown: [\n---\n"
+    }.each do |description, content|
+      it "is false for #{description}" do
+        expect(described_class.front_matter?(content)).to be(false)
+      end
+    end
+  end
 end

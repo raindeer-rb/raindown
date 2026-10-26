@@ -47,6 +47,8 @@ module Raindown
   # Directives like "toc:" export to HTML as bold or comments depending on hide_directives config.
   # Code blocks are highlighted, unless highlight_code is false for a site that highlights code in the browser.
   def render(markdown:, metadata: NoMetadata, bare: false, hide_directives: false, highlight_code: true)
+    bare ||= BareDirectives.front_matter?(markdown)
+
     highlighting(highlight_code) do
       Fragments.collect do
         # Components' HTML goes back in, then their headings get unique ids, before nodes like the TOC see it.

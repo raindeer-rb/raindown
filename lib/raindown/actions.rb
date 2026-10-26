@@ -30,7 +30,7 @@ module Raindown
       raise NotAnEndpoint, "#{directive.name} on line #{directive.line} isn't an endpoint" unless directive.endpoint?
 
       content = File.read(path, encoding: Encoding::UTF_8)
-      rewritten = EndpointRunner.new(content:, bare: BareDirectives.file?(path), only: directive.line - 1).rewrite
+      rewritten = EndpointRunner.new(content:, bare: BareDirectives.enabled?(path:, content:), only: directive.line - 1).rewrite
       return false if rewritten == content
 
       File.write(path, rewritten)

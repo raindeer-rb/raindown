@@ -1,6 +1,6 @@
 # Raindown Example
 
-Run `raindown examples/raindown.rd` and edit this file to see `examples/raindown.html` update on save.
+Run `raindown examples/raindown.rd` and edit this file to see Raindown write back to it on save, or add `--html examples/raindown.html` to render it.
 
 This is a Raindown file (`.rd`), so directives can be written bare on their own line.
 

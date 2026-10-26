@@ -119,10 +119,9 @@ RSpec.describe Raindown do
       expect(described_class.render(markdown: "# Title\n\n:toc\n")).not_to include('Table of contents')
     end
 
-    it 'ignores bare: true front matter' do
-      html = described_class.render(markdown: "---\nbare: true\n---\n\n# Title\n\n:toc\n")
-
-      expect(html).not_to include('Table of contents')
+    it 'renders bare directives in Markdown with raindown: true front matter' do
+      expect(described_class.render(markdown: "---\nraindown: true\n---\n\n# Title\n\n:toc\n")).to include('Table of contents')
+      expect(described_class.render(markdown: "---\nraindown: false\n---\n\n# Title\n\n:toc\n")).not_to include('Table of contents')
     end
 
     it 'renders an endpoint as its code blocks, between its directive and end tag in bold' do

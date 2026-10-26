@@ -5,7 +5,8 @@ require_relative 'front_matter'
 
 module Raindown
   # Raindown files (.rd/.raindown) can write a directive like <{ if: draft }> as a bare if: draft on its own line.
-  # Markdown files opt in with the --bare flag. Nodes like toc: and files: are handled by NodeBlocks, before the rest.
+  # Markdown files opt in with "raindown: true" in their front matter, or with the --bare flag.
+  # Nodes like toc: and files: are handled by NodeBlocks, before the rest.
   #
   # Bare directives have no end tag. A bare block directive closes itself after the content it applies to,
   # so where a block needs to wrap more than that, write it with delimiters and an end tag instead:
@@ -24,14 +25,24 @@ module Raindown
 
     module_function
 
-    def enabled?(path: nil, bare: false)
-      bare || file?(path)
+    def enabled?(path: nil, content: nil, bare: false)
+      bare || file?(path) || front_matter?(content)
     end
 
     def file?(path)
       return false if path.nil?
 
       EXTENSIONS.include?(File.extname(path).downcase)
+    end
+
+    # Whether the front matter has "raindown: true". Front matter that isn't valid YAML fails when the file renders,
+    # so here it only means no.
+    def front_matter?(content)
+      return false unless content&.start_with?('---')
+
+      FrontMatter.parse(content).first[:raindown] == true
+    rescue Psych::Exception
+      false
     end
 
     # Wrap each bare directive in Antlers delimiters and close its block, leaving code and front matter as-is.
