@@ -22,16 +22,13 @@ module Raindown
         KEYS[key]
       end
 
-      # A scroll of the wheel moves the cursor, and a click sends the event of what's under it.
-      def mouse_event(event, zones)
-        wheel.find { |button, _| event.bstate.anybits?(button) }&.last || click(zones, column: event.x, row: event.y)
-      end
+      # The mouse buttons that click, which are the left button's. Scrolling does nothing, and since older ncurses,
+      # like macOS's, has no button for scrolling down, it can't be mistaken for a click.
+      CLICKS = Curses::BUTTON1_PRESSED | Curses::BUTTON1_CLICKED
 
-      # Older ncurses has no fifth button, which is the wheel scrolling down.
-      def wheel
-        { Curses::BUTTON4_PRESSED => :up }.tap do |buttons|
-          buttons[Curses::BUTTON5_PRESSED] = :down if Curses.const_defined?(:BUTTON5_PRESSED)
-        end
+      # A click sends the event of what's under it.
+      def mouse_event(event, zones)
+        click(zones, column: event.x, row: event.y) if event.bstate.anybits?(CLICKS)
       end
 
       # Where each of a Layout's segments with an event is on the screen, as [row, columns, event].

@@ -34,10 +34,13 @@ RSpec.describe Raindown::TUI::Input do
     let(:mouse) { Struct.new(:bstate, :x, :y) }
     let(:zones) { [[0, 0...5, :execute]] }
 
-    it 'moves the cursor when the wheel scrolls up, and otherwise clicks' do
-      expect(described_class.mouse_event(mouse.new(Curses::BUTTON4_PRESSED, 9, 9), zones)).to eq(:up)
+    it 'clicks with the left button, and does nothing when scrolling' do
       expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 0), zones)).to eq(:execute)
+      expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_CLICKED, 2, 0), zones)).to eq(:execute)
       expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 1), zones)).to be_nil
+      expect(described_class.mouse_event(mouse.new(Curses::BUTTON4_PRESSED, 2, 0), zones)).to be_nil
+      # Older ncurses reports scrolling down with no button of its own.
+      expect(described_class.mouse_event(mouse.new(0, 2, 0), zones)).to be_nil
     end
   end
 end
