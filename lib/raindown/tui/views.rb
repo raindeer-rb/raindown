@@ -42,7 +42,7 @@ module Raindown
         @panes[:files].cursor = 0
         dashboard.load
         count = dashboard.charts.length
-        found = "#{count} #{count == 1 ? 'chart' : 'charts'} in #{File.basename(root)}"
+        found = "#{count} #{count == 1 ? 'chart' : 'charts'} in #{File.basename(project || root)}"
         dashboard.errors.empty? ? info(found) : error("#{found}, but couldn't read #{dashboard.errors.join(', ')}")
       end
 
@@ -54,6 +54,16 @@ module Raindown
           show(path)
           [:run, Actions.edit_command(path, line:)]
         end
+      end
+
+      def open_file(path)
+        path = File.expand_path(path)
+        show(path)
+        @files.reveal(path)
+        @view = :browser
+        @focus = :outline
+        @panes[:files].cursor = rows(:files).index { it.target == path } || 0
+        info("Opened #{relative(path)}")
       end
 
       # Opens the file in the outline, on the directive at the line.

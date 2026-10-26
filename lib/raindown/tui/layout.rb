@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'text'
+require_relative 'title'
 
 module Raindown
   module TUI
@@ -16,6 +17,7 @@ module Raindown
     # With the Dashboard chosen in the files, a DashboardPane of the project's charts is in place of the outline.
     class Layout
       include Text
+      include Title
 
       Segment = Data.define(:text, :style, :event)
 
@@ -23,11 +25,9 @@ module Raindown
                  ['w', 'Write back', :write_back], ['r', 'Reload', :reload], ['q', 'Quit', :quit]].freeze
       DASHBOARD_BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
                            ['q', 'Quit', :quit]].freeze
+      PROJECTS_BUTTON = ['p', 'Projects', :projects].freeze
       FILES_WIDTH = (16..32)
       INDENT = Text::INDENT
-      # Terminals draw the rain cloud one column wide or two, so the title line stops a column short of the edge,
-      # and doesn't wrap when it's drawn wider than it's measured.
-      NAME = '🌧️ Raindown'
       # The title, status and button lines.
       CHROME_HEIGHT = 3
 
@@ -42,7 +42,11 @@ module Raindown
       def lines
         return [status].first(height) if height < CHROME_HEIGHT + 1
 
-        [title, *body, status, button_bar]
+        lines = [title, *body, status, button_bar]
+        return lines unless navigator.menu
+
+        require_relative 'menu_overlay'
+        MenuOverlay.new(navigator, width:, column: display_width(name), from_home: method(:from_home)).apply(lines)
       end
 
       # A third of the width, within FILES_WIDTH, and never more than half of a narrow screen.
@@ -57,24 +61,6 @@ module Raindown
       def dashboard? = navigator.view == :dashboard
 
       def body_height = height - CHROME_HEIGHT
-
-      def title
-        path = if dashboard? then 'Dashboard'
-               elsif navigator.path then navigator.relative(navigator.path)
-               else 'No Markdown files'
-               end
-        [segment(" #{NAME}  #{location} › #{path}", :title, width: width - 1)]
-      end
-
-      # The project's folder, from the home folder when it's in it, like ~/dev/raindown.
-      def location = from_home(navigator.root)
-
-      def from_home(path)
-        home = Dir.home
-        path == home || path.start_with?(File.join(home, '')) ? path.sub(home, '~') : path
-      rescue ArgumentError
-        path
-      end
 
       def panes
         pane_height = body_height
@@ -130,12 +116,19 @@ module Raindown
         [segment(" #{message}", kind)]
       end
 
+      # The dashboard's buttons have room for the project menu's, when there's more than one project.
+      def buttons
+        return BUTTONS unless dashboard?
+
+        navigator.projects? ? DASHBOARD_BUTTONS.dup.insert(3, PROJECTS_BUTTON) : DASHBOARD_BUTTONS
+      end
+
       # As many buttons as fit, each clicked by its key or its label.
       def button_bar
         segments = []
         used = 0
 
-        (dashboard? ? DASHBOARD_BUTTONS : BUTTONS).each do |key, label, event|
+        buttons.each do |key, label, event|
           pair = [Segment.new(text: " #{key} ", style: :key, event:), Segment.new(text: "#{label} ", style: :bar, event:)]
           pair_width = display_width(pair.map(&:text).join)
           break if used + pair_width > width

@@ -261,4 +261,69 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(File.read(File.join(@root, 'stats.md'))).to include('▁▅█')
     end
   end
+
+  describe 'project menu' do
+    subject(:navigator) { described_class.new(root: @root) }
+
+    before do
+      write('notes.md', "<{ chart: '1 2 3' }>\n<{ :chart }>\n")
+      write('guides/setup.md', "<{ chart: '3 2 1' }>\n<{ :chart }>\n")
+      FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
+    end
+
+    it 'lists every project, and narrows the files and dashboard to the one chosen' do
+      navigator.handle(:projects)
+      expect([navigator.menu, navigator.menu_items]).to eq([0, [nil, @root, File.join(@root, 'guides')]])
+
+      2.times { navigator.handle(:down) }
+      navigator.handle(:enter)
+
+      expect([navigator.menu, navigator.project, navigator.view]).to eq([nil, File.join(@root, 'guides'), :dashboard])
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', 'setup.md'])
+      expect(navigator.dashboard.charts.map { File.basename(it.path) }).to eq(['setup.md'])
+      expect(navigator.status).to eq([:info, '1 chart in guides'])
+    end
+
+    it "shows a project's own files, without the projects inside it, and every project's again with All projects" do
+      navigator.handle(:projects)
+      navigator.handle([:select, :menu, 1])
+      navigator.handle(:enter)
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', 'notes.md'])
+
+      navigator.handle(:projects)
+      expect(navigator.menu).to eq(1)
+      navigator.handle([:select, :menu, 0])
+      navigator.handle(:enter)
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▸ 🌧 guides/', 'notes.md'])
+      expect(navigator.dashboard.charts.length).to eq(2)
+    end
+
+    it 'stays open until Enter, as clicks move its cursor, and other events do nothing' do
+      navigator.handle(:projects)
+      [[:select, :menu, 2], [:select, :files, 1], [:press, :dashboard, 0, :enter], nil, :tick, :tab, :edit].each do |event|
+        navigator.handle(event)
+      end
+      expect([navigator.menu, navigator.project, navigator.focus]).to eq([2, nil, :files])
+
+      navigator.handle(:enter)
+      expect([navigator.menu, navigator.project]).to eq([nil, File.join(@root, 'guides')])
+    end
+
+    it 'closes with Esc or p, without choosing' do
+      %i[escape projects].each do |event|
+        navigator.handle(:projects)
+        navigator.handle(:down)
+        navigator.handle(event)
+        expect([navigator.menu, navigator.project]).to eq([nil, nil])
+      end
+    end
+
+    it "doesn't open with one project" do
+      FileUtils.rm_rf(File.join(@root, 'guides', '.raindown'))
+      navigator = described_class.new(root: @root)
+
+      navigator.handle(:projects)
+      expect([navigator.menu, navigator.status]).to eq([nil, [:info, "There's one project here"]])
+    end
+  end
 end

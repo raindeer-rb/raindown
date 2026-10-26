@@ -8,11 +8,14 @@ module Raindown
     # The files pane: the Dashboard, then a project's Markdown files as a tree, with folders before files,
     # including the files of the projects inside it, whose folders are marked with Raindown's cloud.
     # Folders start folded, and open with Enter, or when a file in them opens.
+    # A scope narrows it to one project's own files, from the project's folder, like when it's chosen in the header.
     class FileTree
       # A chart, which every terminal draws two columns wide.
       DASHBOARD = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: :dashboard)
 
       attr_reader :root
+      # The project the files are narrowed to, or nil for all of them.
+      attr_accessor :scope
 
       def initialize(root:)
         @root = root
@@ -29,9 +32,12 @@ module Raindown
         @projects = Projects.roots(root).to_set
       end
 
+      # The folder the tree starts from: the scope's, or the root's.
+      def base = scope || root
+
       def rows
         tree = {}
-        @files.each { |path| relative(path).split('/').reduce(tree) { |node, part| node[part] ||= {} } }
+        files.each { |path| relative(path).split('/').reduce(tree) { |node, part| node[part] ||= {} } }
         [DASHBOARD, *tree_rows(tree, '', 0)]
       end
 
@@ -49,21 +55,32 @@ module Raindown
       end
 
       def relative(path)
-        path.delete_prefix(File.join(root, ''))
+        path.delete_prefix(File.join(base, ''))
       end
 
       private
+
+      # A scope's own files, without those of the projects inside it, which are projects of their own.
+      def files
+        return @files unless scope
+
+        @files.select { |path| owner(path) == scope }
+      end
+
+      def owner(path)
+        [root, *@projects].select { path.start_with?(File.join(it, '')) }.max_by(&:length)
+      end
 
       def tree_rows(tree, prefix, depth)
         folders, files = tree.partition { |_name, children| children.any? }
 
         folders.sort.flat_map { |name, children| folder_rows(name, children, prefix, depth) } +
-          files.sort.map { |name, _| Row.new(text: name, depth:, kind: :file, target: File.join(root, prefix, name)) }
+          files.sort.map { |name, _| Row.new(text: name, depth:, kind: :file, target: File.join(base, prefix, name)) }
       end
 
       # A folder, and the tree inside it unless it's folded.
       def folder_rows(name, children, prefix, depth)
-        folder = File.join(root, prefix, name)
+        folder = File.join(base, prefix, name)
         folded = !@expanded.include?(folder)
         project = @projects.include?(folder)
         row = Row.new(text: "#{folded ? '▸' : '▾'} #{"#{PROJECT} " if project}#{name}/", depth:,

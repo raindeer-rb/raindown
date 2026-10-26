@@ -16,7 +16,8 @@ Minor features that don't break backwards compatibility are released as patches.
 
 - `raindown tui` starts with its folders folded
 - `raindown tui` shows the projects inside its folder too, each with its own nodes in a process of its own, like watching.
-  They're marked 🌧 in the files, and the Dashboard shows each project's charts under its path
+  They're marked 🌧 in the files, and the Dashboard shows each project's charts under its path.
+  The header's path, or `p`, opens a list of the projects, which narrows the files and the Dashboard to one
 - `raindown tui` expands a directive to everything inside it, so an endpoint shows its request as well as its response
 - `raindown tui` has a blue title, and selects in a lighter blue
 

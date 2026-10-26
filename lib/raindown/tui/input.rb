@@ -11,7 +11,8 @@ module Raindown
         Curses::KEY_UP => :up, 'k' => :up, Curses::KEY_DOWN => :down, 'j' => :down,
         Curses::KEY_LEFT => :left, 'h' => :left, Curses::KEY_RIGHT => :right, 'l' => :right,
         "\t" => :tab, Curses::KEY_BTAB => :tab, "\r" => :enter, "\n" => :enter, Curses::KEY_ENTER => :enter,
-        ' ' => :toggle, 'x' => :execute, 'e' => :edit, 'w' => :write_back, 'r' => :reload, 'd' => :dashboard, 'q' => :quit
+        ' ' => :toggle, 'x' => :execute, 'e' => :edit, 'w' => :write_back, 'r' => :reload, 'd' => :dashboard,
+        'p' => :projects, "\e" => :escape, 'q' => :quit
       }.freeze
 
       module_function

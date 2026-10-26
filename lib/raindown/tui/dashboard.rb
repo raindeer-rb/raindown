@@ -12,7 +12,7 @@ module Raindown
       REDRAW = 2
       MOVES = %i[up down left right].freeze
 
-      attr_reader :root, :errors, :cursor
+      attr_reader :root, :errors, :cursor, :project
       # The cards' indexes in each row, which the Layout sets as it draws them, so up and down move a row.
       attr_writer :rows
 
@@ -28,18 +28,27 @@ module Raindown
       # Finds the charts again, like when a file is saved or added.
       def load
         draw(find: true)
-        @cursor = @cursor.clamp(0, [@cards.length - 1, 0].max)
+        @cursor = @cursor.clamp(0, [charts.length - 1, 0].max)
       end
 
-      # The charts, as each project's Worker drew them.
-      def charts = @cards
+      # The charts, as each project's Worker drew them, of the project they're narrowed to, if any.
+      def charts
+        project ? @cards.select { it.project == project } : @cards
+      end
+
+      # Narrows the charts to a project's, or with nil, shows every project's.
+      def project=(project)
+        @project = project
+        @cursor = 0
+        @offset = 0
+      end
 
       def cards
         draw if Process.clock_gettime(Process::CLOCK_MONOTONIC) - @drawn_at >= REDRAW
-        @cards
+        charts
       end
 
-      def selected = @cards[@cursor]
+      def selected = charts[@cursor]
 
       def first_in_row?
         @rows.empty? || @rows.any? { it.first == @cursor }
@@ -95,7 +104,7 @@ module Raindown
       end
 
       def select(index)
-        @cursor = index.clamp(0, [@cards.length - 1, 0].max)
+        @cursor = index.clamp(0, [charts.length - 1, 0].max)
         nil
       end
 

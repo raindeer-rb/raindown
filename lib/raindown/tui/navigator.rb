@@ -4,6 +4,7 @@ require_relative 'file_tree'
 require_relative 'commands'
 require_relative 'outline'
 require_relative 'pane'
+require_relative 'project_menu'
 require_relative 'views'
 require_relative 'workers'
 
@@ -19,6 +20,7 @@ module Raindown
     class Navigator
       include Commands
       include Views
+      include ProjectMenu
 
       # Keys of the events that move the cursor or the focus, and those that act on what's selected.
       MOVES = { up: -1, down: 1 }.freeze
@@ -39,9 +41,14 @@ module Raindown
         path ? open_file(path) : open_dashboard
       end
 
+      # An event nothing has, like a mouse button's release, does nothing.
       def handle(event)
+        return if event.nil?
+
         name, = event
         return :quit if name == :quit
+        return menu_event(event) if menu
+        return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
         return dashboard_effect(dashboard.handle(event)) if dashboard_event?(event)
 
@@ -57,6 +64,9 @@ module Raindown
       def root = @files.root
       def path = @outline&.path
       def relative(path) = @files.relative(path)
+
+      # The folder the files are shown from: the chosen project's, or the root's.
+      def base = @files.base
 
       def rows(pane) = @panes[pane].rows
       def cursor(pane) = @panes[pane].cursor
@@ -131,16 +141,6 @@ module Raindown
 
       def editable?(row)
         row&.kind == :body || (row&.kind == :directive && !row.target.body)
-      end
-
-      def open_file(path)
-        path = File.expand_path(path)
-        show(path)
-        @files.reveal(path)
-        @view = :browser
-        @focus = :outline
-        @panes[:files].cursor = rows(:files).index { it.target == path } || 0
-        info("Opened #{relative(path)}")
       end
     end
   end

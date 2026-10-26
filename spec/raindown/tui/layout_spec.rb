@@ -26,6 +26,16 @@ RSpec.describe Raindown::TUI::Layout do
   def text(lines) = lines.map { |segments| segments.map(&:text).join }
   def width(line) = Unicode::DisplayWidth.of(line)
 
+  # A line's text in the columns from a column, which can differ from its characters, like the title's emoji.
+  def columns(line, from:, count:)
+    column = 0
+    line.map(&:text).join.each_char.select do |char|
+      inside = (from...(from + count)).cover?(column)
+      column += width(char)
+      inside
+    end.join
+  end
+
   it 'lays out the title, the files beside the outline, the status and the buttons, each line the full width' do
     lines = described_class.new(navigator, width: 60, height: 7).lines
 
@@ -140,6 +150,32 @@ RSpec.describe Raindown::TUI::Layout do
       expect(main(lines)[1..9]).to eq([' ~/docs', ' stats.md', " chart: '1 2 3'", ' ▁▅█', '',
                                        ' ~/docs/guides', ' more.md › More', " chart: '3 2 1'", ' █▅▁'])
       expect(lines[1].last.style).to eq(:project)
+    end
+  end
+
+  describe 'the project menu' do
+    let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
+
+    before { FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown')) }
+
+    it 'has a Projects button on the dashboard' do
+      expect(described_class.new(navigator, width: 80, height: 8).lines.last.map(&:event).compact.uniq)
+        .to eq(%i[tab enter edit projects reload quit])
+    end
+
+    it "opens from the header's path, and drops down below it over the panes, each project clicked to choose it" do
+      expect(described_class.new(navigator, width: 60, height: 8).lines.first.find(&:event).to_h)
+        .to include(text: '~/docs ▾', event: :projects)
+
+      navigator.handle(:projects)
+      lines = described_class.new(navigator, width: 60, height: 8).lines
+      menu = lines[1..5].map { columns(it, from: width(' 🌧️ Raindown  '), count: 21) }
+
+      expect(menu).to eq(['┌───────────────────┐', '│ All projects    ✓ │', '│ ~/docs            │',
+                          '│ ~/docs/guides     │', '└───────────────────┘'])
+      expect(lines[2].find { it.event == [:select, :menu, 0] }.style).to eq(:selected)
+      expect(lines[4].find { it.event == [:select, :menu, 2] }).not_to be_nil
+      expect(text(lines).drop(1).map { width(it) }).to all(eq(60))
     end
   end
 end
