@@ -12,6 +12,8 @@ RSpec.describe Raindown::TUI::Input do
       expect(described_class.key_event(13)).to eq(:enter)
       expect(described_class.key_event(Curses::KEY_ENTER)).to eq(:enter)
       expect(described_class.key_event('z')).to be_nil
+      expect(described_class.key_event('E')).to eq(:edit)
+      expect(described_class.key_event('Q')).to eq(:quit)
     end
   end
 

@@ -13,7 +13,7 @@ module Raindown
     #    ▾ guides/       │   toc: [+3]
     #      setup.md      │   ## Install
     #    Opened guides/setup.md
-    #    Tab Pane  Enter Open  x Run  e Edit  w Write back  d Charts  r Reload  q Quit
+    #    Tab Pane  Enter Open  X Run  E dit  W rite back  R eload  Q uit
     # Each line is exactly the width, in display columns. A segment with an event is clicked to send it.
     # With the Dashboard chosen in the files, a DashboardPane of the project's charts is in place of the outline.
     class Layout
@@ -124,12 +124,20 @@ module Raindown
         navigator.projects? ? DASHBOARD_BUTTONS.dup.insert(3, PROJECTS_BUTTON) : DASHBOARD_BUTTONS
       end
 
+      # The first letter of a label is stylized as a keyboard key like "(E)dit".
+      def shown(key, label)
+        return [key, label] unless key.length == 1
+
+        [key.upcase, label.downcase.start_with?(key) ? label[1..] : label]
+      end
+
       # As many buttons as fit, each clicked by its key or its label.
       def button_bar
         segments = []
         used = 0
 
         buttons.each do |key, label, event|
+          key, label = shown(key, label)
           pair = [Segment.new(text: " #{key} ", style: :key, event:), Segment.new(text: "#{label} ", style: :bar, event:)]
           pair_width = display_width(pair.map(&:text).join)
           break if used + pair_width > width

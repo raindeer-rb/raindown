@@ -18,9 +18,10 @@ module Raindown
       module_function
 
       # A key from getch, which is a string for a printable character and otherwise a number.
+      # Letters are the same with Shift, as the buttons show them as capitals.
       def key_event(key)
         key = key.chr if key.is_a?(Integer) && key < 256
-        KEYS[key]
+        KEYS[key.is_a?(String) ? key.downcase : key]
       end
 
       # The mouse buttons that click, which are the left button's. Scrolling does nothing, and since older ncurses,

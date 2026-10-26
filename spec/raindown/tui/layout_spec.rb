@@ -48,7 +48,7 @@ RSpec.describe Raindown::TUI::Layout do
        '   setup.md         │',
        ' README.md          │',
        ' Opened guides/setup.md',
-       ' Tab Pane  Enter Open  x Run  e Edit  w Write back']
+       ' Tab Pane  Enter Open  X Run  E dit  W rite back  R eload']
     )
     expect(text(lines).drop(1).map { width(it) }).to all(eq(60))
     # The rain cloud is measured as wide as the terminal draws it, where that's known, and the title stops short of it.
@@ -110,7 +110,7 @@ RSpec.describe Raindown::TUI::Layout do
       expect(main(lines)[1..4]).to eq([' stats.md › Stats           stats.md › Stats',
                                        " chart: '1 2 3'             chart: '3 2 1'",
                                        ' ▁▅█                        █▅▁', ''])
-      expect(text(lines).last.rstrip).to eq(' Tab Pane  Enter Open  e Edit  r Reload  q Quit')
+      expect(text(lines).last.rstrip).to eq(' Tab Pane  Enter Open  E dit  R eload  Q uit')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
     end
 
