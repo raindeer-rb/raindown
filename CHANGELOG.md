@@ -11,10 +11,12 @@ Minor features that don't break backwards compatibility are released as patches.
 
 - `raindown DIRECTORY`, or `raindown` for the current directory, watches every project in it with a `.raindown` folder
 - Each project's nodes load in a process of their own, and reload when they change
+- `Raindown::Document.parse(markdown).headings` reads a file's headings with their level, text and line
 
 ### Changed
 
-- Watching only writes back to files, without writing HTML, so `-o` is for `--once` and `--stdin`
+- Watching only writes back to files, without writing HTML
+- `--html [OUTPUT]` renders HTML once, replacing `--once` and `-o`
 
 ## 0.4.0
 
