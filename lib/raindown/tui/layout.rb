@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'events'
 require_relative 'text'
 require_relative 'title'
 
@@ -94,13 +95,13 @@ module Raindown
         text_width = cell_width - display_width(buttons.map(&:text).join)
         text = " #{INDENT * row.depth}#{row.text}"
 
-        [segment(text, row_style(pane, row, selected), width: text_width, event: [:press, pane, index, :enter]), *buttons]
+        [segment(text, row_style(pane, row, selected), width: text_width, event: Click.new(pane:, index:, action: :enter)), *buttons]
       end
 
       # The row's buttons, right of its text, unless they'd take more than half the pane.
       def row_buttons(row, pane:, index:, selected:, cell_width:)
         buttons = row.buttons.map do |label, event|
-          Segment.new(text: " #{label}", style: selected ? :selected_button : :button, event: [:press, pane, index, event])
+          Segment.new(text: " #{label}", style: selected ? :selected_button : :button, event: Click.new(pane:, index:, action: event))
         end
         display_width(buttons.map(&:text).join) > cell_width / 2 ? [] : buttons
       end

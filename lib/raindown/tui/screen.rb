@@ -35,7 +35,7 @@ module Raindown
           effect = @navigator.handle(read)
           break if effect == :quit
 
-          perform(*effect) if effect.is_a?(Array)
+          perform(effect)
         end
       rescue Interrupt
         nil
@@ -44,11 +44,12 @@ module Raindown
       end
 
       # Runs a command, like the editor, then tells the Navigator, or shows a message while a slow task runs.
-      def perform(name, command_or_message, task = nil)
-        return show(command_or_message).then { task.call } if name == :wait
-
-        suspend { system(*command_or_message) }
-        @navigator.ran
+      def perform(effect)
+        case effect
+        in Run(command:) then suspend { system(*command) }.then { @navigator.ran }
+        in Wait(message:, task:) then show(message).then { task.call }
+        else nil
+        end
       end
 
       def start

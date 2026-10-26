@@ -2,6 +2,7 @@
 
 require_relative 'file_tree'
 require_relative 'commands'
+require_relative 'events'
 require_relative 'outline'
 require_relative 'pane'
 require_relative 'project_menu'
@@ -11,12 +12,8 @@ require_relative 'workers'
 module Raindown
   module TUI
     # What the terminal UI shows and does, in plain Ruby, with no terminal: a FileTree of the project's Markdown files,
-    # beside the open file's Outline, or the Dashboard of its charts. The Screen draws it and sends it events, like :down or
-    # [:press, :outline, 3, :execute], and handle returns what the Screen should do next:
-    #   nil                     draw again
-    #   :quit                   stop
-    #   [:run, command]         leave the screen to run a command, like the editor, then call ran
-    #   [:wait, message, task]  show the message while the task runs, like an endpoint's request
+    # beside the open file's Outline, or the Dashboard of its charts. The Screen draws it and sends it events, keys like
+    # :down, or a Click, and handle returns what the Screen does next: nil to draw again, :quit to stop, or a Run or Wait.
     class Navigator
       include Commands
       include Views
@@ -41,14 +38,13 @@ module Raindown
         path ? open_file(path) : open_dashboard
       end
 
-      # A click, like [:press, :outline, 3, :enter], moves the cursor there and does what Enter, or the button clicked,
-      # does, unless that would leave the terminal UI, like for the editor, so a stray click only moves the cursor.
       # An event nothing has, like a mouse button's release, does nothing.
       def handle(event)
-        return if event.nil?
-
-        effect = route(event)
-        click?(event) && leaves?(effect) ? nil : effect
+        case event
+        when nil then nil
+        when Click then click(event)
+        else route(event)
+        end
       end
 
       # After the editor closes, the file is written back, like a save while it's watched, and read again.
@@ -70,27 +66,39 @@ module Raindown
 
       private
 
-      def route(event)
-        name, = event
+      def route(name)
         return :quit if name == :quit
-        return menu_event(event) if menu
+        return menu_event(name) if menu
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
-        return dashboard_click(event) if dashboard_event?(event)
+        return dashboard_effect(dashboard.handle(name)) if dashboard_event?(name)
 
-        browser_event(event)
+        browser_event(name)
       end
 
-      def click?(event) = event.is_a?(Array) && event.first == :press
+      # A click moves the cursor where it's clicked, and does the click's action there, like a key, unless that would
+      # leave the terminal UI, like for the editor, so a stray click only moves the cursor.
+      # While the project menu's open, only its projects are clicked.
+      def click(click)
+        return if menu && click.pane != :menu
 
-      # Running a command, like the editor, leaves the screen to it.
-      def leaves?(effect) = effect.is_a?(Array) && effect.first == :run
+        point(click)
+        effect = route(click.action)
+        effect unless effect.is_a?(Run)
+      end
 
-      def browser_event(event)
-        name, *args = event
+      def point(click)
+        case click.pane
+        when :menu then @menu = click.index
+        when :dashboard then dashboard.cursor = click.index
+        else @panes[click.pane].cursor = click.index
+        end
+        @focus = click.pane unless click.pane == :menu
+      end
+
+      def browser_event(name)
         return move(MOVES[name]) if MOVES.key?(name)
         return switch(PANES[name] == :main ? main_pane : PANES[name] || other_pane) if PANES.key?(name)
-        return press(*args) if name == :press
         return activate(name) if %i[enter toggle].include?(name)
 
         send(ACTIONS[name]) if ACTIONS.key?(name)
@@ -114,17 +122,6 @@ module Raindown
       def switch(pane)
         @focus = pane
         nil
-      end
-
-      def select(pane, index)
-        @focus = pane
-        @panes[pane].cursor = index
-        nil
-      end
-
-      def press(pane, index, event)
-        select(pane, index)
-        handle(event)
       end
 
       def selected(pane = @focus)

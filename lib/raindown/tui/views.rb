@@ -19,11 +19,8 @@ module Raindown
 
       private
 
-      # Events for the dashboard: its cards' clicks, and keys while it has the focus, other than Tab to the files,
-      # or left from the first card in a row.
-      def dashboard_event?(event)
-        name, pane = event
-        return pane == :dashboard if %i[select press].include?(name)
+      # Keys for the dashboard, while it has the focus, other than Tab to the files, or left from the first card in a row.
+      def dashboard_event?(name)
         return false if name == :left && dashboard.first_in_row?
 
         @focus == :dashboard && !%i[tab tick].include?(name)
@@ -46,19 +43,12 @@ module Raindown
         dashboard.errors.empty? ? info(found) : error("#{found}, but couldn't read #{dashboard.errors.join(', ')}")
       end
 
-      # A click on a card moves the cursor to the dashboard as well.
-      def dashboard_click(event)
-        @focus = :dashboard if click?(event)
-        dashboard_effect(dashboard.handle(event))
-      end
-
       def dashboard_effect(effect)
-        name, path, line = effect
-        case name
-        when :open then open_at(path, line)
-        when :edit
-          show(path)
-          [:run, Actions.edit_command(path, line:)]
+        case effect
+        when Open then open_at(effect.path, effect.line)
+        when Edit
+          show(effect.path)
+          Run.new(command: Actions.edit_command(effect.path, line: effect.line))
         end
       end
 

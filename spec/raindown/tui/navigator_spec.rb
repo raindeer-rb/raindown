@@ -5,6 +5,8 @@ require 'fileutils'
 require 'tmpdir'
 
 RSpec.describe Raindown::TUI::Navigator do
+  def click(pane, index, action = :enter) = Raindown::TUI::Click.new(pane:, index:, action:)
+
   around do |example|
     Dir.mktmpdir do |dir|
       @root = File.realpath(dir)
@@ -128,9 +130,9 @@ RSpec.describe Raindown::TUI::Navigator do
       3.times { navigator.handle(:down) }
 
       effect = navigator.handle(:execute)
-      expect(effect.first(2)).to eq([:wait, 'Running the endpoint on line 14...'])
+      expect(effect.message).to eq('Running the endpoint on line 14...')
 
-      effect.last.call
+      effect.task.call
       expect(File.read(navigator.path)).to include('{ "id": 1 }')
       expect(navigator.status).to eq([:info, 'Ran the endpoint on line 14'])
     end
@@ -138,7 +140,7 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'runs an endpoint when its button is pressed' do
       allow(Raindown::Curl).to receive(:run).and_return(['{ "id": 1 }', 'json'])
 
-      navigator.handle([:press, :outline, 3, :execute]).last.call
+      navigator.handle(click(:outline, 3, :execute)).task.call
 
       expect(File.read(navigator.path)).to include('{ "id": 1 }')
     end
@@ -151,7 +153,7 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'opens the editor at the selected line, then writes back the file' do
       2.times { navigator.handle(:down) }
 
-      expect(navigator.handle(:edit)).to eq([:run, Raindown::Actions.edit_command(navigator.path, line: 10)])
+      expect(navigator.handle(:edit)).to eq(Raindown::TUI::Run.new(command: Raindown::Actions.edit_command(navigator.path, line: 10)))
 
       File.write(navigator.path, "# Notes\n\n<{ toc: }>\n<{ :toc }>\n\n## Added\n")
       navigator.ran
@@ -181,13 +183,13 @@ RSpec.describe Raindown::TUI::Navigator do
       write('notes.md', "# Notes\n")
       navigator = described_class.new(root: @root, path: File.join(@root, 'notes.md'))
 
-      navigator.handle([:press, :files, 1, :enter])
+      navigator.handle(click(:files, 1))
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', 'setup.md', 'notes.md'])
 
-      navigator.handle([:press, :files, 2, :enter])
+      navigator.handle(click(:files, 2))
       expect([navigator.view, navigator.relative(navigator.path), navigator.focus]).to eq([:browser, 'guides/setup.md', :outline])
 
-      navigator.handle([:press, :files, 0, :enter])
+      navigator.handle(click(:files, 0))
       expect(navigator.view).to eq(:dashboard)
     end
 
@@ -195,30 +197,30 @@ RSpec.describe Raindown::TUI::Navigator do
       write('stats.md', "# Stats\n\n<{ chart: '1 2 3' }>\n<{ :chart }>\n")
       navigator = described_class.new(root: @root)
 
-      navigator.handle([:press, :dashboard, 0, :enter])
+      navigator.handle(click(:dashboard, 0))
       expect([navigator.view, navigator.relative(navigator.path), navigator.cursor(:outline)]).to eq([:browser, 'stats.md', 1])
     end
 
     it 'do what Enter does, unless that would leave the terminal UI, like for the editor, so they only move the cursor' do
       navigator = described_class.new(root: @root, path: write('notes.md', notes))
-      navigator.handle([:press, :outline, 1, :enter])
+      navigator.handle(click(:outline, 1))
       navigator.handle(:down)
-      expect(navigator.handle(:enter)).to eq([:run, Raindown::Actions.edit_command(navigator.path, line: 5)])
+      expect(navigator.handle(:enter)).to eq(Raindown::TUI::Run.new(command: Raindown::Actions.edit_command(navigator.path, line: 5)))
 
-      expect(navigator.handle([:press, :outline, 3, :enter])).to be_nil
+      expect(navigator.handle(click(:outline, 3))).to be_nil
       expect(navigator.cursor(:outline)).to eq(3)
     end
 
     it 'fold headings and directives in the outline, and only select their other lines, without opening the editor' do
       navigator = described_class.new(root: @root, path: write('notes.md', notes))
 
-      navigator.handle([:press, :outline, 1, :enter])
+      navigator.handle(click(:outline, 1))
       expect(texts(navigator, :outline)[1..3]).to eq(['toc:', '- [Notes](#notes)', '- [Setup](#setup)'])
 
-      expect(navigator.handle([:press, :outline, 2, :enter])).to be_nil
+      expect(navigator.handle(click(:outline, 2))).to be_nil
       expect([navigator.focus, navigator.cursor(:outline)]).to eq([:outline, 2])
 
-      navigator.handle([:press, :outline, 0, :enter])
+      navigator.handle(click(:outline, 0))
       expect(texts(navigator, :outline)).to eq(['# Notes …', '# Usage'])
     end
   end
@@ -267,7 +269,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.handle(:right)
       expect(navigator.focus).to eq(:dashboard)
 
-      navigator.handle([:press, :files, 2, :enter])
+      navigator.handle(click(:files, 2))
       navigator.handle(:enter)
       expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'stats.md'])
     end
@@ -303,7 +305,8 @@ RSpec.describe Raindown::TUI::Navigator do
     it "edits a chart's file at its directive, then writes back to it" do
       navigator.handle(:right)
 
-      expect(navigator.handle(:edit)).to eq([:run, Raindown::Actions.edit_command(File.join(@root, 'stats.md'), line: 5)])
+      command = Raindown::Actions.edit_command(File.join(@root, 'stats.md'), line: 5)
+      expect(navigator.handle(:edit)).to eq(Raindown::TUI::Run.new(command:))
 
       navigator.ran
       expect(File.read(File.join(@root, 'stats.md'))).to include('▁▅█')
@@ -334,19 +337,19 @@ RSpec.describe Raindown::TUI::Navigator do
 
     it "shows a project's own files, without the projects inside it, and every project's again with All projects" do
       navigator.handle(:projects)
-      navigator.handle([:press, :menu, 1, :enter])
+      navigator.handle(click(:menu, 1))
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', 'notes.md'])
 
       navigator.handle(:projects)
       expect(navigator.menu).to eq(1)
-      navigator.handle([:press, :menu, 0, :enter])
+      navigator.handle(click(:menu, 0))
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▸ 🌧 guides/', 'notes.md'])
       expect(navigator.dashboard.charts.length).to eq(2)
     end
 
     it 'stays open until a project is chosen with Enter or a click, while other events do nothing' do
       navigator.handle(:projects)
-      [:down, [:press, :files, 1, :enter], [:press, :dashboard, 0, :enter], nil, :tick, :tab, :edit].each do |event|
+      [:down, click(:files, 1), click(:dashboard, 0), nil, :tick, :tab, :edit].each do |event|
         navigator.handle(event)
       end
       expect([navigator.menu, navigator.project, navigator.focus]).to eq([1, nil, :files])
@@ -355,7 +358,7 @@ RSpec.describe Raindown::TUI::Navigator do
       expect([navigator.menu, navigator.project]).to eq([nil, @root])
 
       navigator.handle(:projects)
-      navigator.handle([:press, :menu, 2, :enter])
+      navigator.handle(click(:menu, 2))
       expect([navigator.menu, navigator.project]).to eq([nil, File.join(@root, 'guides')])
     end
 

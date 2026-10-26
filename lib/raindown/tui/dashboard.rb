@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
+require_relative 'events'
+
 module Raindown
   module TUI
     # Every chart in the projects' Markdown files, drawn from its data by its project's Worker, as cards in a grid
     # with a cursor. A chart is a chart: directive, or a project's own node that's a Raindown::Chart,
     # like "Sales < Raindown::Chart". Charts are drawn again every few seconds, so they follow changes to their data,
     # like a CSV file, without a save.
-    # Handle returns the Navigator's next step: nil, or [:open, path, line] or [:edit, path, line] for a chart's directive.
+    # Handle returns the Navigator's next step: nil, or an Open or Edit of a chart's directive.
     class Dashboard
       # Seconds between drawing the charts again.
       REDRAW = 2
@@ -54,15 +56,18 @@ module Raindown
         @rows.empty? || @rows.any? { it.first == @cursor }
       end
 
-      def handle(event)
-        name, *args = event
+      def handle(name)
+        chart = selected
         case name
         when *MOVES then move(name)
-        when :press then press(args[1], args[2])
-        when :enter then open
-        when :edit then (chart = selected) && [:edit, chart.path, chart.line]
+        when :enter then chart && Open.new(path: chart.path, line: chart.line)
+        when :edit then chart && Edit.new(path: chart.path, line: chart.line)
         when :reload then load.then { nil }
         end
+      end
+
+      def cursor=(index)
+        @cursor = index.clamp(0, [charts.length - 1, 0].max)
       end
 
       # The first row of cards to show, given each row's height, scrolled so the cursor's row is shown.
@@ -91,30 +96,15 @@ module Raindown
 
       # Left and right move along the cards, and up and down to the card in the same place in the row above or below.
       def move(name)
-        return select(@cursor + (name == :left ? -1 : 1)) if %i[left right].include?(name)
+        return self.cursor = @cursor + (name == :left ? -1 : 1) if %i[left right].include?(name)
 
         row = row_of(@cursor)
         target = @rows[(row + (name == :up ? -1 : 1)).clamp(0, [@rows.length - 1, 0].max)]
-        select(target ? target[[@rows[row].index(@cursor), target.length - 1].min] : @cursor)
+        self.cursor = target ? target[[@rows[row].index(@cursor), target.length - 1].min] : @cursor
       end
 
       def row_of(index)
         @rows.index { it.include?(index) } || 0
-      end
-
-      def select(index)
-        @cursor = index.clamp(0, [charts.length - 1, 0].max)
-        nil
-      end
-
-      def press(index, event)
-        select(index)
-        handle(event)
-      end
-
-      def open
-        chart = selected
-        [:open, chart.path, chart.line] if chart
       end
     end
   end

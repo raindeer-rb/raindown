@@ -75,11 +75,13 @@ RSpec.describe Raindown::TUI::Dashboard do
     end
 
     it "opens or edits the selected chart's file at its directive" do
-      dashboard.handle([:press, :dashboard, 2, :enter])
+      dashboard.cursor = 2
 
-      expect(dashboard.handle(:enter)).to eq([:open, File.join(@root, 'notes.md'), 7])
-      expect(dashboard.handle(:edit)).to eq([:edit, File.join(@root, 'notes.md'), 7])
-      expect(dashboard.handle([:press, :dashboard, 0, :enter])).to eq([:open, File.join(@root, 'guides', 'stats.rd'), 3])
+      expect(dashboard.handle(:enter)).to eq(Raindown::TUI::Open.new(path: File.join(@root, 'notes.md'), line: 7))
+      expect(dashboard.handle(:edit)).to eq(Raindown::TUI::Edit.new(path: File.join(@root, 'notes.md'), line: 7))
+
+      dashboard.cursor = 0
+      expect(dashboard.handle(:enter)).to eq(Raindown::TUI::Open.new(path: File.join(@root, 'guides', 'stats.rd'), line: 3))
     end
   end
 

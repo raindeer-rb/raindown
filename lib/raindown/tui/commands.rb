@@ -13,7 +13,7 @@ module Raindown
         directive = selected(:outline)&.target if @focus == :outline
         return error('Select an endpoint to run') unless directive.is_a?(Document::Directive) && directive.endpoint?
 
-        [:wait, "Running the endpoint on line #{directive.line}...", -> { run_endpoint(directive) }]
+        Wait.new(message: "Running the endpoint on line #{directive.line}...", task: -> { run_endpoint(directive) })
       end
 
       def run_endpoint(directive)
@@ -33,7 +33,7 @@ module Raindown
         return error('Open a file to edit') unless path
 
         line = @focus == :outline && row ? row.line : 1
-        [:run, Actions.edit_command(path, line:)]
+        Run.new(command: Actions.edit_command(path, line:))
       end
 
       def write_back

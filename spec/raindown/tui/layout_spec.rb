@@ -6,6 +6,8 @@ require 'fileutils'
 require 'tmpdir'
 
 RSpec.describe Raindown::TUI::Layout do
+  def click(pane, index, action = :enter) = Raindown::TUI::Click.new(pane:, index:, action:)
+
   around do |example|
     Dir.mktmpdir do |dir|
       @root = File.join(File.realpath(dir), 'docs')
@@ -65,9 +67,9 @@ RSpec.describe Raindown::TUI::Layout do
   it 'sends events from rows and buttons when clicked' do
     lines = described_class.new(navigator, width: 80, height: 7).lines
 
-    expect(lines[1].first.event).to eq([:press, :files, 0, :enter])
-    expect(lines[1].last.event).to eq([:press, :outline, 0, :enter])
-    expect(lines[2].last.event).to eq([:press, :outline, 1, :execute])
+    expect(lines[1].first.event).to eq(click(:files, 0))
+    expect(lines[1].last.event).to eq(click(:outline, 0))
+    expect(lines[2].last.event).to eq(click(:outline, 1, :execute))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload quit])
   end
 
@@ -114,13 +116,13 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'opens a chart when its title is clicked, and highlights the selected one while the dashboard has the focus' do
       lines = described_class.new(navigator, width: 90, height: 8).lines
-      titles = lines[1].select { it.event&.[](1) == :dashboard }
+      titles = lines[1].select { it.event&.pane == :dashboard }
 
-      expect(titles.map(&:event)).to eq([[:press, :dashboard, 0, :enter], [:press, :dashboard, 1, :enter]])
+      expect(titles.map(&:event)).to eq([click(:dashboard, 0), click(:dashboard, 1)])
       expect(titles.map(&:style)).to eq(%i[cursor heading])
 
       navigator.handle(:tab)
-      expect(described_class.new(navigator, width: 90, height: 8).lines[1].find { it.event == [:press, :dashboard, 0, :enter] }.style)
+      expect(described_class.new(navigator, width: 90, height: 8).lines[1].find { it.event == click(:dashboard, 0) }.style)
         .to eq(:selected)
     end
 
@@ -173,8 +175,8 @@ RSpec.describe Raindown::TUI::Layout do
 
       expect(menu).to eq(['┌───────────────────┐', '│ All projects    ✓ │', '│ ~/docs            │',
                           '│ ~/docs/guides     │', '└───────────────────┘'])
-      expect(lines[2].find { it.event == [:press, :menu, 0, :enter] }.style).to eq(:selected)
-      expect(lines[4].find { it.event == [:press, :menu, 2, :enter] }).not_to be_nil
+      expect(lines[2].find { it.event == click(:menu, 0) }.style).to eq(:selected)
+      expect(lines[4].find { it.event == click(:menu, 2) }).not_to be_nil
       expect(text(lines).drop(1).map { width(it) }).to all(eq(60))
     end
   end

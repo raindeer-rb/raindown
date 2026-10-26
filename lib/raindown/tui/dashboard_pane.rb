@@ -92,7 +92,7 @@ module Raindown
       # A card opens chart source when it's clicked, like Enter.
       def card_segment(card, index, line, card_width)
         text = card_lines(card)[line].to_s
-        event = [:press, :dashboard, index, :enter]
+        event = Click.new(pane: :dashboard, index:, action: :enter)
         return segment(text, :chart, width: card_width, event:) if line > 1
         return segment(text, :directive, width: card_width, event:) if line == 1
 
