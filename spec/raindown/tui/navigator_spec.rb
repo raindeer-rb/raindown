@@ -29,26 +29,35 @@ RSpec.describe Raindown::TUI::Navigator do
   def texts(navigator, pane) = navigator.rows(pane).map(&:text)
 
   describe 'files pane' do
-    it 'shows folders before files, each folded with Enter' do
+    it 'starts on the Dashboard, above folders and files, with the folders folded until Enter opens them' do
       write('README.md')
       write('guides/setup.md')
       write('guides/deep/more.md')
       navigator = described_class.new(root: @root)
 
-      expect(texts(navigator, :files)).to eq(['▾ guides/', '▾ deep/', 'more.md', 'setup.md', 'README.md'])
-      expect(navigator.rows(:files).map(&:depth)).to eq([0, 1, 2, 1, 0])
+      expect([navigator.view, navigator.focus, navigator.cursor(:files)]).to eq([:dashboard, :files, 0])
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▸ guides/', 'README.md'])
 
+      navigator.handle(:down)
       navigator.handle(:enter)
-      expect(texts(navigator, :files)).to eq(['▸ guides/', 'README.md'])
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', '▸ deep/', 'setup.md', 'README.md'])
+      expect(navigator.rows(:files).map(&:depth)).to eq([0, 0, 1, 1, 0])
     end
 
-    it 'opens the first file, and a file chosen with Enter, which moves to the outline' do
+    it 'opens a file asked for, in its open folder' do
+      navigator = described_class.new(root: @root, path: write('guides/deep/more.md'))
+
+      expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'guides/deep/more.md'])
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', '▾ deep/', 'more.md'])
+      expect(navigator.cursor(:files)).to eq(3)
+    end
+
+    it 'opens a file chosen with Enter, which moves to the outline' do
       write('a.md', "# A\n")
       write('b.md', "# B\n")
       navigator = described_class.new(root: @root)
-      expect(navigator.relative(navigator.path)).to eq('a.md')
 
-      navigator.handle(:down)
+      2.times { navigator.handle(:down) }
       navigator.handle(:enter)
 
       expect(navigator.relative(navigator.path)).to eq('b.md')
@@ -66,7 +75,7 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(texts(navigator, :outline)).to eq(['# Notes', 'toc:', '## Setup', 'endpoint:', '# Usage'])
       expect(navigator.rows(:outline).map(&:depth)).to eq([0, 1, 1, 2, 0])
       expect(navigator.rows(:outline).map(&:buttons)).to eq(
-        [[], [['[+2]', :toggle]], [], [['[+3]', :toggle], ['[Run]', :execute]], []]
+        [[], [['[+2]', :toggle]], [], [['[+7]', :toggle], ['[Run]', :execute]], []]
       )
     end
 
@@ -79,6 +88,21 @@ RSpec.describe Raindown::TUI::Navigator do
 
       navigator.handle(:enter)
       expect(texts(navigator, :outline)[2]).to eq('## Setup')
+    end
+
+    it "expands an endpoint to its request and response, even before it's run" do
+      3.times { navigator.handle(:down) }
+      navigator.handle(:enter)
+
+      expect(texts(navigator, :outline)[4..]).to eq(
+        ['```sh', 'curl https://api.example.com', '```', '', '```json', '{}', '```', '# Usage']
+      )
+
+      File.write(navigator.path, "<{ endpoint: }>\n#{curl}<{ :endpoint }>\n")
+      navigator.handle(:reload)
+      navigator.handle(:up)
+      navigator.handle(:enter)
+      expect(texts(navigator, :outline)).to eq(['endpoint:', '```sh', 'curl https://api.example.com', '```'])
     end
 
     it 'folds the section below a heading' do
@@ -146,10 +170,83 @@ RSpec.describe Raindown::TUI::Navigator do
       6.times { navigator.handle(:down) }
 
       rows, offset = navigator.visible(:files, 3)
-      expect([rows.map(&:text), offset]).to eq([%w[4.md 5.md 6.md], 4])
+      expect([rows.map(&:text), offset]).to eq([%w[3.md 4.md 5.md], 4])
 
       5.times { navigator.handle(:up) }
       expect(navigator.visible(:files, 3).last).to eq(1)
+    end
+  end
+
+  describe 'dashboard' do
+    subject(:navigator) { described_class.new(root: @root, path: write('notes.md', notes)) }
+
+    before do
+      write('stats.md', "# Stats\n\n## Downloads\n\n<{ chart: '1 2 3' }>\n<{ :chart }>\n")
+      navigator.handle(:dashboard)
+    end
+
+    it 'switches to the dashboard of charts, with the cursor on it in the files, and back to the open file with d' do
+      expect([navigator.view, navigator.focus, navigator.cursor(:files)]).to eq([:dashboard, :files, 0])
+      expect(navigator.status).to eq([:info, "1 chart in #{File.basename(@root)}"])
+
+      navigator.handle(:dashboard)
+      expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'notes.md'])
+    end
+
+    it 'opens the dashboard from the top of the files, beside them, and a file from the files again' do
+      navigator.handle(:dashboard)
+      navigator.handle(:left)
+      5.times { navigator.handle(:up) }
+      navigator.handle(:enter)
+      expect([navigator.view, navigator.focus]).to eq(%i[dashboard files])
+
+      navigator.handle(:tab)
+      expect(navigator.focus).to eq(:dashboard)
+      navigator.handle(:tab)
+      expect(navigator.focus).to eq(:files)
+      navigator.handle(:right)
+      expect(navigator.focus).to eq(:dashboard)
+
+      navigator.handle([:select, :files, 2])
+      navigator.handle(:enter)
+      expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'stats.md'])
+    end
+
+    it "doesn't edit the Dashboard as a file" do
+      expect(navigator.handle(:edit)).to be_nil
+      expect(navigator.status).to eq([:error, 'Select a file to edit'])
+    end
+
+    it 'goes back to the files with left from the first card in a row, and otherwise moves along the cards' do
+      write('more.md', "<{ chart: '3 2 1' }>\n<{ :chart }>\n")
+      navigator.handle(:reload)
+      navigator.handle(:right)
+      navigator.dashboard.rows = [[0, 1]]
+
+      navigator.handle(:right)
+      navigator.handle(:left)
+      expect([navigator.focus, navigator.dashboard.cursor]).to eq([:dashboard, 0])
+
+      navigator.handle(:left)
+      expect(navigator.focus).to eq(:files)
+    end
+
+    it "opens a chart's file in the outline, on its directive" do
+      navigator.handle(:right)
+      navigator.handle(:enter)
+
+      expect([navigator.view, navigator.focus, navigator.relative(navigator.path)]).to eq([:browser, :outline, 'stats.md'])
+      expect(navigator.rows(:outline)[navigator.cursor(:outline)].text).to eq("chart: '1 2 3'")
+      expect(navigator.rows(:files)[navigator.cursor(:files)].text).to eq('stats.md')
+    end
+
+    it "edits a chart's file at its directive, then writes back to it" do
+      navigator.handle(:right)
+
+      expect(navigator.handle(:edit)).to eq([:run, Raindown::Actions.edit_command(File.join(@root, 'stats.md'), line: 5)])
+
+      navigator.ran
+      expect(File.read(File.join(@root, 'stats.md'))).to include('▁▅█')
     end
   end
 end

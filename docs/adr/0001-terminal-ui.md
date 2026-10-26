@@ -109,6 +109,6 @@ ratatui_ruby is the best alternative if Rust is in the toolchain anyway: it is s
 ## Later
 
 - **Several projects.** `raindown tui ~/dev` would list each project. Nodes would load in the project's worker process, as watching does, with workers sending results such as "updated", "error" and "reloaded" back to the TUI over a pipe instead of printing them.
-- **A dashboard for each project.** It could show file and directive counts, how old endpoint responses are, and recent write-backs and errors. The Chart node's block-character charts are text, so curses can show them as they are.
+- **More on the dashboard.** It shows every chart in the project, since the Chart node's block-character charts are text that curses shows as they are (`lib/raindown/tui/dashboard.rb`). It could also show file and directive counts, how old endpoint responses are, and recent write-backs and errors.
 - **Template directives in the outline,** and headings in a component's Markdown output, if they're worth their cost.
 - **Editing text in the TUI.**

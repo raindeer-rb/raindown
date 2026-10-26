@@ -5,28 +5,42 @@ require_relative 'row'
 
 module Raindown
   module TUI
-    # The files pane: a project's Markdown files as a tree, with folders before files, where folders fold.
+    # The files pane: the Dashboard, then a project's Markdown files as a tree, with folders before files,
+    # including the files of the projects inside it.
+    # Folders start folded, and open with Enter, or when a file in them opens.
     class FileTree
+      # A chart, which every terminal draws two columns wide.
+      DASHBOARD = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: :dashboard)
+
       attr_reader :root
 
       def initialize(root:)
         @root = root
-        @folded = Set.new
+        @expanded = Set.new
         load
       end
 
       def load
-        @files = Projects.files(root)
+        @files = Projects.files(root, nested: true)
       end
 
       def rows
         tree = {}
         @files.each { |path| relative(path).split('/').reduce(tree) { |node, part| node[part] ||= {} } }
-        tree_rows(tree, '', 0)
+        [DASHBOARD, *tree_rows(tree, '', 0)]
       end
 
       def toggle(folder)
-        @folded.delete?(folder) || @folded.add(folder)
+        @expanded.delete?(folder) || @expanded.add(folder)
+      end
+
+      # Opens the folders the file is in, so its row is shown.
+      def reveal(path)
+        folder = File.dirname(path)
+        while folder.start_with?(File.join(root, ''))
+          @expanded.add(folder)
+          folder = File.dirname(folder)
+        end
       end
 
       def relative(path)
@@ -45,7 +59,7 @@ module Raindown
       # A folder, and the tree inside it unless it's folded.
       def folder_rows(name, children, prefix, depth)
         folder = File.join(root, prefix, name)
-        folded = @folded.include?(folder)
+        folded = !@expanded.include?(folder)
         row = Row.new(text: "#{folded ? '▸' : '▾'} #{name}/", depth:, kind: :folder, target: folder)
 
         [row, *(tree_rows(children, File.join(prefix, name), depth + 1) unless folded)]

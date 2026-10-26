@@ -27,7 +27,9 @@ module Raindown
       # In the files pane, the selected file opens at its top, and in the outline, the open file at the selected line.
       def edit
         row = selected
-        show(row.target) if @focus == :files && row&.kind == :file
+        return error('Select a file to edit') if @focus == :files && row&.kind != :file
+
+        show(row.target) if @focus == :files
         return error('Open a file to edit') unless path
 
         line = @focus == :outline && row ? row.line : 1
@@ -47,6 +49,7 @@ module Raindown
       def reload
         @files.load
         @outline&.read if path && File.exist?(path)
+        dashboard.load if view == :dashboard
         info('Reloaded')
       end
 
