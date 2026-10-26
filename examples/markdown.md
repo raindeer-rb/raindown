@@ -85,7 +85,7 @@ curl https://httpbin.org/uuid
 
 ```json
 {
-  "uuid": "359ecfa4-a344-46fe-bbe4-c12dea7d4541"
+  "uuid": "4a261325-831a-468a-9402-78d7d228d78d"
 }
 ```
 <!-- raindown:fetched 2026-10-26 -->

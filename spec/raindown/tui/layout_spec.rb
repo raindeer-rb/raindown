@@ -55,11 +55,14 @@ RSpec.describe Raindown::TUI::Layout do
     expect(width(text(lines).first)).to eq(59)
   end
 
-  it 'highlights the cursor, brightly in the focused pane' do
+  it 'highlights the cursor in the focused pane, and dimmer in the others' do
     lines = described_class.new(navigator, width: 60, height: 7).lines
 
     expect(lines[1].last.style).to eq(:selected)
     expect(lines[3].first.style).to eq(:cursor)
+    navigator.handle(:left)
+    expect(described_class.new(navigator, width: 60, height: 7).lines[1].last.style).to eq(:cursor)
+    expect(described_class.new(navigator, width: 60, height: 7).lines[3].first.style).to eq(:selected)
     expect(lines[1].first.style).to eq(:dashboard)
     expect(lines[2].last(2).map(&:style)).to eq(%i[button button])
   end

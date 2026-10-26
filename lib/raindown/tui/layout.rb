@@ -101,11 +101,13 @@ module Raindown
       # The row's buttons, right of its text, unless they'd take more than half the pane.
       def row_buttons(row, pane:, index:, selected:, cell_width:)
         buttons = row.buttons.map do |label, event|
-          Segment.new(text: " #{label}", style: selected ? :selected_button : :button, event: Click.new(pane:, index:, action: event))
+          style = selected ? :"#{row_style(pane, row, true)}_button" : :button
+          Segment.new(text: " #{label}", style:, event: Click.new(pane:, index:, action: event))
         end
         display_width(buttons.map(&:text).join) > cell_width / 2 ? [] : buttons
       end
 
+      # The cursor's row is highlighted in the pane with the focus, and dimmer in the others, like the file a chart opened.
       def row_style(pane, row, selected)
         return row.kind unless selected
 

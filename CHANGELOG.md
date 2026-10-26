@@ -19,7 +19,7 @@ Minor features that don't break backwards compatibility are released as patches.
   They're marked 🌧 in the files, and the Dashboard shows each project's charts under its path.
   The header's path, or `p`, opens a list of the projects, which narrows the files and the Dashboard to one
 - `raindown tui` expands a directive to everything inside it, so an endpoint shows its request as well as its response
-- `raindown tui` has a blue title, and selects in a lighter blue
+- `raindown tui` has a blue title, and selects in a lighter blue, or dark grey in the panes without the focus
 
 ### Fixed
 

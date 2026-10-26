@@ -5,7 +5,9 @@ require 'curses'
 module Raindown
   module TUI
     # The curses attributes of a Layout's styles. The title is white on blue, and the selected row white on a lighter
-    # blue, while other colours are on the terminal's own background. Without colours, they're in reverse.
+    # blue, or on dark grey in the panes without the focus, while other colours are on the terminal's own background.
+    # With only 8 colours, there's no dark grey, so those rows are underlined, and without colours,
+    # the rest are in reverse.
     module Styles
       COLORS = { directive: Curses::COLOR_CYAN, button: Curses::COLOR_YELLOW, error: Curses::COLOR_RED,
                  folder: Curses::COLOR_BLUE }.freeze
@@ -13,6 +15,7 @@ module Raindown
       BLUES = { title: 25, selected: 33 }.freeze
       BASIC_BLUES = { title: Curses::COLOR_BLUE, selected: Curses::COLOR_CYAN }.freeze
       BRIGHT_WHITE = 15
+      DARK_GREY = 238
 
       module_function
 
@@ -26,8 +29,8 @@ module Raindown
 
       def plain
         { title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, selected_button: Curses::A_REVERSE,
-          cursor: Curses::A_UNDERLINE, heading: Curses::A_BOLD, body: Curses::A_DIM, error: Curses::A_BOLD,
-          button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, dashboard: Curses::A_BOLD,
+          cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
+          body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, dashboard: Curses::A_BOLD,
           key: Curses::A_REVERSE, border: Curses::A_DIM }
       end
 
@@ -35,10 +38,20 @@ module Raindown
         plain.merge(
           title: pair(:title) | Curses::A_BOLD, selected: pair(:selected) | white_bold,
           selected_button: pair(:selected_button) | Curses::A_BOLD, directive: pair(:directive),
-          error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD,
-          folder: pair(:folder) | Curses::A_BOLD, project: pair(:directive) | Curses::A_BOLD,
-          dashboard: pair(:directive) | Curses::A_BOLD
+          error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD, **files, **unfocused
         )
+      end
+
+      def files
+        { folder: pair(:folder) | Curses::A_BOLD, project: pair(:directive) | Curses::A_BOLD,
+          dashboard: pair(:directive) | Curses::A_BOLD }
+      end
+
+      # The selected rows of the panes without the focus, on dark grey where there's one.
+      def unfocused
+        return { cursor_button: pair(:button) | Curses::A_BOLD } unless Curses.colors >= 256
+
+        { cursor: pair(:cursor), cursor_button: pair(:cursor_button) | Curses::A_BOLD }
       end
 
       # Each colour pair as [name, foreground, background], where -1 is the terminal's own background.
@@ -48,7 +61,8 @@ module Raindown
         white = many ? BRIGHT_WHITE : Curses::COLOR_WHITE
 
         [*COLORS.map { |name, color| [name, color, -1] }, [:title, white, blues[:title]],
-         [:selected, white, blues[:selected]], [:selected_button, Curses::COLOR_YELLOW, blues[:selected]]]
+         [:selected, white, blues[:selected]], [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
+         [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY]]
       end
 
       def pair(name)
