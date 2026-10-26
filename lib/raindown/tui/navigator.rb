@@ -41,18 +41,14 @@ module Raindown
         path ? open_file(path) : open_dashboard
       end
 
+      # A click, like [:press, :outline, 3, :enter], moves the cursor there and does what Enter, or the button clicked,
+      # does, unless that would leave the terminal UI, like for the editor, so a stray click only moves the cursor.
       # An event nothing has, like a mouse button's release, does nothing.
       def handle(event)
         return if event.nil?
 
-        name, = event
-        return :quit if name == :quit
-        return menu_event(event) if menu
-        return toggle_menu if name == :projects
-        return toggle_dashboard if name == :dashboard
-        return dashboard_effect(dashboard.handle(event)) if dashboard_event?(event)
-
-        browser_event(event)
+        effect = route(event)
+        click?(event) && leaves?(effect) ? nil : effect
       end
 
       # After the editor closes, the file is written back, like a save while it's watched, and read again.
@@ -74,11 +70,26 @@ module Raindown
 
       private
 
+      def route(event)
+        name, = event
+        return :quit if name == :quit
+        return menu_event(event) if menu
+        return toggle_menu if name == :projects
+        return toggle_dashboard if name == :dashboard
+        return dashboard_click(event) if dashboard_event?(event)
+
+        browser_event(event)
+      end
+
+      def click?(event) = event.is_a?(Array) && event.first == :press
+
+      # Running a command, like the editor, leaves the screen to it.
+      def leaves?(effect) = effect.is_a?(Array) && effect.first == :run
+
       def browser_event(event)
         name, *args = event
         return move(MOVES[name]) if MOVES.key?(name)
         return switch(PANES[name] == :main ? main_pane : PANES[name] || other_pane) if PANES.key?(name)
-        return click(*args) if name == :select
         return press(*args) if name == :press
         return activate(name) if %i[enter toggle].include?(name)
 
@@ -109,17 +120,6 @@ module Raindown
         @focus = pane
         @panes[pane].cursor = index
         nil
-      end
-
-      # A click does what Enter does in the files, and folds a heading or directive in the outline.
-      # Other lines in the outline are only selected, so a click doesn't open the editor.
-      def click(pane, index)
-        select(pane, index)
-        row = selected
-        return activate(:enter) if pane == :files
-        return unless row&.kind == :heading || (row&.kind == :directive && row.target.body)
-
-        activate(:toggle)
       end
 
       def press(pane, index, event)

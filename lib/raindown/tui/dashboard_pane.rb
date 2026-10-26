@@ -89,14 +89,15 @@ module Raindown
         [*segments, segment('', :blank, width: width - segments.sum { display_width(it.text) })]
       end
 
-      # A card's title opens its chart when clicked, and the rest of it selects the card.
+      # A card opens chart source when it's clicked, like Enter.
       def card_segment(card, index, line, card_width)
         text = card_lines(card)[line].to_s
-        return segment(text, :chart, width: card_width, event: [:select, :dashboard, index]) if line > 1
-        return segment(text, :directive, width: card_width, event: [:select, :dashboard, index]) if line == 1
+        event = [:press, :dashboard, index, :enter]
+        return segment(text, :chart, width: card_width, event:) if line > 1
+        return segment(text, :directive, width: card_width, event:) if line == 1
 
         style = dashboard.cursor == index ? row_style(:dashboard, nil, true) : :heading
-        segment(text, style, width: card_width, event: [:press, :dashboard, index, :enter])
+        segment(text, style, width: card_width, event:)
       end
 
       # A row of cards' lines, under its project's heading when it's the project's first row.

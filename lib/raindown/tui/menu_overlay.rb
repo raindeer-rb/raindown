@@ -49,7 +49,7 @@ module Raindown
         chosen = @navigator.menu_items[index] == @navigator.project ? '✓' : ' '
         style = @navigator.menu == index ? :selected : :menu
         text = fit("#{fit(item, inner_width - 2)} #{chosen}", inner_width)
-        [segment('│ ', :border), segment(text, style, [:select, :menu, index]), segment(' │', :border)]
+        [segment('│ ', :border), segment(text, style, [:press, :menu, index, :enter]), segment(' │', :border)]
       end
 
       def segment(text, style, event = nil)

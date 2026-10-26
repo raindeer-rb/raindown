@@ -58,7 +58,6 @@ module Raindown
         name, *args = event
         case name
         when *MOVES then move(name)
-        when :select then select(*args.last(1))
         when :press then press(args[1], args[2])
         when :enter then open
         when :edit then (chart = selected) && [:edit, chart.path, chart.line]

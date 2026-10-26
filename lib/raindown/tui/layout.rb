@@ -94,7 +94,7 @@ module Raindown
         text_width = cell_width - display_width(buttons.map(&:text).join)
         text = " #{INDENT * row.depth}#{row.text}"
 
-        [segment(text, row_style(pane, row, selected), width: text_width, event: [:select, pane, index]), *buttons]
+        [segment(text, row_style(pane, row, selected), width: text_width, event: [:press, pane, index, :enter]), *buttons]
       end
 
       # The row's buttons, right of its text, unless they'd take more than half the pane.

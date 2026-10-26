@@ -4,7 +4,8 @@ module Raindown
   module TUI
     # The list of projects that drops down from the header's path, with "p" or a click, when there's more than one.
     # Choosing one narrows the files and the dashboard to its own, and "All projects" shows every project's again.
-    # It stays open until a project's chosen, with Enter or a click, while up and down move its cursor.
+    # It stays open until a project's chosen, with Enter or a click, which is Enter on the project clicked,
+    # while up and down move its cursor.
     # Esc or "p" close it without choosing, and other keys and clicks do nothing while it's open.
     module ProjectMenu
       # The menu's cursor, while it's open.
@@ -34,9 +35,14 @@ module Raindown
         case name
         when :up, :down then move_menu(name == :up ? -1 : 1)
         when :enter then choose(menu_items[@menu])
-        when :select, :press then choose(menu_items[index]) if pane == :menu
+        when :press then press_menu(index, event.last) if pane == :menu
         when :escape, :projects then close_menu
         end
+      end
+
+      def press_menu(index, event)
+        @menu = index
+        menu_event(event)
       end
 
       def move_menu(by)

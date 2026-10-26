@@ -46,6 +46,12 @@ module Raindown
         dashboard.errors.empty? ? info(found) : error("#{found}, but couldn't read #{dashboard.errors.join(', ')}")
       end
 
+      # A click on a card moves the cursor to the dashboard as well.
+      def dashboard_click(event)
+        @focus = :dashboard if click?(event)
+        dashboard_effect(dashboard.handle(event))
+      end
+
       def dashboard_effect(effect)
         name, path, line = effect
         case name
