@@ -11,6 +11,12 @@ module Raindown
     module Styles
       COLORS = { directive: Curses::COLOR_CYAN, button: Curses::COLOR_YELLOW, error: Curses::COLOR_RED,
                  folder: Curses::COLOR_BLUE }.freeze
+      # The colours of endpoints' HTTP methods, like GET in green, from the 256 colours most terminals have,
+      # which are the same in every theme, unlike the 8 they all do, where green can look yellow.
+      METHODS = { get: 40, post: 33, delete: 196, put: 220, patch: 171, head: 44, options: 44 }.freeze
+      BASIC_METHODS = { get: Curses::COLOR_GREEN, post: Curses::COLOR_BLUE, delete: Curses::COLOR_RED,
+                        put: Curses::COLOR_YELLOW, patch: Curses::COLOR_MAGENTA, head: Curses::COLOR_CYAN,
+                        options: Curses::COLOR_CYAN }.freeze
       # The title's and the selected row's blues, from the 256 colours most terminals have, or the 8 they all do.
       BLUES = { title: 25, selected: 33 }.freeze
       BASIC_BLUES = { title: Curses::COLOR_BLUE, selected: Curses::COLOR_CYAN }.freeze
@@ -31,8 +37,8 @@ module Raindown
         { title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, selected_button: Curses::A_REVERSE,
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, dashboard: Curses::A_BOLD,
-          key: Curses::A_REVERSE, border: Curses::A_DIM, divider: Curses::A_BOLD, selected_divider: Curses::A_REVERSE,
-          cursor_divider: Curses::A_BOLD }
+          key: Curses::A_REVERSE, border: Curses::A_DIM, run: Curses::A_REVERSE | Curses::A_BOLD, divider: Curses::A_BOLD,
+          selected_divider: Curses::A_REVERSE, cursor_divider: Curses::A_BOLD }
       end
 
       def colored
@@ -40,13 +46,13 @@ module Raindown
           title: pair(:title) | Curses::A_BOLD, selected: pair(:selected) | white_bold,
           selected_button: pair(:selected_button) | Curses::A_BOLD, directive: pair(:directive),
           error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD, divider: pair(:divider),
-          selected_divider: pair(:selected_divider), **files, **unfocused
+          selected_divider: pair(:selected_divider), run: pair(:run) | Curses::A_BOLD, **files, **unfocused
         )
       end
 
       def files
         { folder: pair(:folder) | Curses::A_BOLD, project: pair(:directive) | Curses::A_BOLD,
-          dashboard: pair(:directive) | Curses::A_BOLD }
+          dashboard: pair(:directive) | Curses::A_BOLD, **METHODS.keys.to_h { [:"method_#{it}", pair(:"method_#{it}") | Curses::A_BOLD] } }
       end
 
       # The selected rows of the panes without the focus, on dark grey where there's one.
@@ -62,10 +68,13 @@ module Raindown
         blues = many ? BLUES : BASIC_BLUES
         white = many ? BRIGHT_WHITE : Curses::COLOR_WHITE
 
-        [*COLORS.map { |name, color| [name, color, -1] }, [:title, white, blues[:title]],
+        [*COLORS.map { |name, color| [name, color, -1] },
+         *(many ? METHODS : BASIC_METHODS).map { |name, color| [:"method_#{name}", color, -1] },
+         [:title, white, blues[:title]],
          [:selected, white, blues[:selected]], [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
          [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, blues[:title], -1],
-         [:selected_divider, blues[:title], blues[:selected]], [:cursor_divider, blues[:title], DARK_GREY]]
+         [:selected_divider, blues[:title], blues[:selected]], [:cursor_divider, blues[:title], DARK_GREY],
+         [:run, white, Curses::COLOR_GREEN]]
       end
 
       def pair(name)

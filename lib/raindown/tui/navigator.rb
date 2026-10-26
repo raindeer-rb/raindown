@@ -2,6 +2,8 @@
 
 require_relative 'file_tree'
 require_relative 'commands'
+require_relative 'endpoints'
+require_relative 'focus'
 require_relative 'events'
 require_relative 'outline'
 require_relative 'pane'
@@ -18,6 +20,7 @@ module Raindown
       include Commands
       include Views
       include ProjectMenu
+      include Focus
 
       # Keys of the events that move the cursor or the focus, and those that act on what's selected.
       MOVES = { up: -1, down: 1 }.freeze
@@ -29,8 +32,9 @@ module Raindown
       def initialize(root:, path: nil, workers: Workers.new(root:))
         @workers = workers
         @files = FileTree.new(root:)
+        @endpoints = Endpoints.new(workers:)
         @focus = :files
-        @panes = { files: Pane.new { @files.rows }, outline: Pane.new { @outline ? @outline.rows : [] } }
+        @panes = { files: Pane.new { [*@files.rows, *@endpoints.rows] }, outline: Pane.new { @outline ? @outline.rows : [] } }
         @status = [:info, 'Tab switches panes, Enter opens and folds, q quits']
         first = Projects.files(root, nested: true).first
         show(path || first) if path || first
@@ -50,6 +54,8 @@ module Raindown
       # After the editor closes, the file is written back, like a save while it's watched, and read again.
       def ran
         write_back
+        @endpoints.load
+        @endpoint_view&.read
         dashboard.load if view == :dashboard
       end
 
@@ -71,7 +77,8 @@ module Raindown
         return menu_event(name) if menu
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
-        return dashboard_effect(dashboard.handle(name)) if dashboard_event?(name)
+        return view_effect(dashboard.handle(name)) if dashboard_event?(name)
+        return view_effect(endpoint_view.handle(name)) if endpoint_event?(name)
 
         browser_event(name)
       end
@@ -91,6 +98,7 @@ module Raindown
         case click.pane
         when :menu then @menu = click.index
         when :dashboard then dashboard.cursor = click.index
+        when :endpoint then nil
         else @panes[click.pane].cursor = click.index
         end
         @focus = click.pane unless click.pane == :menu
@@ -110,20 +118,6 @@ module Raindown
         @panes[:outline].reset
       end
 
-      def other_pane
-        @focus == :files ? main_pane : :files
-      end
-
-      def move(by)
-        @panes[@focus].move(by)
-        nil
-      end
-
-      def switch(pane)
-        @focus = pane
-        nil
-      end
-
       def selected(pane = @focus)
         @panes[pane].selected
       end
@@ -133,7 +127,7 @@ module Raindown
       def activate(name)
         row = selected
         return edit if name == :enter && editable?(row)
-        return open_row(row) if name == :enter && %i[dashboard file].include?(row&.kind)
+        return open_row(row) if name == :enter && %i[dashboard file endpoint].include?(row&.kind)
 
         case row&.kind
         when :folder, :project then @files.toggle(row.target)
@@ -144,7 +138,11 @@ module Raindown
       end
 
       def open_row(row)
-        row.kind == :dashboard ? open_dashboard : open_file(row.target)
+        case row.kind
+        when :dashboard then open_dashboard
+        when :endpoint then open_endpoint(row.target)
+        else open_file(row.target)
+        end
       end
 
       def editable?(row)

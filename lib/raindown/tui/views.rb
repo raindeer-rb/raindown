@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 require_relative 'dashboard'
+require_relative 'endpoint_view'
 
 module Raindown
   module TUI
     # Beside the files, a Navigator shows the open file's outline, or the dashboard of the project's charts,
-    # which is the first item in the files and "d" switches to. The dashboard finds its charts each time it's shown,
-    # and opens a chart's file in the outline at its directive.
+    # which is the first item in the files and "d" switches to, or an endpoint opened from the files.
+    # The dashboard finds its charts each time it's shown, and opens a chart's file in the outline at its directive,
+    # as an endpoint does its own.
     module Views
       def view = @view || :browser
 
@@ -14,8 +16,11 @@ module Raindown
         @dashboard ||= Dashboard.new(root:, workers: @workers)
       end
 
+      # The endpoint opened from the files, while it's shown.
+      attr_reader :endpoint_view
+
       # The pane right of the files, which the cursor moves to with Tab.
-      def main_pane = view == :dashboard ? :dashboard : :outline
+      def main_pane = { dashboard: :dashboard, endpoint: :endpoint }.fetch(view, :outline)
 
       private
 
@@ -24,6 +29,15 @@ module Raindown
         return false if name == :left && dashboard.first_in_row?
 
         @focus == :dashboard && !%i[tab tick].include?(name)
+      end
+
+      # Keys for the endpoint, while it has the focus, to scroll its response and open its directive.
+      def endpoint_event?(name) = @focus == :endpoint && %i[up down enter edit].include?(name)
+
+      def open_endpoint(endpoint)
+        @view = :endpoint
+        @endpoint_view = EndpointView.new(endpoint, worker: @workers.for(endpoint.path))
+        info(endpoint.text)
       end
 
       def toggle_dashboard
@@ -43,7 +57,8 @@ module Raindown
         dashboard.errors.empty? ? info(found) : error("#{found}, but couldn't read #{dashboard.errors.join(', ')}")
       end
 
-      def dashboard_effect(effect)
+      # What the dashboard or an endpoint asks for, to open or edit a directive.
+      def view_effect(effect)
         case effect
         when Open then open_at(effect.path, effect.line)
         when Edit

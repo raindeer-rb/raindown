@@ -383,4 +383,81 @@ RSpec.describe Raindown::TUI::Navigator do
       expect([navigator.menu, navigator.status]).to eq([nil, [:info, "There's one project here"]])
     end
   end
+
+  describe 'endpoints' do
+    subject(:navigator) { described_class.new(root: @root) }
+
+    before do
+      write('a.md', "# A\n")
+      post = "<{ endpoint: }>\n```sh\ncurl -X POST https://api.example.com/users\n```\n<{ :endpoint }>\n"
+      write('api.md', "# API\n\n<{ endpoint: }>\n#{curl}<{ :endpoint }>\n\n#{post}")
+    end
+
+    def endpoints(navigator) = navigator.rows(:files).select { it.kind == :endpoint }.map { it.target.text }
+
+    it 'lists every endpoint below the files, after a blank line, by its request, with its method in its colour' do
+      expect(navigator.rows(:files).last(3).map { [it.kind, it.tag, it.text] })
+        .to eq([[:separator, nil, ''], [:endpoint, ['GET', :method_get], 'api.example.com'],
+                [:endpoint, ['POST', :method_post], 'api.example.com/users']])
+    end
+
+    it 'scrolls with the files, and the cursor moves from the last file to the first endpoint and back' do
+      3.times { navigator.handle(:down) }
+      expect(navigator.rows(:files)[navigator.cursor(:files)].text).to eq('api.example.com')
+
+      navigator.handle(:up)
+      expect(navigator.rows(:files)[navigator.cursor(:files)].text).to eq('api.md')
+    end
+
+    it 'opens an endpoint beside the files, with its response, and its directive in the outline with Enter' do
+      navigator.handle(click(:files, 6))
+      expect([navigator.view, navigator.endpoint_view.endpoint.line, navigator.focus]).to eq([:endpoint, 9, :files])
+      expect(navigator.endpoint_view.response).to eq([])
+
+      navigator.handle(:tab)
+      expect(navigator.focus).to eq(:endpoint)
+      navigator.handle(:enter)
+      expect([navigator.view, navigator.relative(navigator.path), navigator.focus]).to eq([:browser, 'api.md', :outline])
+      expect(navigator.rows(:outline)[navigator.cursor(:outline)].target.line).to eq(9)
+    end
+
+    it 'runs an opened endpoint with X' do
+      allow(Raindown::Curl).to receive(:run).and_return(['{}', 'json'])
+      navigator.handle(click(:files, 6))
+      navigator.handle(:tab)
+
+      navigator.handle(:execute).task.call
+      expect(navigator.endpoint_view.response).to eq(['{}'])
+    end
+
+    it 'runs an opened endpoint with its button, and shows the response' do
+      allow(Raindown::Curl).to receive(:run).and_return(["{\n  \"id\": 1\n}", 'json'])
+      navigator.handle(click(:files, 5))
+
+      navigator.handle(click(:endpoint, 0, :execute)).task.call
+      view = navigator.endpoint_view
+      expect([view.language, view.response, view.fetched]).to eq(['json', ['{', '  "id": 1', '}'], Date.today.iso8601])
+    end
+
+    it 'runs the selected endpoint' do
+      allow(Raindown::Curl).to receive(:run).and_return(['{ "id": 1 }', 'json'])
+      3.times { navigator.handle(:down) }
+
+      effect = navigator.handle(:execute)
+      expect(effect.message).to eq('Running GET api.example.com...')
+      effect.task.call
+      expect(File.read(File.join(@root, 'api.md'))).to include('{ "id": 1 }')
+    end
+
+    it 'narrows to the project chosen in the menu, and shows its own' do
+      write('guides/more.md', "<{ endpoint: }>\n```sh\ncurl https://guides.example.com\n```\n<{ :endpoint }>\n")
+      FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
+      navigator = described_class.new(root: @root)
+      expect(endpoints(navigator).length).to eq(3)
+
+      navigator.handle(:projects)
+      navigator.handle(click(:menu, 2))
+      expect(endpoints(navigator)).to eq(['GET guides.example.com'])
+    end
+  end
 end

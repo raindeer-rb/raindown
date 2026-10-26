@@ -39,7 +39,7 @@ RSpec.describe Raindown::TUI::Layout do
   end
 
   it 'lays out the title, the files beside the outline below a blank line, the status and the buttons, each line the full width' do
-    lines = described_class.new(navigator, width: 60, height: 9).lines
+    lines = described_class.new(navigator, width: 60, height: 14).lines
 
     expect(text(lines).map(&:rstrip)).to eq(
       [' 🌧️ Raindown  ~/docs › guides/setup.md',
@@ -49,6 +49,11 @@ RSpec.describe Raindown::TUI::Layout do
        ' ▾ guides/          ▏',
        '   setup.md         ▏',
        ' README.md          ▏',
+       '                    ▏',
+       ' GET example.com    ▏',
+       '                    ▏',
+       '                    ▏',
+       '                    ▏',
        ' Opened guides/setup.md',
        ' Tab Pane  Enter Open  X Run  E dit  W rite back  R eload']
     )
@@ -58,7 +63,7 @@ RSpec.describe Raindown::TUI::Layout do
   end
 
   it 'highlights the cursor in the focused pane, and dimmer in the others, with the divider beside the outline\'s' do
-    lines = described_class.new(navigator, width: 60, height: 9).lines
+    lines = described_class.new(navigator, width: 60, height: 14).lines
     divider = ->(line) { line.find { it.text == described_class::DIVIDER }.style }
 
     expect(lines[2].last.style).to eq(:selected)
@@ -66,17 +71,19 @@ RSpec.describe Raindown::TUI::Layout do
     expect([lines[3].first.style, lines[3].first.event]).to eq([:blank, nil])
     expect([divider[lines[1]], divider[lines[2]], divider[lines[3]]]).to eq(%i[divider selected_divider divider])
     navigator.handle(:left)
-    lines = described_class.new(navigator, width: 60, height: 9).lines
+    lines = described_class.new(navigator, width: 60, height: 14).lines
     expect([lines[2].last.style, lines[5].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
     expect(lines[2].first.style).to eq(:dashboard)
     expect(lines[3].last(2).map(&:style)).to eq(%i[button button])
   end
 
   it 'sends events from rows and buttons when clicked' do
-    lines = described_class.new(navigator, width: 80, height: 9).lines
+    lines = described_class.new(navigator, width: 80, height: 14).lines
 
     expect(lines[2].first.event).to eq(click(:files, 0))
     expect(lines[4].first.event).to eq(click(:files, 2))
+    expect(lines[8].first.event).to eq(click(:files, 6))
+    expect(lines[7].first.event).to be_nil
     expect(lines[2].last.event).to eq(click(:outline, 0))
     expect(lines[3].last.event).to eq(click(:outline, 1, :execute))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload quit])
@@ -213,6 +220,39 @@ RSpec.describe Raindown::TUI::Layout do
       expect(lines[2].find { it.event == click(:menu, 0) }.style).to eq(:selected)
       expect(lines[4].find { it.event == click(:menu, 2) }).not_to be_nil
       expect(text(lines).drop(1).map { width(it) }).to all(eq(60))
+    end
+  end
+
+  describe 'an endpoint' do
+    let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
+
+    before do
+      File.write(File.join(@root, 'api.md'), "<{ endpoint: }>\n```sh\ncurl -X DELETE https://api.example.com/users/1\n```\n" \
+                                             "```json\n{}\n```\n<!-- raindown:fetched 2026-10-26 -->\n<{ :endpoint }>\n")
+    end
+
+    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+    def endpoint_row(lines) = lines.index { |line| line.any? { it.style == :method_delete } }
+
+    it 'lists the method in its colour in the files' do
+      lines = described_class.new(navigator, width: 100, height: 14).lines
+      row = lines[endpoint_row(lines)]
+
+      expect(row.map { [it.text.strip, it.style] }.first(2)).to eq([['DELETE', :method_delete], ['api.example.com/users/1', :endpoint]])
+    end
+
+    it 'shows its URL in a bar with rounded corners and a button to run it, then its response' do
+      navigator.handle(click(:files, navigator.rows(:files).index { it.kind == :endpoint }))
+      lines = described_class.new(navigator, width: 90, height: 12).lines
+
+      expect(main(lines)[2..7]).to eq([' ╭───────────────────────────────────────────────────────╮',
+                                       ' │ DELETE https://api.example.com/users/1        [ Run ] │',
+                                       ' ╰───────────────────────────────────────────────────────╯',
+                                       '', ' Response · json · fetched 2026-10-26', ' {}'])
+      expect(lines[3].find { it.text == '[ Run ]' }.event).to eq(click(:endpoint, 0, :execute))
+      expect(lines[3].find { it.text == 'DELETE' }.style).to eq(:method_delete)
+      expect(text(lines).first).to include('› DELETE api.example.com/users/1')
+      expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
     end
   end
 end

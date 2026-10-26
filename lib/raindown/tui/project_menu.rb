@@ -52,6 +52,7 @@ module Raindown
         @menu = nil
         @project = project
         @files.scope = project
+        @endpoints.project = project
         dashboard.project = project
         open_dashboard
       end

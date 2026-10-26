@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'events'
+require_relative 'rows'
 require_relative 'text'
 require_relative 'title'
 
@@ -17,6 +18,7 @@ module Raindown
     # Each line is exactly the width, in display columns. A segment with an event is clicked to send it.
     # With the Dashboard chosen in the files, a DashboardPane of the project's charts is in place of the outline.
     class Layout
+      include Rows
       include Text
       include Title
 
@@ -27,6 +29,8 @@ module Raindown
       DASHBOARD_BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
                            ['q', 'Quit', :quit]].freeze
       PROJECTS_BUTTON = ['p', 'Projects', :projects].freeze
+      ENDPOINT_BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['x', 'Run', :execute], ['e', 'Edit', :edit],
+                          ['r', 'Reload', :reload], ['q', 'Quit', :quit]].freeze
       FILES_WIDTH = (16..32)
       # The line between the files and the outline or dashboard, at its column's left edge, unlike │ in the middle,
       # so a highlighted file's row runs up to it.
@@ -86,6 +90,10 @@ module Raindown
 
       # The outline's lines, or the dashboard's.
       def main_pane(pane_width, pane_height)
+        if navigator.view == :endpoint
+          require_relative 'endpoint_pane'
+          return EndpointPane.new(navigator, width: pane_width, height: pane_height).lines
+        end
         if dashboard?
           require_relative 'dashboard_pane'
           return DashboardPane.new(navigator, width: pane_width, height: pane_height).lines
@@ -95,36 +103,6 @@ module Raindown
         Array.new(pane_height) { |index| cell(:outline, *outline, index, pane_width) }
       end
 
-      # A pane's row as its text, then its buttons, or blank below its last row.
-      def cell(pane, rows, offset, index, cell_width)
-        row = rows[index]
-        return [segment('', :blank, width: cell_width)] unless row&.selectable?
-
-        index += offset
-        selected = navigator.cursor(pane) == index
-        buttons = row_buttons(row, pane:, index:, selected:, cell_width:)
-        text_width = cell_width - display_width(buttons.map(&:text).join)
-        text = " #{INDENT * row.depth}#{row.text}"
-
-        [segment(text, row_style(pane, row, selected), width: text_width, event: Click.new(pane:, index:, action: :enter)), *buttons]
-      end
-
-      # The row's buttons, right of its text, unless they'd take more than half the pane.
-      def row_buttons(row, pane:, index:, selected:, cell_width:)
-        buttons = row.buttons.map do |label, event|
-          style = selected ? :"#{row_style(pane, row, true)}_button" : :button
-          Segment.new(text: " #{label}", style:, event: Click.new(pane:, index:, action: event))
-        end
-        display_width(buttons.map(&:text).join) > cell_width / 2 ? [] : buttons
-      end
-
-      # The cursor's row is highlighted in the pane with the focus, and dimmer in the others, like the file a chart opened.
-      def row_style(pane, row, selected)
-        return row.kind unless selected
-
-        navigator.focus == pane ? :selected : :cursor
-      end
-
       def status
         kind, message = navigator.status
         [segment(" #{message}", kind)]
@@ -132,6 +110,7 @@ module Raindown
 
       # The dashboard's buttons have room for the project menu's, when there's more than one project.
       def buttons
+        return ENDPOINT_BUTTONS if navigator.view == :endpoint
         return BUTTONS unless dashboard?
 
         navigator.projects? ? DASHBOARD_BUTTONS.dup.insert(3, PROJECTS_BUTTON) : DASHBOARD_BUTTONS

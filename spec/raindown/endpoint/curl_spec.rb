@@ -3,6 +3,20 @@
 require 'raindown/endpoint/curl'
 
 RSpec.describe Raindown::Curl do
+  describe '.request' do
+    it "reads a snippet's method and URL, which is a POST when it sends data, as with curl" do
+      expect(described_class.request('curl https://httpbin.org/uuid')).to eq(['GET', 'https://httpbin.org/uuid'])
+      expect(described_class.request('curl -sSL -XDELETE https://a.io/x')).to eq(['DELETE', 'https://a.io/x'])
+      expect(described_class.request("curl -d 'a=1' https://a.io/p")).to eq(['POST', 'https://a.io/p'])
+      expect(described_class.request('curl -I https://a.io')).to eq(['HEAD', 'https://a.io'])
+    end
+
+    it "is nil for a snippet that isn't a curl request" do
+      expect(described_class.request('ls')).to be_nil
+      expect(described_class.request('curl -o out https://a.io')).to be_nil
+    end
+  end
+
   describe '.arguments' do
     it 'splits the snippet like a shell would, without curl, and spells options long' do
       snippet = "curl -X POST https://api.example.com/users \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"name\": \"rain\"}'\n"

@@ -26,6 +26,16 @@ module Raindown
         "#{cut}…#{' ' * (width - 1 - cut_width)}"
       end
 
+      # The widths of texts side by side in a width: each as wide as it is, and the last as wide as what's left,
+      # with none past the width.
+      def spread(texts, width)
+        texts.each_with_index.map do |text, index|
+          part = index == texts.length - 1 ? width : [display_width(text), width].min
+          width -= part
+          part
+        end
+      end
+
       # Tabs and control characters, like in a directive's output, would move the terminal's cursor.
       def printable(text)
         text.gsub("\t", INDENT).gsub(/[[:cntrl:]]/, '')

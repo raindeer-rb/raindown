@@ -10,6 +10,9 @@ require_relative '../nodes'
 require_relative '../pages'
 require_relative '../projects'
 require_relative 'card'
+require_relative 'endpoint'
+require_relative '../code_blocks'
+require_relative '../endpoint/curl'
 
 module Raindown
   module TUI
@@ -47,6 +50,16 @@ module Raindown
         { cards: drawn, errors: @load_errors + @file_errors }
       end
 
+      # Every endpoint in the project's files, by its request, leaving out the ones whose snippet can't be read.
+      def endpoints
+        Projects.files(root).flat_map do |path|
+          lines = File.readlines(path, encoding: Encoding::UTF_8)
+          Document.read(path).directives.select(&:endpoint?).filter_map { |directive| endpoint(path, lines, directive) }
+        rescue StandardError
+          []
+        end
+      end
+
       def write_back(path)
         Actions.write_back(path)
       end
@@ -60,6 +73,12 @@ module Raindown
       end
 
       private
+
+      def endpoint(path, lines, directive)
+        snippet = CodeBlocks.endpoint(lines, directive.line).first&.dig(:body)
+        method, url = Curl.request(snippet.to_s)
+        Endpoint.new(project: root, path:, line: directive.line, method:, url:) if url
+      end
 
       def charts_in(path)
         content = File.read(path, encoding: Encoding::UTF_8)

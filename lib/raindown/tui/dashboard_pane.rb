@@ -87,7 +87,7 @@ module Raindown
           segments.concat(card_line(cards[index], index, line))
         end
 
-        [*segments, segment('', :blank, width: width - segments.sum { display_width(it.text) })]
+        padded(segments)
       end
 
       # A card opens chart source when it's clicked, like Enter, but not the space below a card shorter than its row.

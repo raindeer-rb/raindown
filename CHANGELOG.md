@@ -11,6 +11,9 @@ Minor features that don't break backwards compatibility are released as patches.
 
 - `raindown tui` opens on a Dashboard, at the top of the files, showing every chart in the project drawn from its data
 - `Raindown::Document::Directive#body` is the lines inside a directive, like an endpoint's request and response
+- `raindown tui` lists every endpoint below the files, by its request, with its method in colour,
+  and opens one beside them with its URL, a button to run it, and its response
+- `Raindown::Curl.request` reads a curl snippet's method and URL
 
 ### Changed
 

@@ -9,17 +9,33 @@ module Raindown
     module Commands
       private
 
+      # Runs the endpoint selected in the outline, or listed below the files, or opened beside them.
       def execute
+        return run_listed if @focus == :files
+        return run_opened if @focus == :endpoint
+
         directive = selected(:outline)&.target if @focus == :outline
         return error('Select an endpoint to run') unless directive.is_a?(Document::Directive) && directive.endpoint?
 
-        Wait.new(message: "Running the endpoint on line #{directive.line}...", task: -> { run_endpoint(directive) })
+        Wait.new(message: "Running the endpoint on line #{directive.line}...", task: -> { run_endpoint(path, directive.line) })
       end
 
-      def run_endpoint(directive)
-        changed = @workers.for(path).call(:execute, path, directive.line)
-        @outline.read
-        info(changed ? "Ran the endpoint on line #{directive.line}" : 'The response is the same')
+      def run_listed
+        endpoint = selected(:files)&.target
+        return error('Select an endpoint to run') unless endpoint.is_a?(Endpoint)
+
+        run(endpoint)
+      end
+
+      def run_opened = run(endpoint_view.endpoint)
+
+      def run(endpoint) = Wait.new(message: "Running #{endpoint.text}...", task: -> { run_endpoint(endpoint.path, endpoint.line) })
+
+      def run_endpoint(file, line)
+        changed = @workers.for(file).call(:execute, file, line)
+        @outline.read if file == path
+        @endpoint_view&.read
+        info(changed ? "Ran the endpoint on line #{line}" : 'The response is the same')
       rescue StandardError => e
         error(e.message)
       end
@@ -50,6 +66,8 @@ module Raindown
       def reload
         @workers.restart
         @files.load
+        @endpoints.load
+        @endpoint_view&.read
         @outline&.read if path && File.exist?(path)
         dashboard.load if view == :dashboard
         info('Reloaded')

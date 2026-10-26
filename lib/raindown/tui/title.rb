@@ -14,11 +14,8 @@ module Raindown
       def title
         parts = [[name, nil], ["#{location}#{' ▾' if navigator.projects?}", (:projects if navigator.projects?)],
                  [" › #{page}", nil]]
-        remaining = width - 1
 
-        parts.each_with_index.map do |(text, event), index|
-          part_width = index == parts.length - 1 ? remaining : [display_width(text), remaining].min
-          remaining -= part_width
+        parts.zip(spread(parts.map(&:first), width - 1)).map do |(text, event), part_width|
           segment(text, :title, width: part_width, event:)
         end
       end
@@ -27,6 +24,7 @@ module Raindown
 
       def page
         if dashboard? then 'Dashboard'
+        elsif navigator.view == :endpoint then navigator.endpoint_view.endpoint.text
         elsif navigator.path then navigator.relative(navigator.path)
         else 'No Markdown files'
         end
