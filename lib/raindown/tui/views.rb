@@ -9,12 +9,12 @@ module Raindown
     # which is the first item in the files and "d" switches to, or an endpoint opened from the files.
     # The dashboard finds its charts each time it's shown, and opens a chart's file in the outline at its directive,
     # as an endpoint does its own.
-    # A view is named after its pane, handles the keys it has while that has the focus, and loads again after a change.
+    # A view is named after its pane, has a next step for the keys it takes while that has the focus, and loads again after a change.
     module Views
       # The open file's outline, whose keys the Navigator handles itself, as they move between rows like the files'.
       OutlineView = Data.define do
         def name = :outline
-        def handles?(_key) = false
+        def next_step?(_key) = false
         def load = nil
       end
 

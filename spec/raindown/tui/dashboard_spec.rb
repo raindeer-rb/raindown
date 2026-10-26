@@ -60,39 +60,39 @@ RSpec.describe Raindown::TUI::Dashboard do
     expect(dashboard.cards.find { it.path.end_with?('missing.md') }.chart.first).to start_with("Can't chart")
   end
 
-  describe '#handle' do
+  describe '#next_step' do
     before { dashboard.rows = [[0, 1], [2]] }
 
     it 'moves along the cards, and to the row above or below' do
-      dashboard.handle(:right)
+      dashboard.next_step(:right)
       expect(dashboard.cursor).to eq(1)
 
-      dashboard.handle(:down)
+      dashboard.next_step(:down)
       expect(dashboard.cursor).to eq(2)
 
-      dashboard.handle(:up)
+      dashboard.next_step(:up)
       expect(dashboard.cursor).to eq(0)
     end
 
     it "opens or edits the selected chart's file at its directive" do
       dashboard.cursor = 2
 
-      expect(dashboard.handle(:enter)).to eq(Raindown::TUI::Open.new(path: File.join(@root, 'notes.md'), line: 7))
-      expect(dashboard.handle(:edit)).to eq(Raindown::TUI::Edit.new(path: File.join(@root, 'notes.md'), line: 7))
+      expect(dashboard.next_step(:enter)).to eq(Raindown::TUI::Open.new(path: File.join(@root, 'notes.md'), line: 7))
+      expect(dashboard.next_step(:edit)).to eq(Raindown::TUI::Edit.new(path: File.join(@root, 'notes.md'), line: 7))
 
       dashboard.cursor = 0
-      expect(dashboard.handle(:enter)).to eq(Raindown::TUI::Open.new(path: File.join(@root, 'guides', 'stats.rd'), line: 3))
+      expect(dashboard.next_step(:enter)).to eq(Raindown::TUI::Open.new(path: File.join(@root, 'guides', 'stats.rd'), line: 3))
     end
   end
 
   describe '#scroll' do
     it 'scrolls down to the cursor, and back up' do
       dashboard.rows = [[0], [1], [2]]
-      2.times { dashboard.handle(:down) }
+      2.times { dashboard.next_step(:down) }
 
       expect(dashboard.scroll([5, 5, 5], 8)).to eq(2)
 
-      dashboard.handle(:up)
+      dashboard.next_step(:up)
       expect(dashboard.scroll([5, 5, 5], 8)).to eq(1)
     end
   end

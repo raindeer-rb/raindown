@@ -32,7 +32,7 @@ module Raindown
 
         loop do
           draw
-          effect = @navigator.handle(read)
+          effect = @navigator.next_step(read)
           break if effect == :quit
 
           perform(effect)

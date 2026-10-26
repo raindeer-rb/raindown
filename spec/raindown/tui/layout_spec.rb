@@ -70,7 +70,7 @@ RSpec.describe Raindown::TUI::Layout do
     expect(lines[5].first.style).to eq(:cursor)
     expect([lines[3].first.style, lines[3].first.event]).to eq([:blank, nil])
     expect([divider[lines[1]], divider[lines[2]], divider[lines[3]]]).to eq(%i[divider selected_divider divider])
-    navigator.handle(:left)
+    navigator.next_step(:left)
     lines = described_class.new(navigator, width: 60, height: 14).lines
     expect([lines[2].last.style, lines[5].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
     expect(lines[2].first.style).to eq(:dashboard)
@@ -140,7 +140,7 @@ RSpec.describe Raindown::TUI::Layout do
       expect(titles.map(&:style)).to eq(%i[cursor heading])
       expect(lines[2].map(&:event).select { it&.pane == :dashboard }).to eq([click(:dashboard, 0), click(:dashboard, 1)])
 
-      navigator.handle(:tab)
+      navigator.next_step(:tab)
       line = described_class.new(navigator, width: 90, height: 10).lines[3]
       title = line.find { it.event == click(:dashboard, 0) && it.style != :border }
       expect(title.style).to eq(:selected)
@@ -149,7 +149,7 @@ RSpec.describe Raindown::TUI::Layout do
     it "doesn't click the space below a card shorter than its row" do
       columns = "<{ chart: '1 2 3' height: 3 format: 'columns' }>\n<{ :chart }>\n"
       File.write(File.join(@root, 'stats.md'), "<{ chart: '1 2 3' }>\n<{ :chart }>\n\n#{columns}")
-      navigator.handle(:reload)
+      navigator.next_step(:reload)
       lines = described_class.new(navigator, width: 90, height: 13).lines
 
       clicks = ->(line) { lines[line].map(&:event).select { it&.pane == :dashboard }.map(&:index).uniq }
@@ -211,7 +211,7 @@ RSpec.describe Raindown::TUI::Layout do
       expect(described_class.new(navigator, width: 60, height: 8).lines.first.find(&:event).to_h)
         .to include(text: '~/docs ▾', event: :projects)
 
-      navigator.handle(:projects)
+      navigator.next_step(:projects)
       lines = described_class.new(navigator, width: 60, height: 8).lines
       menu = lines[1..5].map { columns(it, from: width(' 🌧️ Raindown  '), count: 21) }
 
@@ -242,7 +242,7 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'shows its URL in a bar with rounded corners and a button to run it, then its response' do
-      navigator.handle(click(:files, navigator.rows(:files).index { it.kind == :endpoint }))
+      navigator.next_step(click(:files, navigator.rows(:files).index { it.kind == :endpoint }))
       lines = described_class.new(navigator, width: 90, height: 12).lines
 
       expect(main(lines)[2..7]).to eq([' ╭───────────────────────────────────────────────────────╮',

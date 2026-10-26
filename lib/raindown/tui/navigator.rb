@@ -15,7 +15,7 @@ module Raindown
   module TUI
     # What the terminal UI shows and does, in plain Ruby, with no terminal: a FileTree of the project's Markdown files,
     # beside the open file's Outline, or the Dashboard of its charts. The Screen draws it and sends it events, keys like
-    # :down, or a Click, and handle returns what the Screen does next: nil to draw again, :quit to stop, or a Run or Wait.
+    # :down, or a Click, and next_step returns what the Screen does next: nil to draw again, :quit to stop, or a Run or Wait.
     class Navigator
       include Commands
       include Views
@@ -43,7 +43,7 @@ module Raindown
       end
 
       # An event nothing has, like a mouse button's release, does nothing.
-      def handle(event)
+      def next_step(event)
         case event
         when nil then nil
         when Click then click(event)
@@ -76,7 +76,7 @@ module Raindown
         return menu_event(name) if menu
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
-        return view_effect(view.handle(name)) if @focus == view.name && view.handles?(name)
+        return view_effect(view.next_step(name)) if @focus == view.name && view.next_step?(name)
 
         browser_event(name)
       end

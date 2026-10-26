@@ -8,7 +8,7 @@ module Raindown
     # with a cursor. A chart is a chart: directive, or a project's own node that's a Raindown::Chart,
     # like "Sales < Raindown::Chart". Charts are drawn again every few seconds, so they follow changes to their data,
     # like a CSV file, without a save.
-    # Handle returns the Navigator's next step: nil, or an Open or Edit of a chart's directive.
+    # A key's next step, for the Navigator, is nil, or an Open or Edit of a chart's directive.
     class Dashboard
       # Seconds between drawing the charts again.
       REDRAW = 2
@@ -59,12 +59,12 @@ module Raindown
       def name = :dashboard
 
       # Every key but Tab to the files, or left from the first card in a row.
-      def handles?(key) = !%i[tab tick].include?(key) && !(key == :left && first_in_row?)
+      def next_step?(key) = !%i[tab tick].include?(key) && !(key == :left && first_in_row?)
 
-      def handle(name)
+      def next_step(key)
         chart = selected
-        case name
-        when *MOVES then move(name)
+        case key
+        when *MOVES then move(key)
         when :enter then chart && Open.new(path: chart.path, line: chart.line)
         when :edit then chart && Edit.new(path: chart.path, line: chart.line)
         when :reload then load.then { nil }
