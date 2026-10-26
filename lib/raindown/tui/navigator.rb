@@ -78,7 +78,7 @@ module Raindown
         name, *args = event
         return move(MOVES[name]) if MOVES.key?(name)
         return switch(PANES[name] == :main ? main_pane : PANES[name] || other_pane) if PANES.key?(name)
-        return select(*args) if name == :select
+        return click(*args) if name == :select
         return press(*args) if name == :press
         return activate(name) if %i[enter toggle].include?(name)
 
@@ -109,6 +109,17 @@ module Raindown
         @focus = pane
         @panes[pane].cursor = index
         nil
+      end
+
+      # A click does what Enter does in the files, and folds a heading or directive in the outline.
+      # Other lines in the outline are only selected, so a click doesn't open the editor.
+      def click(pane, index)
+        select(pane, index)
+        row = selected
+        return activate(:enter) if pane == :files
+        return unless row&.kind == :heading || (row&.kind == :directive && row.target.body)
+
+        activate(:toggle)
       end
 
       def press(pane, index, event)

@@ -175,6 +175,36 @@ RSpec.describe Raindown::TUI::Navigator do
     end
   end
 
+  describe 'clicks' do
+    it 'do what Enter does in the files: open the Dashboard, fold a folder, open a file' do
+      write('guides/setup.md', "# Setup\n")
+      write('notes.md', "# Notes\n")
+      navigator = described_class.new(root: @root, path: File.join(@root, 'notes.md'))
+
+      navigator.handle([:select, :files, 1])
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', 'setup.md', 'notes.md'])
+
+      navigator.handle([:select, :files, 2])
+      expect([navigator.view, navigator.relative(navigator.path), navigator.focus]).to eq([:browser, 'guides/setup.md', :outline])
+
+      navigator.handle([:select, :files, 0])
+      expect(navigator.view).to eq(:dashboard)
+    end
+
+    it 'fold headings and directives in the outline, and only select their other lines, without opening the editor' do
+      navigator = described_class.new(root: @root, path: write('notes.md', notes))
+
+      navigator.handle([:select, :outline, 1])
+      expect(texts(navigator, :outline)[1..3]).to eq(['toc:', '- [Notes](#notes)', '- [Setup](#setup)'])
+
+      expect(navigator.handle([:select, :outline, 2])).to be_nil
+      expect([navigator.focus, navigator.cursor(:outline)]).to eq([:outline, 2])
+
+      navigator.handle([:select, :outline, 0])
+      expect(texts(navigator, :outline)).to eq(['# Notes …', '# Usage'])
+    end
+  end
+
   describe '#visible' do
     it 'scrolls so the cursor is in view' do
       10.times { write("#{it}.md") }
@@ -287,25 +317,27 @@ RSpec.describe Raindown::TUI::Navigator do
     it "shows a project's own files, without the projects inside it, and every project's again with All projects" do
       navigator.handle(:projects)
       navigator.handle([:select, :menu, 1])
-      navigator.handle(:enter)
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', 'notes.md'])
 
       navigator.handle(:projects)
       expect(navigator.menu).to eq(1)
       navigator.handle([:select, :menu, 0])
-      navigator.handle(:enter)
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▸ 🌧 guides/', 'notes.md'])
       expect(navigator.dashboard.charts.length).to eq(2)
     end
 
-    it 'stays open until Enter, as clicks move its cursor, and other events do nothing' do
+    it 'stays open until a project is chosen with Enter or a click, while other events do nothing' do
       navigator.handle(:projects)
-      [[:select, :menu, 2], [:select, :files, 1], [:press, :dashboard, 0, :enter], nil, :tick, :tab, :edit].each do |event|
+      [:down, [:select, :files, 1], [:press, :dashboard, 0, :enter], nil, :tick, :tab, :edit].each do |event|
         navigator.handle(event)
       end
-      expect([navigator.menu, navigator.project, navigator.focus]).to eq([2, nil, :files])
+      expect([navigator.menu, navigator.project, navigator.focus]).to eq([1, nil, :files])
 
       navigator.handle(:enter)
+      expect([navigator.menu, navigator.project]).to eq([nil, @root])
+
+      navigator.handle(:projects)
+      navigator.handle([:select, :menu, 2])
       expect([navigator.menu, navigator.project]).to eq([nil, File.join(@root, 'guides')])
     end
 
