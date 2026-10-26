@@ -2,16 +2,19 @@
 
 require_relative '../document'
 require_relative 'row'
+require_relative 'worker'
 
 module Raindown
   module TUI
-    # The outline pane: a file's headings and directives, read from its Document. Headings fold the section below them,
-    # and a directive's output, the lines Raindown wrote back, expands below it. Both start folded away.
+    # The outline pane: a file's headings and directives, read by its project's Worker. Headings fold the section below them,
+    # and a directive's body expands below it, like the lines a node wrote back or an endpoint's request and response.
+    # Both start folded away.
     class Outline
       attr_reader :path, :error
 
-      def initialize(path)
+      def initialize(path, worker:)
         @path = path
+        @worker = worker
         @folded = Set.new
         @expanded = Set.new
         read
@@ -20,11 +23,12 @@ module Raindown
       # Reads the file again, keeping what's folded.
       def read
         @mtime = File.mtime(path)
-        @document = Document.read(path)
-        @lines = File.readlines(path, chomp: true)
-        @document.directives # Finds an error in the file, like a missing end tag, now rather than while drawing.
+        outline = @worker.call(:outline, path)
+        @lines = outline.lines
+        @headings = outline.headings
+        @directives = outline.directives
         @error = nil
-      rescue StandardError => e
+      rescue Worker::Error, SystemCallError => e
         @error = e.message
       end
 
@@ -72,12 +76,13 @@ module Raindown
 
       # Headings a directive wrote are part of its output, so they show when it's expanded rather than on their own.
       def items
-        outputs = @document.directives.filter_map(&:output)
-        @document.outline.reject { |item| item.is_a?(Document::Heading) && outputs.any? { it.cover?(item.line) } }
+        outputs = @directives.filter_map(&:output)
+        (@headings + @directives).sort_by(&:line)
+                                 .reject { |item| item.is_a?(Document::Heading) && outputs.any? { it.cover?(item.line) } }
       end
 
       def min_level
-        @document.headings.map(&:level).min || 1
+        @headings.map(&:level).min || 1
       end
 
       def heading_row(heading)
@@ -92,14 +97,14 @@ module Raindown
                       buttons: buttons(directive, expanded:))
         return [row] unless expanded
 
-        [row, *directive.output.map do |number|
-          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :output, target: number)
+        [row, *directive.body.map do |number|
+          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number)
         end]
       end
 
       def buttons(directive, expanded:)
         buttons = []
-        buttons << [expanded ? '[-]' : "[+#{directive.output.size}]", :toggle] if directive.output
+        buttons << [expanded ? '[-]' : "[+#{directive.body.size}]", :toggle] if directive.body
         buttons << ['[Run]', :execute] if directive.endpoint?
         buttons
       end

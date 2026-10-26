@@ -4,6 +4,8 @@ require 'curses'
 
 require_relative 'input'
 require_relative 'layout'
+require_relative 'quiet'
+require_relative 'ncurses_shim'
 require_relative 'styles'
 
 module Raindown
@@ -20,14 +22,20 @@ module Raindown
       end
 
       def run
+        Quiet.holding_stderr { loop_screen }
+      end
+
+      private
+
+      def loop_screen
         start
 
         loop do
           draw
-          effect = @navigator.handle(read)
+          effect = @navigator.next_step(read)
           break if effect == :quit
 
-          perform(*effect) if effect.is_a?(Array)
+          perform(effect)
         end
       rescue Interrupt
         nil
@@ -35,23 +43,18 @@ module Raindown
         stop
       end
 
-      private
-
-      def perform(name, *args)
-        case name
-        when :run
-          suspend { system(*args.first) }
-          @navigator.ran
-        when :wait
-          message, task = args
-          show(message)
-          task.call
+      # Runs a command, like the editor, then tells the Navigator, or shows a message while a slow task runs.
+      def perform(effect)
+        case effect
+        in Run(command:) then suspend { system(*command) }.then { @navigator.ran }
+        in Wait(message:, task:) then show(message).then { task.call }
+        else nil
         end
       end
 
       def start
         ENV['ESCDELAY'] ||= '25'
-        Curses.init_screen
+        NcursesShim.starting { Curses.init_screen }
         @styles = Styles.start
         Curses.noecho
         Curses.cbreak
@@ -59,7 +62,8 @@ module Raindown
         Curses.curs_set(0)
         Curses.stdscr.keypad(true)
         Curses.stdscr.timeout = TICK
-        Curses.mousemask(Curses::BUTTON1_PRESSED | Curses::BUTTON1_CLICKED | Input.wheel.keys.sum)
+        # The terminal sends the app its mouse events, so scrolling doesn't scroll the terminal either.
+        Curses.mousemask(Input::CLICKS)
         Curses.mouseinterval(0)
       end
 
@@ -80,7 +84,17 @@ module Raindown
           segments.each { |segment| paint(window, segment) }
         end
 
+        repaint_title(lines.first, window)
         window.refresh
+      end
+
+      # The title's rain cloud is one column to ncurses, and two in terminals like iTerm and kitty, which would put
+      # the rest of the title a column out when ncurses changes part of it. So when it changes, the screen is
+      # repainted, and the title is written in one go.
+      def repaint_title(title, window)
+        text = title&.map(&:text)&.join
+        window.redraw if @title && text != @title
+        @title = text
       end
 
       def paint(window, segment)
@@ -102,8 +116,9 @@ module Raindown
         Input.key_event(key)
       end
 
+      # The curses gem warns the first time it makes a MouseEvent, that it's "undefining the allocator" of the class.
       def mouse
-        event = Curses.getmouse
+        event = Quiet.quietly { Curses.getmouse }
         Input.mouse_event(event, @zones) if event
       end
 

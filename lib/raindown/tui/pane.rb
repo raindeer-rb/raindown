@@ -20,8 +20,12 @@ module Raindown
         @cursor.clamp(0, [rows.length - 1, 0].max)
       end
 
+      # Moves past rows that can't be selected, like separators, and stays at the first or last row rather than moving off them.
       def move(by)
-        @cursor = (cursor + by).clamp(0, [rows.length - 1, 0].max)
+        rows = self.rows
+        index = cursor + by
+        index += by while index.between?(0, rows.length - 1) && !rows[index].selectable?
+        @cursor = index if index.between?(0, rows.length - 1)
       end
 
       def reset

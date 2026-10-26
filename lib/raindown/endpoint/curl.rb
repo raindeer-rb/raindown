@@ -64,6 +64,19 @@ module Raindown
       raise Error, 'curl is not installed'
     end
 
+    # The snippet's method and URL, like ["GET", "https://httpbin.org/uuid"], or nil when it can't be read.
+    # A snippet that sends data is a POST, unless it says otherwise, as with curl.
+    def request(snippet)
+      args = arguments(snippet)
+      url = args.find { it.match?(URL) }
+      method = args[args.index('--request') + 1] if args.include?('--request')
+      method ||= 'HEAD' if args.include?('--head')
+      method ||= 'POST' if args.intersect?(VALUE_CHECKS.keys.grep(/data|json/))
+      [(method || 'GET').upcase, url]
+    rescue Error
+      nil
+    end
+
     def arguments(snippet)
       words = Shellwords.split(snippet.gsub(/\\\r?\n/, ' ').strip.delete_prefix('$ '))
       raise Error, 'Endpoint snippets must start with curl' unless words.first == 'curl'

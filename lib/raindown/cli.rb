@@ -23,8 +23,8 @@ module Raindown
 
       Commands:
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
-        tui [PATH]          Browse a project's files and outlines in the terminal, fold directives, run endpoints
-                            and open the editor at a line
+        tui [PATH]          Browse a project's files and outlines in the terminal, fold directives, run endpoints,
+                            open the editor at a line and see a dashboard of the project's charts
 
       Options:
         --html [OUTPUT]     Render FILE to HTML once, writing to OUTPUT or else printing to stdout

@@ -9,17 +9,22 @@ module Raindown
     module Commands
       private
 
+      # Runs the endpoint selected in the outline, or listed below the files. One opened beside them runs itself.
       def execute
-        directive = selected(:outline)&.target if @focus == :outline
-        return error('Select an endpoint to run') unless directive.is_a?(Document::Directive) && directive.endpoint?
+        target = selected&.target
+        return run(target.path, target.line, target.text) if target.is_a?(Endpoint)
+        return error('Select an endpoint to run') unless target.is_a?(Document::Directive) && target.endpoint?
 
-        [:wait, "Running the endpoint on line #{directive.line}...", -> { run_endpoint(directive) }]
+        run(path, target.line, "the endpoint on line #{target.line}")
       end
 
-      def run_endpoint(directive)
-        changed = Actions.execute(path, directive)
-        @outline.read
-        info(changed ? "Ran the endpoint on line #{directive.line}" : 'The response is the same')
+      def run(file, line, name) = Wait.new(message: "Running #{name}...", task: -> { run_endpoint(file, line) })
+
+      def run_endpoint(file, line)
+        changed = @workers.for(file).call(:execute, file, line)
+        @outline.read if file == path
+        view.load
+        info(changed ? "Ran the endpoint on line #{line}" : 'The response is the same')
       rescue StandardError => e
         error(e.message)
       end
@@ -27,25 +32,31 @@ module Raindown
       # In the files pane, the selected file opens at its top, and in the outline, the open file at the selected line.
       def edit
         row = selected
-        show(row.target) if @focus == :files && row&.kind == :file
+        return error('Select a file to edit') if @focus == :files && row&.kind != :file
+
+        show(row.target) if @focus == :files
         return error('Open a file to edit') unless path
 
         line = @focus == :outline && row ? row.line : 1
-        [:run, Actions.edit_command(path, line:)]
+        Run.new(command: Actions.edit_command(path, line:))
       end
 
       def write_back
         return error('Open a file to write back') unless path
 
-        changed = Actions.write_back(path)
+        changed = @workers.for(path).call(:write_back, path)
         @outline.read
         info(changed ? "Updated #{relative(path)}" : "#{relative(path)} is up to date")
       rescue StandardError => e
         error(e.message)
       end
 
+      # The workers start again too, loading their projects' nodes again, like when one of them has changed.
       def reload
+        @workers.restart
         @files.load
+        @endpoints.load
+        view.load
         @outline&.read if path && File.exist?(path)
         info('Reloaded')
       end

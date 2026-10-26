@@ -65,6 +65,13 @@ The VS Code extension could call the same actions later, for example as an Execu
 - `[:run, command]`: leave the screen to run a command such as the editor, then call `ran`, which writes back.
 - `[:wait, message, task]`: show the message while a slow task runs, like an endpoint request.
 
+**Each project's nodes load in a worker process of their own, as when watching.** A project's nodes are Ruby classes, so two projects loaded into one process would merge their nodes of the same name, and one project's nodes would leak into another's files. The terminal UI's process loads no project's nodes:
+- **Projects:** `Workers` keeps a forked `Worker` for the folder's project and for each project inside it.
+- **Requests:** each file's requests go to the worker of its nearest project. A worker runs a `Project`, which answers four requests: a file's outline, the project's charts, writing back a file, and running an endpoint.
+- **Pipes:** requests and answers go through two pipes as Marshal data, and answers are plain data, like a `Document::Directive` or a chart's lines.
+- **Reload:** `r` restarts the workers, which loads their nodes again.
+- **Without `fork`:** on Windows, the workers answer in the terminal UI's process, and projects' nodes share it again.
+
 Everything above the screen layer has specs that need no terminal. The file is read again when its mtime changes, checked every 500ms while no key is pressed. So saving in an editor, or a `raindown` watcher running in another terminal, updates the outline.
 
 **We draw with curses (the `curses` gem, a binding to ncurses).** It is a required dependency in the gemspec (`~> 1.7`), so `raindown tui` works wherever Raindown is installed, and it's in every standalone binary. It's only loaded when `raindown tui` starts, so watching and `--html` start no slower. Without a terminal, `raindown tui` stops with "raindown tui needs a terminal" instead of ncurses' "Error opening terminal".
@@ -108,7 +115,7 @@ ratatui_ruby is the best alternative if Rust is in the toolchain anyway: it is s
 
 ## Later
 
-- **Several projects.** `raindown tui ~/dev` would list each project. Nodes would load in the project's worker process, as watching does, with workers sending results such as "updated", "error" and "reloaded" back to the TUI over a pipe instead of printing them.
-- **A dashboard for each project.** It could show file and directive counts, how old endpoint responses are, and recent write-backs and errors. The Chart node's block-character charts are text, so curses can show them as they are.
+- **Activity from the workers.** Workers could watch their projects' files and write back on save, sending events such as "updated", "error" and "reloaded" back to the TUI, so it could replace running `raindown` in another terminal.
+- **More on the dashboard.** It shows every chart in the project, since the Chart node's block-character charts are text that curses shows as they are (`lib/raindown/tui/dashboard.rb`). It could also show file and directive counts, how old endpoint responses are, and recent write-backs and errors.
 - **Template directives in the outline,** and headings in a component's Markdown output, if they're worth their cost.
 - **Editing text in the TUI.**

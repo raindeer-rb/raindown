@@ -5,6 +5,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- `raindown tui` opens on a Dashboard, at the top of the files, showing every chart in the project drawn from its data
+- `Raindown::Document::Directive#body` is the lines inside a directive, like an endpoint's request and response
+- `raindown tui` lists every endpoint below the files, by its request, with its method in colour,
+  and opens one beside them with its URL, a button to run it, and its response
+- `Raindown::Curl.request` reads a curl snippet's method and URL
+
+### Changed
+
+- `raindown tui` starts with its folders folded
+- `raindown tui` shows the projects inside its folder too, each with its own nodes in a process of its own, like watching.
+  They're marked 🌧 in the files, and the Dashboard shows each project's charts under its path.
+  The header's path, or `p`, opens a list of the projects, which narrows the files and the Dashboard to one
+- `raindown tui` expands a directive to everything inside it, so an endpoint shows its request as well as its response
+- `raindown tui` has a blue title, and selects in a lighter blue, or dark grey in the panes without the focus
+
+### Fixed
+
+- `Raindown::Document` loads the Markdown options it parses with, so it works without the rest of Raindown loaded
+- `raindown tui` no longer crashes in a terminal narrower than 32 columns
+- `raindown tui` draws repeated characters, like a bar chart's █, in terminals like Ghostty with macOS's ncurses,
+  which drew them as ?
+
 ## 0.5.1
 
 ### Added

@@ -1,25 +1,34 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
+require_relative 'events'
+require_relative 'rows'
+require_relative 'text'
+require_relative 'title'
 
 module Raindown
   module TUI
     # The screen as lines of styled segments, worked out from a Navigator with no terminal, so the Screen only paints them.
     # A title, the files pane beside the outline, a status line and a bar of buttons:
-    #    raindown  docs  guides/setup.md
-    #    ▾ guides/       │ # Setup
-    #      setup.md      │   toc: [+3]
-    #    README.md       │   ## Install
+    #    🌧️ Raindown  ~/docs › guides/setup.md
+    #    📊 Dashboard    ▏ # Setup
+    #    ▾ guides/       ▏   toc: [+3]
+    #      setup.md      ▏   ## Install
     #    Opened guides/setup.md
-    #    Tab Pane  Enter Open  x Run  e Edit  w Write back  r Reload  q Quit
+    #    Tab Pane  Enter Open  X Run  E dit  W rite back  R eload  Q uit
     # Each line is exactly the width, in display columns. A segment with an event is clicked to send it.
+    # Right of the files is the view's pane, an OutlinePane, DashboardPane or EndpointPane, with its buttons and page.
     class Layout
+      include Rows
+      include Text
+      include Title
+
       Segment = Data.define(:text, :style, :event)
 
-      BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['x', 'Run', :execute], ['e', 'Edit', :edit],
-                 ['w', 'Write back', :write_back], ['r', 'Reload', :reload], ['q', 'Quit', :quit]].freeze
       FILES_WIDTH = (16..32)
-      INDENT = '  '
+      # The line between the files and the outline or dashboard, at its column's left edge, unlike │ in the middle,
+      # so a highlighted file's row runs up to it.
+      DIVIDER = '▏'
+      INDENT = Text::INDENT
       # The title, status and button lines.
       CHROME_HEIGHT = 3
 
@@ -34,57 +43,45 @@ module Raindown
       def lines
         return [status].first(height) if height < CHROME_HEIGHT + 1
 
-        [title, *panes, status, button_bar]
+        lines = [title, *body, status, button_bar]
+        return lines unless navigator.menu
+
+        require_relative 'menu_overlay'
+        MenuOverlay.new(navigator, width:, column: display_width(name), from_home: method(:from_home)).apply(lines)
       end
 
+      # A third of the width, within FILES_WIDTH, and never more than half of a narrow screen.
       def files_width
-        (width / 3).clamp(FILES_WIDTH.begin, [FILES_WIDTH.end, width / 2].min)
+        [(width / 3).clamp(FILES_WIDTH), width / 2].min
       end
 
       private
 
-      def title
-        path = navigator.path ? navigator.relative(navigator.path) : 'No Markdown files'
-        [segment(" raindown  #{File.basename(navigator.root)}  #{path}", :title)]
-      end
+      def body = panes
 
+      def body_height = height - CHROME_HEIGHT
+
+      # Below a blank line for spacing, the files beside the outline or dashboard.
       def panes
-        pane_height = height - CHROME_HEIGHT
+        pane_height = body_height - 1
         files = navigator.visible(:files, pane_height)
-        outline = navigator.visible(:outline, pane_height)
+        main = self.main.lines
 
-        Array.new(pane_height) do |index|
-          [*cell(:files, *files, index, files_width), Segment.new(text: '│', style: :border, event: nil),
-           *cell(:outline, *outline, index, width - files_width - 1)]
-        end
+        [spacer, *Array.new(pane_height) { |index| [*cell(:files, *files, index, files_width), divider(main[index]), *main[index]] }]
       end
 
-      # A pane's row as its text, then its buttons, or blank below its last row.
-      def cell(pane, rows, offset, index, cell_width)
-        row = rows[index]
-        return [segment('', :blank, width: cell_width)] unless row
+      # A blank line above the panes, for spacing.
+      def spacer = [segment('', :blank, width: files_width), divider([]), segment('', :blank, width: width - files_width - 1)]
 
-        index += offset
-        selected = navigator.cursor(pane) == index
-        buttons = row_buttons(row, pane:, index:, selected:, cell_width:)
-        text_width = cell_width - display_width(buttons.map(&:text).join)
-        text = " #{INDENT * row.depth}#{row.text}"
-
-        [segment(text, row_style(pane, row, selected), width: text_width, event: [:select, pane, index]), *buttons]
+      # The divider is on the background of the outline's row beside it, when that's highlighted, so they meet.
+      def divider(main_line)
+        style = { selected: :selected_divider, cursor: :cursor_divider }.fetch(main_line.first&.style, :divider)
+        segment(DIVIDER, style, width: 1)
       end
 
-      # The row's buttons, right of its text, unless they'd take more than half the pane.
-      def row_buttons(row, pane:, index:, selected:, cell_width:)
-        buttons = row.buttons.map do |label, event|
-          Segment.new(text: " #{label}", style: selected ? :selected_button : :button, event: [:press, pane, index, event])
-        end
-        display_width(buttons.map(&:text).join) > cell_width / 2 ? [] : buttons
-      end
-
-      def row_style(pane, row, selected)
-        return row.kind unless selected
-
-        navigator.focus == pane ? :selected : :cursor
+      def main
+        @main ||= { outline: OutlinePane, dashboard: DashboardPane, endpoint: EndpointPane }
+                  .fetch(navigator.view.name).new(navigator, width: width - files_width - 1, height: body_height - 1)
       end
 
       def status
@@ -92,12 +89,20 @@ module Raindown
         [segment(" #{message}", kind)]
       end
 
+      # The first letter of a label is stylized as a keyboard key like "(E)dit".
+      def shown(key, label)
+        return [key, label] unless key.length == 1
+
+        [key.upcase, label.downcase.start_with?(key) ? label[1..] : label]
+      end
+
       # As many buttons as fit, each clicked by its key or its label.
       def button_bar
         segments = []
         used = 0
 
-        BUTTONS.each do |key, label, event|
+        main.buttons.each do |key, label, event|
+          key, label = shown(key, label)
           pair = [Segment.new(text: " #{key} ", style: :key, event:), Segment.new(text: "#{label} ", style: :bar, event:)]
           pair_width = display_width(pair.map(&:text).join)
           break if used + pair_width > width
@@ -113,30 +118,10 @@ module Raindown
       def segment(text, style, width: self.width, event: nil)
         Segment.new(text: fit(printable(text), width), style:, event:)
       end
-
-      def fit(text, width)
-        return '' if width <= 0
-        return text + (' ' * (width - display_width(text))) if display_width(text) <= width
-
-        cut = +''
-        cut_width = 0
-        text.each_char do |char|
-          break if cut_width + display_width(char) > width - 1
-
-          cut << char
-          cut_width += display_width(char)
-        end
-        "#{cut}…#{' ' * (width - 1 - cut_width)}"
-      end
-
-      # Tabs and control characters, like in a directive's output, would move the terminal's cursor.
-      def printable(text)
-        text.gsub("\t", INDENT).gsub(/[[:cntrl:]]/, '')
-      end
-
-      def display_width(text)
-        Unicode::DisplayWidth.of(text)
-      end
     end
   end
 end
+
+require_relative 'outline_pane'
+require_relative 'dashboard_pane'
+require_relative 'endpoint_pane'

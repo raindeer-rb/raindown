@@ -4,14 +4,10 @@
 
 Raindown is a Markdown superset for AI, APIs, Docs and humans.
 
-<{ Commits: limit=5 }>
+<{ Commits: limit=1 }>
 
 ```
-ecf65be   -6        █│█▊                       +14
-3e2c2ab   -0         │████████████████████    +163
-5021033  -60 ▐███████│██████████████████████▋ +184
-913fa60   -1        ▕│█                         +8
-69ce897  -47   ██████│██████████████████      +146
+748ab33  -135 ▐███████████████│██████████████▋ +129
 ```
 
 <{ :Commits }>
@@ -44,7 +40,11 @@ With `--stdin`, FILE only decides whether bare directives are allowed (by its ex
 
 Watching a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
 
-`raindown tui` shows a project's Markdown files beside an outline of the open file's headings and directives. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. The mouse works too.
+`raindown tui` shows a project's Markdown files beside an outline of the open file's headings and directives. It opens on the Dashboard (below), or on the file you name, like `raindown tui README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
+
+**Dashboard**, at the top of the files (or `d`), shows every chart in the project beside them, each in a card under its file and heading. The projects inside it, marked 🌧 in the files, are shown too, each with its own nodes, and their charts are under their paths. Click the path in the header, or press `p`, to narrow the files and the Dashboard to one project.
+
+Below the files, after a blank line, is every endpoint in the project, by its request, like `GET httpbin.org/uuid`, with its method in colour: GET green, POST blue, DELETE red, PUT yellow and PATCH magenta. Enter or a click opens one beside the files, with its URL in a bar and a **Run** button, and its response below. `x`, or clicking **Run**, runs it, and Enter opens its directive in the outline. The charts are drawn from their data every few seconds, so editing a CSV file updates its chart without a save. Enter (or clicking a card's title) opens the chart's file in the outline, on its directive.
 
 ### Directives
 

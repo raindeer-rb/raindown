@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'nodes'
 require_relative 'projects'
 require_relative 'tui/navigator'
 
@@ -19,9 +18,13 @@ module Raindown
 
       path = File.expand_path(path)
       root = Projects.root(path) || (File.directory?(path) ? path : File.dirname(path))
-      Nodes.load(File.join(root, Nodes::FOLDER))
+      # The projects inside it are shown too. Each loads its own nodes in its worker's process, like when watching,
+      # so two projects' nodes of the same name stay apart.
+      workers = Workers.new(root:)
 
-      Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)))).run
+      Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)), workers:)).run
+    ensure
+      workers&.stop
     end
   end
 end

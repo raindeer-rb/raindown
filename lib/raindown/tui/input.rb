@@ -11,27 +11,26 @@ module Raindown
         Curses::KEY_UP => :up, 'k' => :up, Curses::KEY_DOWN => :down, 'j' => :down,
         Curses::KEY_LEFT => :left, 'h' => :left, Curses::KEY_RIGHT => :right, 'l' => :right,
         "\t" => :tab, Curses::KEY_BTAB => :tab, "\r" => :enter, "\n" => :enter, Curses::KEY_ENTER => :enter,
-        ' ' => :toggle, 'x' => :execute, 'e' => :edit, 'w' => :write_back, 'r' => :reload, 'q' => :quit
+        ' ' => :toggle, 'x' => :execute, 'e' => :edit, 'w' => :write_back, 'r' => :reload, 'd' => :dashboard,
+        'p' => :projects, "\e" => :escape, 'q' => :quit
       }.freeze
 
       module_function
 
       # A key from getch, which is a string for a printable character and otherwise a number.
+      # Letters are the same with Shift, as the buttons show them as capitals.
       def key_event(key)
         key = key.chr if key.is_a?(Integer) && key < 256
-        KEYS[key]
+        KEYS[key.is_a?(String) ? key.downcase : key]
       end
 
-      # A scroll of the wheel moves the cursor, and a click sends the event of what's under it.
+      # The mouse buttons that click, which are the left button's. Scrolling does nothing, and since older ncurses,
+      # like macOS's, has no button for scrolling down, it can't be mistaken for a click.
+      CLICKS = Curses::BUTTON1_PRESSED | Curses::BUTTON1_CLICKED
+
+      # A click sends the event of what's under it.
       def mouse_event(event, zones)
-        wheel.find { |button, _| event.bstate.anybits?(button) }&.last || click(zones, column: event.x, row: event.y)
-      end
-
-      # Older ncurses has no fifth button, which is the wheel scrolling down.
-      def wheel
-        { Curses::BUTTON4_PRESSED => :up }.tap do |buttons|
-          buttons[Curses::BUTTON5_PRESSED] = :down if Curses.const_defined?(:BUTTON5_PRESSED)
-        end
+        click(zones, column: event.x, row: event.y) if event.bstate.anybits?(CLICKS)
       end
 
       # Where each of a Layout's segments with an event is on the screen, as [row, columns, event].

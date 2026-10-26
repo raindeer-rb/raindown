@@ -12,4 +12,9 @@ RSpec.configure do |config|
     # Large diff when expected objects don't match.
     expectations.max_formatted_output_length = 10_000
   end
+
+  # The terminal UI's workers answer in the spec's process, so its stubs apply, unless an example is tagged fork: true.
+  config.before do |example|
+    Raindown::TUI::Worker.fork = example.metadata[:fork] == true if defined?(Raindown::TUI::Worker)
+  end
 end

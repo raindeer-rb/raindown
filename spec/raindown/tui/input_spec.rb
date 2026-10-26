@@ -12,6 +12,8 @@ RSpec.describe Raindown::TUI::Input do
       expect(described_class.key_event(13)).to eq(:enter)
       expect(described_class.key_event(Curses::KEY_ENTER)).to eq(:enter)
       expect(described_class.key_event('z')).to be_nil
+      expect(described_class.key_event('E')).to eq(:edit)
+      expect(described_class.key_event('Q')).to eq(:quit)
     end
   end
 
@@ -19,12 +21,12 @@ RSpec.describe Raindown::TUI::Input do
     it 'finds what was clicked by its row and column, counting wide characters as two columns' do
       segment = Raindown::TUI::Layout::Segment
       lines = [[segment.new(text: '界 ', style: :title, event: nil), segment.new(text: '[Run]', style: :button, event: :execute)],
-               [segment.new(text: 'row', style: :file, event: [:select, :files, 0])]]
+               [segment.new(text: 'row', style: :file, event: Raindown::TUI::Click.new(pane: :files, index: 0, action: :enter))]]
       zones = described_class.zones(lines)
 
       expect(described_class.click(zones, column: 3, row: 0)).to eq(:execute)
       expect(described_class.click(zones, column: 2, row: 0)).to be_nil
-      expect(described_class.click(zones, column: 1, row: 1)).to eq([:select, :files, 0])
+      expect(described_class.click(zones, column: 1, row: 1)).to eq(Raindown::TUI::Click.new(pane: :files, index: 0, action: :enter))
       expect(described_class.click(zones, column: 9, row: 1)).to be_nil
     end
   end
@@ -34,10 +36,13 @@ RSpec.describe Raindown::TUI::Input do
     let(:mouse) { Struct.new(:bstate, :x, :y) }
     let(:zones) { [[0, 0...5, :execute]] }
 
-    it 'moves the cursor when the wheel scrolls up, and otherwise clicks' do
-      expect(described_class.mouse_event(mouse.new(Curses::BUTTON4_PRESSED, 9, 9), zones)).to eq(:up)
+    it 'clicks with the left button, and does nothing when scrolling' do
       expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 0), zones)).to eq(:execute)
+      expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_CLICKED, 2, 0), zones)).to eq(:execute)
       expect(described_class.mouse_event(mouse.new(Curses::BUTTON1_PRESSED, 2, 1), zones)).to be_nil
+      expect(described_class.mouse_event(mouse.new(Curses::BUTTON4_PRESSED, 2, 0), zones)).to be_nil
+      # Older ncurses reports scrolling down with no button of its own.
+      expect(described_class.mouse_event(mouse.new(0, 2, 0), zones)).to be_nil
     end
   end
 end
