@@ -44,6 +44,18 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(navigator.rows(:files).map(&:depth)).to eq([0, 0, 1, 1, 0])
     end
 
+    it "marks the projects inside the folder with Raindown's cloud, which fold like folders" do
+      write('guides/setup.md')
+      FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
+      navigator = described_class.new(root: @root)
+
+      expect(navigator.rows(:files).map { [it.kind, it.text] }).to eq([%i[dashboard] + ['📊 Dashboard'], [:project, '▸ 🌧 guides/']])
+
+      navigator.handle(:down)
+      navigator.handle(:enter)
+      expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ 🌧 guides/', 'setup.md'])
+    end
+
     it 'opens a file asked for, in its open folder' do
       navigator = described_class.new(root: @root, path: write('guides/deep/more.md'))
 

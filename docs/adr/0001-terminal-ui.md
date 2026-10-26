@@ -116,7 +116,7 @@ ratatui_ruby is the best alternative if Rust is in the toolchain anyway: it is s
 ## Later
 
 - **Activity from the workers.** Workers could watch their projects' files and write back on save, sending events such as "updated", "error" and "reloaded" back to the TUI, so it could replace running `raindown` in another terminal.
-- **Projects in the sidebar and the dashboard.** The sidebar could mark project roots, and the dashboard could group charts under their projects, with a filter of the projects for a folder like `~/dev`.
+- **A filter of the projects.** For a folder like `~/dev` with many projects, the header's path could open a list of them, narrowing the files and the dashboard to one. The sidebar already marks projects with 🌧, and the dashboard groups charts under their projects' paths.
 - **More on the dashboard.** It shows every chart in the project, since the Chart node's block-character charts are text that curses shows as they are (`lib/raindown/tui/dashboard.rb`). It could also show file and directive counts, how old endpoint responses are, and recent write-backs and errors.
 - **Template directives in the outline,** and headings in a component's Markdown output, if they're worth their cost.
 - **Editing text in the TUI.**

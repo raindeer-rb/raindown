@@ -118,7 +118,7 @@ module Raindown
         return open_row(row) if name == :enter && %i[dashboard file].include?(row&.kind)
 
         case row&.kind
-        when :folder then @files.toggle(row.target)
+        when :folder, :project then @files.toggle(row.target)
         when :heading then @outline.fold(row.target)
         when :directive then @outline.expand(row.target) if row.target.body
         end

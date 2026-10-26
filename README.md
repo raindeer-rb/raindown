@@ -46,7 +46,7 @@ Watching a directory watches each project in it, a folder with a `.raindown` fol
 
 `raindown tui` shows a project's Markdown files beside an outline of the open file's headings and directives. It opens on the Dashboard (below), or on the file you name, like `raindown tui README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Clicking works too, while scrolling does nothing.
 
-**Dashboard**, at the top of the files (or `d`), shows every chart in the project beside them, each in a card under its file and heading. The charts are drawn from their data every few seconds, so editing a CSV file updates its chart without a save. Enter (or clicking a card's title) opens the chart's file in the outline, on its directive.
+**Dashboard**, at the top of the files (or `d`), shows every chart in the project beside them, each in a card under its file and heading. The projects inside it, marked 🌧 in the files, are shown too, each with its own nodes, and their charts are under their paths. The charts are drawn from their data every few seconds, so editing a CSV file updates its chart without a save. Enter (or clicking a card's title) opens the chart's file in the outline, on its directive.
 
 ### Directives
 

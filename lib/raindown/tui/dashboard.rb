@@ -77,7 +77,7 @@ module Raindown
         rescue Worker::Error => e
           @errors << "#{File.basename(worker.root)}: #{e.message}"
         end
-        @cards.sort_by! { [it.path, it.line] }
+        @cards.sort_by! { [it.project, it.path, it.line] }
         @drawn_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
 

@@ -121,4 +121,25 @@ RSpec.describe Raindown::TUI::Layout do
                                        ' stats.md › Stats', " chart: '3 2 1'", ' █▅▁', ''])
     end
   end
+
+  describe 'the dashboard with projects inside the folder' do
+    let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
+
+    before do
+      FileUtils.mkdir_p(File.join(@root, '.raindown'))
+      File.write(File.join(@root, 'stats.md'), "<{ chart: '1 2 3' }>\n<{ :chart }>\n")
+      FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
+      File.write(File.join(@root, 'guides', 'more.md'), "# More\n\n<{ chart: '3 2 1' }>\n<{ :chart }>\n")
+    end
+
+    def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
+
+    it "puts each project's charts under its path from the home folder, titled from the project" do
+      lines = described_class.new(navigator, width: 90, height: 14).lines
+
+      expect(main(lines)[1..9]).to eq([' ~/docs', ' stats.md', " chart: '1 2 3'", ' ▁▅█', '',
+                                       ' ~/docs/guides', ' more.md › More', " chart: '3 2 1'", ' █▅▁'])
+      expect(lines[1].last.style).to eq(:project)
+    end
+  end
 end

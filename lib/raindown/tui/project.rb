@@ -15,8 +15,8 @@ module Raindown
     # What the terminal UI asks of a project, answered in the project's Worker with its own nodes loaded,
     # so two projects' nodes of the same name stay apart. Answers are plain data, which a Worker sends back through a pipe.
     class Project
-      # A chart drawn from its data, under the heading above its directive.
-      Card = Data.define(:path, :line, :heading, :directive, :lines)
+      # A chart drawn from its data, under the heading above its directive, in the project at its root.
+      Card = Data.define(:project, :path, :line, :heading, :directive, :lines)
       Outline = Data.define(:lines, :headings, :directives)
 
       attr_reader :root
@@ -45,11 +45,7 @@ module Raindown
           @charts = Projects.files(root).flat_map { |path| charts_in(path) }
         end
 
-        pages = {}
-        cards = @charts.map do |chart|
-          chart.merge(lines: lines(chart, pages[File.dirname(chart[:path])] ||= Pages.for(chart[:path])))
-        end
-        { cards: cards.map { Card.new(**it.except(:node)) }, errors: @load_errors + @file_errors }
+        { cards: drawn, errors: @load_errors + @file_errors }
       end
 
       def write_back(path)
@@ -78,6 +74,14 @@ module Raindown
       rescue StandardError => e
         @file_errors << "#{path.delete_prefix(File.join(root, ''))}: #{e.message}"
         []
+      end
+
+      def drawn
+        pages = {}
+        @charts.map do |chart|
+          lines = lines(chart, pages[File.dirname(chart[:path])] ||= Pages.for(chart[:path]))
+          Card.new(project: root, lines:, **chart.except(:node))
+        end
       end
 
       def chart(block, path:, lines:, headings:)

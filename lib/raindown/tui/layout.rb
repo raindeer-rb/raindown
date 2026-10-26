@@ -67,12 +67,13 @@ module Raindown
       end
 
       # The project's folder, from the home folder when it's in it, like ~/dev/raindown.
-      def location
+      def location = from_home(navigator.root)
+
+      def from_home(path)
         home = Dir.home
-        root = navigator.root
-        root == home || root.start_with?(File.join(home, '')) ? root.sub(home, '~') : root
+        path == home || path.start_with?(File.join(home, '')) ? path.sub(home, '~') : path
       rescue ArgumentError
-        navigator.root
+        path
       end
 
       def panes

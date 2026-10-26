@@ -27,8 +27,8 @@ module Raindown
       def plain
         { title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, selected_button: Curses::A_REVERSE,
           cursor: Curses::A_UNDERLINE, heading: Curses::A_BOLD, body: Curses::A_DIM, error: Curses::A_BOLD,
-          button: Curses::A_BOLD, folder: Curses::A_BOLD, dashboard: Curses::A_BOLD, key: Curses::A_REVERSE,
-          border: Curses::A_DIM }
+          button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, dashboard: Curses::A_BOLD,
+          key: Curses::A_REVERSE, border: Curses::A_DIM }
       end
 
       def colored
@@ -36,7 +36,8 @@ module Raindown
           title: pair(:title) | Curses::A_BOLD, selected: pair(:selected) | white_bold,
           selected_button: pair(:selected_button) | Curses::A_BOLD, directive: pair(:directive),
           error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD,
-          folder: pair(:folder) | Curses::A_BOLD, dashboard: pair(:directive) | Curses::A_BOLD
+          folder: pair(:folder) | Curses::A_BOLD, project: pair(:directive) | Curses::A_BOLD,
+          dashboard: pair(:directive) | Curses::A_BOLD
         )
       end
 
