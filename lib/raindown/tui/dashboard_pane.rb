@@ -47,7 +47,7 @@ module Raindown
         used = 1
 
         indexes.each do |index|
-          card_width = card_width(cards[index]) + (rows.last.empty? ? 0 : GAP)
+          card_width = cards[index].width(within: card_widths) + (rows.last.empty? ? 0 : GAP)
           if used + card_width > width && rows.last.any?
             rows << []
             used = 1
@@ -60,9 +60,8 @@ module Raindown
         rows
       end
 
-      def card_width(card)
-        (card.lines.map { display_width(it) }.max || 0).clamp(MIN_CARD_WIDTH, width - 1)
-      end
+      # The widths a card can be: no narrower than MIN_CARD_WIDTH, when there's room, and no wider than the pane.
+      def card_widths = [MIN_CARD_WIDTH, width - 1].min..(width - 1)
 
       # The rows of cards from the first that's scrolled to, each card's lines side by side, with a line between rows.
       def grid(rows, cards)
@@ -75,7 +74,7 @@ module Raindown
 
       # The tallest card's lines, and one line below it.
       def row_height(row, cards)
-        row.map { card_lines(cards[it]).length }.max + 1
+        row.map { cards[it].height }.max + 1
       end
 
       def row_line(row, cards, line)
@@ -83,21 +82,19 @@ module Raindown
 
         row.each_with_index do |index, column|
           segments << segment('', :blank, width: GAP) unless column.zero?
-          segments << card_segment(cards[index], index, line, card_width(cards[index]))
+          segments << card_line(cards[index], index, line)
         end
 
         [*segments, segment('', :blank, width: width - segments.sum { display_width(it.text) })]
       end
 
       # A card opens chart source when it's clicked, like Enter.
-      def card_segment(card, index, line, card_width)
-        text = card_lines(card)[line].to_s
-        event = Click.new(pane: :dashboard, index:, action: :enter)
-        return segment(text, :chart, width: card_width, event:) if line > 1
-        return segment(text, :directive, width: card_width, event:) if line == 1
+      # The selected card's title is highlighted, like a selected row.
+      def card_line(card, index, line)
+        text, style = card.parts[line] || ['', :blank]
+        style = row_style(:dashboard, nil, true) if style == :heading && dashboard.cursor == index
 
-        style = dashboard.cursor == index ? row_style(:dashboard, nil, true) : :heading
-        segment(text, style, width: card_width, event:)
+        segment(text, style, width: card.width(within: card_widths), event: Click.new(pane: :dashboard, index:, action: :enter))
       end
 
       # A row of cards' lines, under its project's heading when it's the project's first row.
@@ -108,11 +105,6 @@ module Raindown
       # A project's path from the home folder, above its charts.
       def heading_line(project)
         [segment(" #{from_home(project)}", :project)]
-      end
-
-      def card_lines(card)
-        title = [card.path.delete_prefix(File.join(card.project, '')), card.heading].compact.join(' › ')
-        [title, card.directive, *card.lines]
       end
 
       def blank(count, message = '')

@@ -9,14 +9,13 @@ require_relative '../node_blocks'
 require_relative '../nodes'
 require_relative '../pages'
 require_relative '../projects'
+require_relative 'card'
 
 module Raindown
   module TUI
     # What the terminal UI asks of a project, answered in the project's Worker with its own nodes loaded,
     # so two projects' nodes of the same name stay apart. Answers are plain data, which a Worker sends back through a pipe.
     class Project
-      # A chart drawn from its data, under the heading above its directive, in the project at its root.
-      Card = Data.define(:project, :path, :line, :heading, :directive, :lines)
       Outline = Data.define(:lines, :headings, :directives)
 
       attr_reader :root
@@ -80,7 +79,7 @@ module Raindown
         pages = {}
         @charts.map do |chart|
           lines = lines(chart, pages[File.dirname(chart[:path])] ||= Pages.for(chart[:path]))
-          Card.new(project: root, lines:, **chart.except(:node))
+          Card.new(project: root, chart: lines, **chart.except(:node))
         end
       end
 

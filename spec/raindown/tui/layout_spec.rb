@@ -126,6 +126,13 @@ RSpec.describe Raindown::TUI::Layout do
         .to eq(:selected)
     end
 
+    it 'fits the cards to a pane narrower than a card can be' do
+      lines = described_class.new(navigator, width: 40, height: 8).lines
+
+      expect(text(lines).drop(1).map { width(it) }).to all(eq(40))
+      expect(main(lines)[1]).to start_with(' stats.md › Stats')
+    end
+
     it 'puts the cards in rows below each other when they do not fit beside each other' do
       lines = described_class.new(navigator, width: 60, height: 12).lines
 

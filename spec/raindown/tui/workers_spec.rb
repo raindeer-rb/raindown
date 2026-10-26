@@ -48,7 +48,7 @@ RSpec.describe Raindown::TUI::Workers do
 
       expect(File.read(raindeer)).to include("WorkersShout:\nDeer to be different\n")
       expect(File.read(raindown)).to include("WorkersShout:\nStay sane out there\n")
-      expect(workers.each.map { it.call(:charts)[:cards].map(&:lines) }.reject(&:empty?)).to eq([[['▁▅█']], [['█▅▁']]])
+      expect(workers.each.map { it.call(:charts)[:cards].map(&:chart) }.reject(&:empty?)).to eq([[['▁▅█']], [['█▅▁']]])
       expect(workers.for(raindeer).call(:outline, raindeer).directives.map(&:name)).to eq(%w[WorkersShout WorkersSales])
       expect(defined?(WorkersShout)).to be_nil
     end

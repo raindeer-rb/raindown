@@ -42,14 +42,14 @@ RSpec.describe Raindown::TUI::Dashboard do
   end
 
   it 'draws each chart from its data, as it would be written back' do
-    expect(dashboard.cards.map(&:lines)).to eq([['▁▅█'], ['█▁▅'], ['Jan  █████      4', 'Feb  ██████████ 8']])
+    expect(dashboard.cards.map(&:chart)).to eq([['▁▅█'], ['█▁▅'], ['Jan  █████      4', 'Feb  ██████████ 8']])
   end
 
   it "draws the charts again when they're loaded, following changes to their data" do
     write('data/sales.csv', "month,sales\nJan,9\n")
     dashboard.load
 
-    expect(dashboard.cards.last.lines.length).to eq(1)
+    expect(dashboard.cards.last.chart.length).to eq(1)
   end
 
   it "shows a chart's error in its card, and the files it couldn't read" do
@@ -57,7 +57,7 @@ RSpec.describe Raindown::TUI::Dashboard do
     write('missing.md', "<{ chart: 'data/missing.csv' }>\n<{ :chart }>\n")
 
     expect(dashboard.errors).to eq(['broken.md: <{ chart: }> on line 1 needs <{ :chart }>'])
-    expect(dashboard.cards.find { it.path.end_with?('missing.md') }.lines.first).to start_with("Can't chart")
+    expect(dashboard.cards.find { it.path.end_with?('missing.md') }.chart.first).to start_with("Can't chart")
   end
 
   describe '#handle' do
