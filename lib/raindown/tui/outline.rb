@@ -6,7 +6,8 @@ require_relative 'row'
 module Raindown
   module TUI
     # The outline pane: a file's headings and directives, read from its Document. Headings fold the section below them,
-    # and a directive's output, the lines Raindown wrote back, expands below it. Both start folded away.
+    # and a directive's body expands below it, like the lines a node wrote back or an endpoint's request and response.
+    # Both start folded away.
     class Outline
       attr_reader :path, :error
 
@@ -92,14 +93,14 @@ module Raindown
                       buttons: buttons(directive, expanded:))
         return [row] unless expanded
 
-        [row, *directive.output.map do |number|
-          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :output, target: number)
+        [row, *directive.body.map do |number|
+          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number)
         end]
       end
 
       def buttons(directive, expanded:)
         buttons = []
-        buttons << [expanded ? '[-]' : "[+#{directive.output.size}]", :toggle] if directive.output
+        buttons << [expanded ? '[-]' : "[+#{directive.body.size}]", :toggle] if directive.body
         buttons << ['[Run]', :execute] if directive.endpoint?
         buttons
       end
