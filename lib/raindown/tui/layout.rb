@@ -16,7 +16,7 @@ module Raindown
     #    Opened guides/setup.md
     #    Tab Pane  Enter Open  X Run  E dit  W rite back  R eload  Q uit
     # Each line is exactly the width, in display columns. A segment with an event is clicked to send it.
-    # With the Dashboard chosen in the files, a DashboardPane of the project's charts is in place of the outline.
+    # Right of the files is the view's pane, an OutlinePane, DashboardPane or EndpointPane, with its buttons and page.
     class Layout
       include Rows
       include Text
@@ -24,13 +24,6 @@ module Raindown
 
       Segment = Data.define(:text, :style, :event)
 
-      BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['x', 'Run', :execute], ['e', 'Edit', :edit],
-                 ['w', 'Write back', :write_back], ['r', 'Reload', :reload], ['q', 'Quit', :quit]].freeze
-      DASHBOARD_BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
-                           ['q', 'Quit', :quit]].freeze
-      PROJECTS_BUTTON = ['p', 'Projects', :projects].freeze
-      ENDPOINT_BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['x', 'Run', :execute], ['e', 'Edit', :edit],
-                          ['r', 'Reload', :reload], ['q', 'Quit', :quit]].freeze
       FILES_WIDTH = (16..32)
       # The line between the files and the outline or dashboard, at its column's left edge, unlike │ in the middle,
       # so a highlighted file's row runs up to it.
@@ -66,15 +59,13 @@ module Raindown
 
       def body = panes
 
-      def dashboard? = navigator.view == :dashboard
-
       def body_height = height - CHROME_HEIGHT
 
       # Below a blank line for spacing, the files beside the outline or dashboard.
       def panes
         pane_height = body_height - 1
         files = navigator.visible(:files, pane_height)
-        main = main_pane(width - files_width - 1, pane_height)
+        main = self.main.lines
 
         [spacer, *Array.new(pane_height) { |index| [*cell(:files, *files, index, files_width), divider(main[index]), *main[index]] }]
       end
@@ -88,32 +79,14 @@ module Raindown
         segment(DIVIDER, style, width: 1)
       end
 
-      # The outline's lines, or the dashboard's.
-      def main_pane(pane_width, pane_height)
-        if navigator.view == :endpoint
-          require_relative 'endpoint_pane'
-          return EndpointPane.new(navigator, width: pane_width, height: pane_height).lines
-        end
-        if dashboard?
-          require_relative 'dashboard_pane'
-          return DashboardPane.new(navigator, width: pane_width, height: pane_height).lines
-        end
-
-        outline = navigator.visible(:outline, pane_height)
-        Array.new(pane_height) { |index| cell(:outline, *outline, index, pane_width) }
+      def main
+        @main ||= { outline: OutlinePane, dashboard: DashboardPane, endpoint: EndpointPane }
+                  .fetch(navigator.view.name).new(navigator, width: width - files_width - 1, height: body_height - 1)
       end
 
       def status
         kind, message = navigator.status
         [segment(" #{message}", kind)]
-      end
-
-      # The dashboard's buttons have room for the project menu's, when there's more than one project.
-      def buttons
-        return ENDPOINT_BUTTONS if navigator.view == :endpoint
-        return BUTTONS unless dashboard?
-
-        navigator.projects? ? DASHBOARD_BUTTONS.dup.insert(3, PROJECTS_BUTTON) : DASHBOARD_BUTTONS
       end
 
       # The first letter of a label is stylized as a keyboard key like "(E)dit".
@@ -128,7 +101,7 @@ module Raindown
         segments = []
         used = 0
 
-        buttons.each do |key, label, event|
+        main.buttons.each do |key, label, event|
           key, label = shown(key, label)
           pair = [Segment.new(text: " #{key} ", style: :key, event:), Segment.new(text: "#{label} ", style: :bar, event:)]
           pair_width = display_width(pair.map(&:text).join)
@@ -148,3 +121,7 @@ module Raindown
     end
   end
 end
+
+require_relative 'outline_pane'
+require_relative 'dashboard_pane'
+require_relative 'endpoint_pane'

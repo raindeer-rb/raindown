@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'layout'
-
 module Raindown
   module TUI
     # An endpoint opened from the files, right of them: its URL in a bar with rounded corners, and a button to run it,
@@ -18,9 +16,13 @@ module Raindown
     class EndpointPane < Layout
       RUN = '[ Run ]'
       RUN_WIDTH = RUN.length
+      BUTTONS = OutlinePane::BUTTONS.reject { it.last == :write_back }.freeze
+
+      def buttons = BUTTONS
+      def page = navigator.view.endpoint.text
 
       def lines
-        view = navigator.endpoint_view
+        view = navigator.view
         top = [*url_bar(view.endpoint), [segment('', :blank, width:)], about(view)]
 
         (top + response(view, height - top.length)).first(height)

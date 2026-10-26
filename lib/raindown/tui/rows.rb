@@ -34,7 +34,7 @@ module Raindown
         lead = " #{Text::INDENT * row.depth}"
         return [["#{lead}#{row.text}", style]] unless row.tag
 
-        [["#{lead}#{row.tag.first} ", selected ? style : row.tag.last], [row.text, style]]
+        [["#{lead}#{row.tag.method} ", selected ? style : row.tag.style], [row.text, style]]
       end
 
       # The row's buttons, right of its text, unless they'd take more than half the pane.

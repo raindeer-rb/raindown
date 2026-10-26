@@ -8,7 +8,7 @@ module Raindown
       private
 
       def other_pane
-        @focus == :files ? main_pane : :files
+        @focus == :files ? view.name : :files
       end
 
       def move(by)

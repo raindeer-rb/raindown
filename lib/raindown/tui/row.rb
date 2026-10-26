@@ -3,8 +3,7 @@
 module Raindown
   module TUI
     # A line of a pane. Target is what it's about: a folder or file path, a Heading or Directive, or a line number.
-    # Buttons are [label, event] pairs, like ['[Run]', :execute], and a tag is a [text, style] pair before its text,
-    # like an endpoint's ['GET', :method_get].
+    # Buttons are [label, event] pairs, like ['[Run]', :execute], and a tag is an Endpoint, whose method is before its text.
     Row = Data.define(:text, :depth, :kind, :target, :buttons, :tag) do
       def initialize(buttons: [], tag: nil, **) = super
 

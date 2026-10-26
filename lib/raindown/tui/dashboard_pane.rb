@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'layout'
-
 module Raindown
   module TUI
     # The dashboard, right of the files: a card for each of the projects' charts, as wide as its chart,
@@ -18,6 +16,18 @@ module Raindown
       # Columns between the cards, and the narrowest a card is, with its border.
       GAP = 2
       MIN_CARD_WIDTH = 28
+      BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
+                 ['q', 'Quit', :quit]].freeze
+      PROJECTS_BUTTON = ['p', 'Projects', :projects].freeze
+
+      # Room for the project menu's button, when there's more than one project.
+      def buttons
+        if navigator.projects? then BUTTONS.dup.insert(3, PROJECTS_BUTTON)
+        else BUTTONS
+        end
+      end
+
+      def page = 'Dashboard'
 
       def lines
         cards = dashboard.cards

@@ -38,7 +38,7 @@ RSpec.describe Raindown::TUI::Navigator do
       write('guides/deep/more.md')
       navigator = described_class.new(root: @root)
 
-      expect([navigator.view, navigator.focus, navigator.cursor(:files)]).to eq([:dashboard, :files, 0])
+      expect([navigator.view.name, navigator.focus, navigator.cursor(:files)]).to eq([:dashboard, :files, 0])
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▸ guides/', 'README.md'])
 
       navigator.handle(:down)
@@ -63,7 +63,7 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'opens a file asked for, in its open folder' do
       navigator = described_class.new(root: @root, path: write('guides/deep/more.md'))
 
-      expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'guides/deep/more.md'])
+      expect([navigator.view.name, navigator.relative(navigator.path)]).to eq([:outline, 'guides/deep/more.md'])
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', '▾ deep/', 'more.md'])
       expect(navigator.cursor(:files)).to eq(4)
     end
@@ -189,10 +189,10 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', 'setup.md', 'notes.md'])
 
       navigator.handle(click(:files, 3))
-      expect([navigator.view, navigator.relative(navigator.path), navigator.focus]).to eq([:browser, 'guides/setup.md', :outline])
+      expect([navigator.view.name, navigator.relative(navigator.path), navigator.focus]).to eq([:outline, 'guides/setup.md', :outline])
 
       navigator.handle(click(:files, 0))
-      expect(navigator.view).to eq(:dashboard)
+      expect(navigator.view.name).to eq(:dashboard)
     end
 
     it "open a dashboard's chart, wherever it's clicked" do
@@ -200,7 +200,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator = described_class.new(root: @root)
 
       navigator.handle(click(:dashboard, 0))
-      expect([navigator.view, navigator.relative(navigator.path), navigator.cursor(:outline)]).to eq([:browser, 'stats.md', 1])
+      expect([navigator.view.name, navigator.relative(navigator.path), navigator.cursor(:outline)]).to eq([:outline, 'stats.md', 1])
     end
 
     it 'do what Enter does, unless that would leave the terminal UI, like for the editor, so they only move the cursor' do
@@ -252,11 +252,11 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'switches to the dashboard of charts, with the cursor on it in the files, and back to the open file with d' do
-      expect([navigator.view, navigator.focus, navigator.cursor(:files)]).to eq([:dashboard, :files, 0])
+      expect([navigator.view.name, navigator.focus, navigator.cursor(:files)]).to eq([:dashboard, :files, 0])
       expect(navigator.status).to eq([:info, "1 chart in #{File.basename(@root)}"])
 
       navigator.handle(:dashboard)
-      expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'notes.md'])
+      expect([navigator.view.name, navigator.relative(navigator.path)]).to eq([:outline, 'notes.md'])
     end
 
     it 'opens the dashboard from the top of the files, beside them, and a file from the files again' do
@@ -264,7 +264,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.handle(:left)
       5.times { navigator.handle(:up) }
       navigator.handle(:enter)
-      expect([navigator.view, navigator.focus]).to eq(%i[dashboard files])
+      expect([navigator.view.name, navigator.focus]).to eq(%i[dashboard files])
 
       navigator.handle(:tab)
       expect(navigator.focus).to eq(:dashboard)
@@ -275,7 +275,7 @@ RSpec.describe Raindown::TUI::Navigator do
 
       navigator.handle(click(:files, 3))
       navigator.handle(:enter)
-      expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'stats.md'])
+      expect([navigator.view.name, navigator.relative(navigator.path)]).to eq([:outline, 'stats.md'])
     end
 
     it "doesn't edit the Dashboard as a file" do
@@ -301,7 +301,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.handle(:right)
       navigator.handle(:enter)
 
-      expect([navigator.view, navigator.focus, navigator.relative(navigator.path)]).to eq([:browser, :outline, 'stats.md'])
+      expect([navigator.view.name, navigator.focus, navigator.relative(navigator.path)]).to eq([:outline, :outline, 'stats.md'])
       expect(navigator.rows(:outline)[navigator.cursor(:outline)].text).to eq("chart: '1 2 3'")
       expect(navigator.rows(:files)[navigator.cursor(:files)].text).to eq('stats.md')
     end
@@ -333,7 +333,7 @@ RSpec.describe Raindown::TUI::Navigator do
       2.times { navigator.handle(:down) }
       navigator.handle(:enter)
 
-      expect([navigator.menu, navigator.project, navigator.view]).to eq([nil, File.join(@root, 'guides'), :dashboard])
+      expect([navigator.menu, navigator.project, navigator.view.name]).to eq([nil, File.join(@root, 'guides'), :dashboard])
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', 'setup.md'])
       expect(navigator.dashboard.charts.map { File.basename(it.path) }).to eq(['setup.md'])
       expect(navigator.status).to eq([:info, '1 chart in guides'])
@@ -396,7 +396,7 @@ RSpec.describe Raindown::TUI::Navigator do
     def endpoints(navigator) = navigator.rows(:files).select { it.kind == :endpoint }.map { it.target.text }
 
     it 'lists every endpoint below the files, after a blank line, by its request, with its method in its colour' do
-      expect(navigator.rows(:files).last(3).map { [it.kind, it.tag, it.text] })
+      expect(navigator.rows(:files).last(3).map { [it.kind, it.tag&.then { [it.method, it.style] }, it.text] })
         .to eq([[:separator, nil, ''], [:endpoint, ['GET', :method_get], 'api.example.com'],
                 [:endpoint, ['POST', :method_post], 'api.example.com/users']])
     end
@@ -411,13 +411,13 @@ RSpec.describe Raindown::TUI::Navigator do
 
     it 'opens an endpoint beside the files, with its response, and its directive in the outline with Enter' do
       navigator.handle(click(:files, 6))
-      expect([navigator.view, navigator.endpoint_view.endpoint.line, navigator.focus]).to eq([:endpoint, 9, :files])
-      expect(navigator.endpoint_view.response).to eq([])
+      expect([navigator.view.name, navigator.view.endpoint.line, navigator.focus]).to eq([:endpoint, 9, :files])
+      expect(navigator.view.response).to eq([])
 
       navigator.handle(:tab)
       expect(navigator.focus).to eq(:endpoint)
       navigator.handle(:enter)
-      expect([navigator.view, navigator.relative(navigator.path), navigator.focus]).to eq([:browser, 'api.md', :outline])
+      expect([navigator.view.name, navigator.relative(navigator.path), navigator.focus]).to eq([:outline, 'api.md', :outline])
       expect(navigator.rows(:outline)[navigator.cursor(:outline)].target.line).to eq(9)
     end
 
@@ -427,7 +427,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.handle(:tab)
 
       navigator.handle(:execute).task.call
-      expect(navigator.endpoint_view.response).to eq(['{}'])
+      expect(navigator.view.response).to eq(['{}'])
     end
 
     it 'runs an opened endpoint with its button, and shows the response' do
@@ -435,7 +435,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.handle(click(:files, 5))
 
       navigator.handle(click(:endpoint, 0, :execute)).task.call
-      view = navigator.endpoint_view
+      view = navigator.view
       expect([view.language, view.response, view.fetched]).to eq(['json', ['{', '  "id": 1', '}'], Date.today.iso8601])
     end
 

@@ -56,6 +56,11 @@ module Raindown
         @rows.empty? || @rows.any? { it.first == @cursor }
       end
 
+      def name = :dashboard
+
+      # Every key but Tab to the files, or left from the first card in a row.
+      def handles?(key) = !%i[tab tick].include?(key) && !(key == :left && first_in_row?)
+
       def handle(name)
         chart = selected
         case name

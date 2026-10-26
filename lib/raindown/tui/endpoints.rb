@@ -33,7 +33,7 @@ module Raindown
       def rows
         return [] if all.empty?
 
-        [FileTree::SEPARATOR, *all.map { Row.new(text: it.address, tag: [it.method, it.style], depth: 0, kind: :endpoint, target: it) }]
+        [FileTree::SEPARATOR, *all.map { Row.new(text: it.address, tag: it, depth: 0, kind: :endpoint, target: it) }]
       end
     end
   end

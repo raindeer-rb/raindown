@@ -13,7 +13,7 @@ module Raindown
       # The name, the folder, which opens the project menu when there's more than one project, and the page.
       def title
         parts = [[name, nil], ["#{location}#{' ▾' if navigator.projects?}", (:projects if navigator.projects?)],
-                 [" › #{page}", nil]]
+                 [" › #{main.page}", nil]]
 
         parts.zip(spread(parts.map(&:first), width - 1)).map do |(text, event), part_width|
           segment(text, :title, width: part_width, event:)
@@ -21,14 +21,6 @@ module Raindown
       end
 
       def name = " #{NAME}  "
-
-      def page
-        if dashboard? then 'Dashboard'
-        elsif navigator.view == :endpoint then navigator.endpoint_view.endpoint.text
-        elsif navigator.path then navigator.relative(navigator.path)
-        else 'No Markdown files'
-        end
-      end
 
       # The folder the files are shown from, from the home folder when it's in it, like ~/dev/raindown.
       def location = from_home(navigator.base)

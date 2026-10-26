@@ -55,8 +55,7 @@ module Raindown
       def ran
         write_back
         @endpoints.load
-        @endpoint_view&.read
-        dashboard.load if view == :dashboard
+        view.load
       end
 
       def root = @files.root
@@ -77,8 +76,7 @@ module Raindown
         return menu_event(name) if menu
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
-        return view_effect(dashboard.handle(name)) if dashboard_event?(name)
-        return view_effect(endpoint_view.handle(name)) if endpoint_event?(name)
+        return view_effect(view.handle(name)) if @focus == view.name && view.handles?(name)
 
         browser_event(name)
       end
@@ -97,16 +95,14 @@ module Raindown
       def point(click)
         case click.pane
         when :menu then @menu = click.index
-        when :dashboard then dashboard.cursor = click.index
-        when :endpoint then nil
-        else @panes[click.pane].cursor = click.index
+        else (@panes[click.pane] || view).cursor = click.index
         end
         @focus = click.pane unless click.pane == :menu
       end
 
       def browser_event(name)
         return move(MOVES[name]) if MOVES.key?(name)
-        return switch(PANES[name] == :main ? main_pane : PANES[name] || other_pane) if PANES.key?(name)
+        return switch(PANES[name] == :main ? view.name : PANES[name] || other_pane) if PANES.key?(name)
         return activate(name) if %i[enter toggle].include?(name)
 
         send(ACTIONS[name]) if ACTIONS.key?(name)
