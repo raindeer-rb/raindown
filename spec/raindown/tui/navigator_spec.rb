@@ -28,7 +28,8 @@ RSpec.describe Raindown::TUI::Navigator do
     end
   end
 
-  def texts(navigator, pane) = navigator.rows(pane).map(&:text)
+  # The rows that can be selected, without the separator between the Dashboard and the files.
+  def texts(navigator, pane) = navigator.rows(pane).select(&:selectable?).map(&:text)
 
   describe 'files pane' do
     it 'starts on the Dashboard, above folders and files, with the folders folded until Enter opens them' do
@@ -43,7 +44,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.handle(:down)
       navigator.handle(:enter)
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', '▸ deep/', 'setup.md', 'README.md'])
-      expect(navigator.rows(:files).map(&:depth)).to eq([0, 0, 1, 1, 0])
+      expect(navigator.rows(:files).select(&:selectable?).map(&:depth)).to eq([0, 0, 1, 1, 0])
     end
 
     it "marks the projects inside the folder with Raindown's cloud, which fold like folders" do
@@ -51,7 +52,8 @@ RSpec.describe Raindown::TUI::Navigator do
       FileUtils.mkdir_p(File.join(@root, 'guides', '.raindown'))
       navigator = described_class.new(root: @root)
 
-      expect(navigator.rows(:files).map { [it.kind, it.text] }).to eq([%i[dashboard] + ['📊 Dashboard'], [:project, '▸ 🌧 guides/']])
+      expect(navigator.rows(:files).select(&:selectable?).map { [it.kind, it.text] })
+        .to eq([[:dashboard, '📊 Dashboard'], [:project, '▸ 🌧 guides/']])
 
       navigator.handle(:down)
       navigator.handle(:enter)
@@ -63,7 +65,7 @@ RSpec.describe Raindown::TUI::Navigator do
 
       expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'guides/deep/more.md'])
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', '▾ deep/', 'more.md'])
-      expect(navigator.cursor(:files)).to eq(3)
+      expect(navigator.cursor(:files)).to eq(4)
     end
 
     it 'opens a file chosen with Enter, which moves to the outline' do
@@ -183,10 +185,10 @@ RSpec.describe Raindown::TUI::Navigator do
       write('notes.md', "# Notes\n")
       navigator = described_class.new(root: @root, path: File.join(@root, 'notes.md'))
 
-      navigator.handle(click(:files, 1))
+      navigator.handle(click(:files, 2))
       expect(texts(navigator, :files)).to eq(['📊 Dashboard', '▾ guides/', 'setup.md', 'notes.md'])
 
-      navigator.handle(click(:files, 2))
+      navigator.handle(click(:files, 3))
       expect([navigator.view, navigator.relative(navigator.path), navigator.focus]).to eq([:browser, 'guides/setup.md', :outline])
 
       navigator.handle(click(:files, 0))
@@ -232,10 +234,12 @@ RSpec.describe Raindown::TUI::Navigator do
       6.times { navigator.handle(:down) }
 
       rows, offset = navigator.visible(:files, 3)
-      expect([rows.map(&:text), offset]).to eq([%w[3.md 4.md 5.md], 4])
+      expect([rows.map(&:text), offset]).to eq([%w[3.md 4.md 5.md], 5])
 
       5.times { navigator.handle(:up) }
-      expect(navigator.visible(:files, 3).last).to eq(1)
+      expect(navigator.visible(:files, 3).last).to eq(2)
+      navigator.handle(:up)
+      expect(navigator.cursor(:files)).to eq(0)
     end
   end
 
@@ -269,7 +273,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.handle(:right)
       expect(navigator.focus).to eq(:dashboard)
 
-      navigator.handle(click(:files, 2))
+      navigator.handle(click(:files, 3))
       navigator.handle(:enter)
       expect([navigator.view, navigator.relative(navigator.path)]).to eq([:browser, 'stats.md'])
     end

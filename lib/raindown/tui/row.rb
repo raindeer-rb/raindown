@@ -7,6 +7,9 @@ module Raindown
     Row = Data.define(:text, :depth, :kind, :target, :buttons) do
       def initialize(buttons: [], **) = super
 
+      # A separator is space between a pane's sections, which the cursor skips and clicks don't reach.
+      def selectable? = kind != :separator
+
       # The line the editor opens at for the row.
       def line
         target.is_a?(Integer) ? target : target.line

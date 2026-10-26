@@ -12,6 +12,8 @@ module Raindown
     class FileTree
       # A chart, which every terminal draws two columns wide.
       DASHBOARD = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: :dashboard)
+      # A blank line between the Dashboard and the files.
+      SEPARATOR = Row.new(text: '', depth: 0, kind: :separator, target: nil)
 
       attr_reader :root
       # The project the files are narrowed to, or nil for all of them.
@@ -38,7 +40,7 @@ module Raindown
       def rows
         tree = {}
         files.each { |path| relative(path).split('/').reduce(tree) { |node, part| node[part] ||= {} } }
-        [DASHBOARD, *tree_rows(tree, '', 0)]
+        [DASHBOARD, SEPARATOR, *tree_rows(tree, '', 0)]
       end
 
       def toggle(folder)

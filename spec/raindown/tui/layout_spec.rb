@@ -38,15 +38,17 @@ RSpec.describe Raindown::TUI::Layout do
     end.join
   end
 
-  it 'lays out the title, the files beside the outline, the status and the buttons, each line the full width' do
-    lines = described_class.new(navigator, width: 60, height: 7).lines
+  it 'lays out the title, the files beside the outline below a blank line, the status and the buttons, each line the full width' do
+    lines = described_class.new(navigator, width: 60, height: 9).lines
 
     expect(text(lines).map(&:rstrip)).to eq(
       [' 🌧️ Raindown  ~/docs › guides/setup.md',
-       ' 📊 Dashboard       │ # Setup',
-       ' ▾ guides/          │   endpoint:                 [+6] [Run]',
-       '   setup.md         │',
-       ' README.md          │',
+       '                    ▏',
+       ' 📊 Dashboard       ▏ # Setup',
+       '                    ▏   endpoint:                 [+6] [Run]',
+       ' ▾ guides/          ▏',
+       '   setup.md         ▏',
+       ' README.md          ▏',
        ' Opened guides/setup.md',
        ' Tab Pane  Enter Open  X Run  E dit  W rite back  R eload']
     )
@@ -55,24 +57,28 @@ RSpec.describe Raindown::TUI::Layout do
     expect(width(text(lines).first)).to eq(59)
   end
 
-  it 'highlights the cursor in the focused pane, and dimmer in the others' do
-    lines = described_class.new(navigator, width: 60, height: 7).lines
+  it 'highlights the cursor in the focused pane, and dimmer in the others, with the divider beside the outline\'s' do
+    lines = described_class.new(navigator, width: 60, height: 9).lines
+    divider = ->(line) { line.find { it.text == described_class::DIVIDER }.style }
 
-    expect(lines[1].last.style).to eq(:selected)
-    expect(lines[3].first.style).to eq(:cursor)
+    expect(lines[2].last.style).to eq(:selected)
+    expect(lines[5].first.style).to eq(:cursor)
+    expect([lines[3].first.style, lines[3].first.event]).to eq([:blank, nil])
+    expect([divider[lines[1]], divider[lines[2]], divider[lines[3]]]).to eq(%i[divider selected_divider divider])
     navigator.handle(:left)
-    expect(described_class.new(navigator, width: 60, height: 7).lines[1].last.style).to eq(:cursor)
-    expect(described_class.new(navigator, width: 60, height: 7).lines[3].first.style).to eq(:selected)
-    expect(lines[1].first.style).to eq(:dashboard)
-    expect(lines[2].last(2).map(&:style)).to eq(%i[button button])
+    lines = described_class.new(navigator, width: 60, height: 9).lines
+    expect([lines[2].last.style, lines[5].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
+    expect(lines[2].first.style).to eq(:dashboard)
+    expect(lines[3].last(2).map(&:style)).to eq(%i[button button])
   end
 
   it 'sends events from rows and buttons when clicked' do
-    lines = described_class.new(navigator, width: 80, height: 7).lines
+    lines = described_class.new(navigator, width: 80, height: 9).lines
 
-    expect(lines[1].first.event).to eq(click(:files, 0))
-    expect(lines[1].last.event).to eq(click(:outline, 0))
-    expect(lines[2].last.event).to eq(click(:outline, 1, :execute))
+    expect(lines[2].first.event).to eq(click(:files, 0))
+    expect(lines[4].first.event).to eq(click(:files, 2))
+    expect(lines[2].last.event).to eq(click(:outline, 0))
+    expect(lines[3].last.event).to eq(click(:outline, 1, :execute))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload quit])
   end
 
@@ -103,14 +109,14 @@ RSpec.describe Raindown::TUI::Layout do
     let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
 
     # The dashboard's side of each line, right of the files.
-    def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
+    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
 
     it 'shows each chart in a card with a rounded border beside the files, with as many in a row as fit' do
-      lines = described_class.new(navigator, width: 90, height: 9).lines
+      lines = described_class.new(navigator, width: 90, height: 10).lines
 
       expect(text(lines).first.rstrip).to eq(' 🌧️ Raindown  ~/docs › Dashboard')
-      expect(text(lines)[1]).to start_with(' 📊 Dashboard ')
-      expect(main(lines)[1..5]).to eq([' ╭──────────────────────────╮  ╭──────────────────────────╮',
+      expect(text(lines)[2]).to start_with(' 📊 Dashboard ')
+      expect(main(lines)[2..6]).to eq([' ╭──────────────────────────╮  ╭──────────────────────────╮',
                                        ' │ stats.md › Stats         │  │ stats.md › Stats         │',
                                        " │ chart: '1 2 3'           │  │ chart: '3 2 1'           │",
                                        ' │ ▁▅█                      │  │ █▅▁                      │',
@@ -120,15 +126,16 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'opens a chart when its title is clicked, and highlights the selected one while the dashboard has the focus' do
-      lines = described_class.new(navigator, width: 90, height: 9).lines
-      titles = lines[2].select { it.event&.pane == :dashboard && it.style != :border }
+      lines = described_class.new(navigator, width: 90, height: 10).lines
+      titles = lines[3].select { it.event&.pane == :dashboard && it.style != :border }
 
       expect(titles.map(&:event)).to eq([click(:dashboard, 0), click(:dashboard, 1)])
       expect(titles.map(&:style)).to eq(%i[cursor heading])
-      expect(lines[1].map(&:event).select { it&.pane == :dashboard }).to eq([click(:dashboard, 0), click(:dashboard, 1)])
+      expect(lines[2].map(&:event).select { it&.pane == :dashboard }).to eq([click(:dashboard, 0), click(:dashboard, 1)])
 
       navigator.handle(:tab)
-      title = described_class.new(navigator, width: 90, height: 9).lines[2].find { it.event == click(:dashboard, 0) && it.style != :border }
+      line = described_class.new(navigator, width: 90, height: 10).lines[3]
+      title = line.find { it.event == click(:dashboard, 0) && it.style != :border }
       expect(title.style).to eq(:selected)
     end
 
@@ -136,23 +143,23 @@ RSpec.describe Raindown::TUI::Layout do
       columns = "<{ chart: '1 2 3' height: 3 format: 'columns' }>\n<{ :chart }>\n"
       File.write(File.join(@root, 'stats.md'), "<{ chart: '1 2 3' }>\n<{ :chart }>\n\n#{columns}")
       navigator.handle(:reload)
-      lines = described_class.new(navigator, width: 90, height: 12).lines
+      lines = described_class.new(navigator, width: 90, height: 13).lines
 
       clicks = ->(line) { lines[line].map(&:event).select { it&.pane == :dashboard }.map(&:index).uniq }
-      expect([clicks[5], clicks[6]]).to eq([[0, 1], [1]])
+      expect([clicks[6], clicks[7]]).to eq([[0, 1], [1]])
     end
 
     it 'fits the cards to a pane narrower than a card can be' do
-      lines = described_class.new(navigator, width: 40, height: 8).lines
+      lines = described_class.new(navigator, width: 40, height: 9).lines
 
       expect(text(lines).drop(1).map { width(it) }).to all(eq(40))
-      expect(main(lines)[2]).to start_with(' │ stats.md › Stats')
+      expect(main(lines)[3]).to start_with(' │ stats.md › Stats')
     end
 
     it 'puts the cards in rows below each other when they do not fit beside each other' do
-      lines = described_class.new(navigator, width: 60, height: 16).lines
+      lines = described_class.new(navigator, width: 60, height: 17).lines
 
-      expect(main(lines)[1..12]).to eq([' ╭──────────────────────────╮', ' │ stats.md › Stats         │', " │ chart: '1 2 3'           │",
+      expect(main(lines)[2..13]).to eq([' ╭──────────────────────────╮', ' │ stats.md › Stats         │', " │ chart: '1 2 3'           │",
                                         ' │ ▁▅█                      │', ' ╰──────────────────────────╯', '',
                                         ' ╭──────────────────────────╮', ' │ stats.md › Stats         │', " │ chart: '3 2 1'           │",
                                         ' │ █▅▁                      │', ' ╰──────────────────────────╯', ''])
@@ -169,17 +176,17 @@ RSpec.describe Raindown::TUI::Layout do
       File.write(File.join(@root, 'guides', 'more.md'), "# More\n\n<{ chart: '3 2 1' }>\n<{ :chart }>\n")
     end
 
-    def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
+    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
 
     it "puts each project's charts under its path from the home folder, titled from the project" do
-      lines = described_class.new(navigator, width: 90, height: 18).lines
+      lines = described_class.new(navigator, width: 90, height: 19).lines
 
-      expect(main(lines)[1..13]).to eq([' ~/docs', ' ╭──────────────────────────╮', ' │ stats.md                 │',
+      expect(main(lines)[2..14]).to eq([' ~/docs', ' ╭──────────────────────────╮', ' │ stats.md                 │',
                                         " │ chart: '1 2 3'           │",
                                         ' │ ▁▅█                      │', ' ╰──────────────────────────╯', '',
                                         ' ~/docs/guides', ' ╭──────────────────────────╮', ' │ more.md › More           │',
                                         " │ chart: '3 2 1'           │", ' │ █▅▁                      │', ' ╰──────────────────────────╯'])
-      expect(lines[1].last.style).to eq(:project)
+      expect(lines[2].last.style).to eq(:project)
     end
   end
 

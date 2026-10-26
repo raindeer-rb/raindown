@@ -31,14 +31,16 @@ module Raindown
         { title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, selected_button: Curses::A_REVERSE,
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, dashboard: Curses::A_BOLD,
-          key: Curses::A_REVERSE, border: Curses::A_DIM }
+          key: Curses::A_REVERSE, border: Curses::A_DIM, divider: Curses::A_BOLD, selected_divider: Curses::A_REVERSE,
+          cursor_divider: Curses::A_BOLD }
       end
 
       def colored
         plain.merge(
           title: pair(:title) | Curses::A_BOLD, selected: pair(:selected) | white_bold,
           selected_button: pair(:selected_button) | Curses::A_BOLD, directive: pair(:directive),
-          error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD, **files, **unfocused
+          error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD, divider: pair(:divider),
+          selected_divider: pair(:selected_divider), **files, **unfocused
         )
       end
 
@@ -49,9 +51,9 @@ module Raindown
 
       # The selected rows of the panes without the focus, on dark grey where there's one.
       def unfocused
-        return { cursor_button: pair(:button) | Curses::A_BOLD } unless Curses.colors >= 256
+        return { cursor_button: pair(:button) | Curses::A_BOLD, cursor_divider: pair(:divider) } unless Curses.colors >= 256
 
-        { cursor: pair(:cursor), cursor_button: pair(:cursor_button) | Curses::A_BOLD }
+        { cursor: pair(:cursor), cursor_button: pair(:cursor_button) | Curses::A_BOLD, cursor_divider: pair(:cursor_divider) }
       end
 
       # Each colour pair as [name, foreground, background], where -1 is the terminal's own background.
@@ -62,7 +64,8 @@ module Raindown
 
         [*COLORS.map { |name, color| [name, color, -1] }, [:title, white, blues[:title]],
          [:selected, white, blues[:selected]], [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
-         [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY]]
+         [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, blues[:title], -1],
+         [:selected_divider, blues[:title], blues[:selected]], [:cursor_divider, blues[:title], DARK_GREY]]
       end
 
       def pair(name)
