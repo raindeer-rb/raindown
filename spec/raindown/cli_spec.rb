@@ -15,35 +15,50 @@ RSpec.describe Raindown::CLI do
   let(:output_path) { File.join(@dir, 'out.html') }
   let(:watcher) { instance_double(Raindown::Watcher, start: nil) }
 
-  before { allow(Raindown::Watcher).to receive(:new).and_return(watcher) }
+  let(:supervisor) { instance_double(Raindown::Supervisor, start: nil) }
+
+  before do
+    allow(Raindown::Watcher).to receive(:new).and_return(watcher)
+    allow(Raindown::Supervisor).to receive(:new).and_return(supervisor)
+  end
 
   describe '.run' do
     it 'watches the file' do
       described_class.run([path])
 
-      expect(Raindown::Watcher).to have_received(:new).with(path:, output: nil, bare: false, execute: false)
+      expect(Raindown::Watcher).to have_received(:new).with(path:, bare: false, execute: false)
       expect(watcher).to have_received(:start)
     end
 
-    it 'writes to the given output path' do
-      described_class.run([path, '-o', output_path])
-      described_class.run([path, '--output', output_path])
-
-      expect(Raindown::Watcher).to have_received(:new).with(path:, output: output_path, bare: false, execute: false).twice
-    end
-
     it 'accepts the options in any order' do
-      [['--bare', '-x', '-o', output_path], ['-o', output_path, '--execute', '--bare'], ['-x', '--output', output_path, '--bare']]
-        .each { |args| described_class.run([path, *args]) }
+      [['--bare', '-x'], ['--execute', '--bare']].each { |args| described_class.run([path, *args]) }
 
-      expect(Raindown::Watcher).to have_received(:new).with(path:, output: output_path, bare: true, execute: true).thrice
+      expect(Raindown::Watcher).to have_received(:new).with(path:, bare: true, execute: true).twice
     end
 
-    context 'with --once' do
+    it 'watches the projects in a directory' do
+      described_class.run([@dir, '-x'])
+
+      expect(Raindown::Supervisor).to have_received(:new).with(directory: @dir, bare: false, execute: true)
+      expect(supervisor).to have_received(:start)
+    end
+
+    it 'watches the current directory without a path' do
+      [[], ['--bare']].each { |args| described_class.run(args) }
+
+      expect(Raindown::Supervisor).to have_received(:new).with(directory: '.', bare: false, execute: false)
+      expect(Raindown::Supervisor).to have_received(:new).with(directory: '.', bare: true, execute: false)
+    end
+
+    it 'aborts when --html is given a directory' do
+      expect { described_class.run([@dir, '--html']) }.to raise_error(SystemExit).and output(/not a directory/).to_stderr
+    end
+
+    context 'with --html' do
       it 'renders to stdout without watching' do
         File.write(path, "# Title\n\n<{ toc: }>\n<{ :toc }>\n\n## Section\n")
 
-        expect { described_class.run([path, '--once']) }.to output(/Table of contents/).to_stdout
+        expect { described_class.run([path, '--html']) }.to output(/Table of contents/).to_stdout
         expect(File.read(path)).to include('- [Section](#section)')
         expect(Raindown::Watcher).not_to have_received(:new)
       end
@@ -51,7 +66,7 @@ RSpec.describe Raindown::CLI do
       it 'writes to the given output path with the other options in any order' do
         rd = File.join(@dir, 'sample.rd').tap { |file| File.write(file, "# Title\n\n:toc\n") }
 
-        [['--once', '-o', output_path], ['-x', '--output', output_path, '--once', '--bare']].each do |args|
+        [['--html', output_path], ['-x', '--html', output_path, '--bare'], ['--bare', '--html', output_path, '-x']].each do |args|
           File.delete(output_path) if File.exist?(output_path)
           described_class.run([rd, *args])
 
@@ -84,7 +99,7 @@ RSpec.describe Raindown::CLI do
       end
 
       it 'writes to the given output path' do
-        run_with_stdin("# Title\n", [path, '--stdin', '-o', output_path])
+        run_with_stdin("# Title\n", [path, '--stdin', '--html', output_path])
 
         expect(File.read(output_path)).to include('Title')
       end
@@ -103,7 +118,7 @@ RSpec.describe Raindown::CLI do
     it 'shows an error in the file as one line' do
       File.write(path, "# Title\n\n<{ toc: }>\n")
 
-      expect { described_class.run([path, '--once']) }
+      expect { described_class.run([path, '--html']) }
         .to raise_error(SystemExit).and output("raindown: #{path}: <{ toc: }> on line 3 needs <{ :toc }>\n").to_stderr
     end
 
@@ -111,7 +126,7 @@ RSpec.describe Raindown::CLI do
       File.write(path, "# Title\n\n<{ toc: }>\n")
       stub_const('ENV', ENV.to_h.merge('RAINDOWN_DEBUG' => '1'))
 
-      expect { described_class.run([path, '--once']) }.to raise_error(Raindown::NodeBlocks::MissingEndTag)
+      expect { described_class.run([path, '--html']) }.to raise_error(Raindown::NodeBlocks::MissingEndTag)
     end
 
     it 'shows the version with -v or --version' do
@@ -145,9 +160,29 @@ RSpec.describe Raindown::CLI do
       end
     end
 
-    it 'shows the usage with -h, --help or no arguments' do
-      [['-h'], ['--help'], [], [path, '--help']].each do |args|
-        expect { described_class.run(args) }.to raise_error(SystemExit).and output(/Usage: raindown FILE/).to_stderr
+    describe 'tui' do
+      before do
+        require 'raindown/tui'
+        allow(Raindown::TUI).to receive(:start)
+      end
+
+      it 'starts the terminal UI on the path, or the current directory' do
+        described_class.run(['tui', path])
+        expect(Raindown::TUI).to have_received(:start).with(path)
+
+        described_class.run(['tui'])
+        expect(Raindown::TUI).to have_received(:start).with('.')
+      end
+
+      it 'stops when the path does not exist' do
+        expect { described_class.run(%w[tui missing.md]) }.to raise_error(SystemExit).and output(/File not found/).to_stderr
+        expect(Raindown::TUI).not_to have_received(:start)
+      end
+    end
+
+    it 'shows the usage with -h or --help' do
+      [['-h'], ['--help'], [path, '--help']].each do |args|
+        expect { described_class.run(args) }.to raise_error(SystemExit).and output(/Usage: raindown \[PATH\]/).to_stderr
       end
 
       expect(Raindown::Watcher).not_to have_received(:new)

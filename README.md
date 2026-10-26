@@ -18,23 +18,33 @@ ecf65be   -6        █│█▊                       +14
 
 ## CLI
 
-The gem ships a `raindown` executable that renders a Markdown file (including directives like `<{ :toc }>`) to HTML, then re-renders it every time the file is saved.
+The gem ships a `raindown` executable that watches Markdown files and writes back to them as they're saved, like their tables of contents, tables and endpoint responses.
 
 ```sh
-# Write to README.html beside README.md:
+# Watch every project with a .raindown folder in the current directory, or in another one:
+raindown
+raindown ~/dev
+
+# Watch one file:
 raindown README.md
 
-# Write to another path:
-raindown README.md -o site/index.html
-
-# Render once without watching, to stdout or with -o to a file:
-raindown README.md --once
+# Render to HTML once, to stdout or to a file:
+raindown README.md --html
+raindown README.md --html site/index.html
 
 # Render Markdown from stdin without touching the file (for editor previews):
 cat draft.rd | raindown draft.rd --stdin
+
+# Browse a project's files and their outlines in the terminal:
+raindown tui
+raindown tui README.md
 ```
 
 With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
+
+Watching a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
+
+`raindown tui` shows a project's Markdown files beside an outline of the open file's headings and directives. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. The mouse works too.
 
 ### Directives
 
@@ -356,7 +366,7 @@ The [VS Code extension](vscode/) highlights syntax and previews Raindown files w
 
 ### Standalone binaries
 
-Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed, except on Alpine and other musl distros, which need `libgcc` (`apk add libgcc`).
+Each [GitHub release](https://github.com/raindeer-rb/raindown/releases) has a standalone `raindown` executable for macOS, Linux (glibc and musl) and Windows, built with [Tebako](https://github.com/tamatebako/tebako). Ruby is bundled inside, so nothing else needs to be installed, except on Alpine and other musl distros, which need `libgcc` and ncurses (`apk add libgcc ncurses-libs`). Other Linux binaries use the system's ncurses, which most distros include.
 
 To build one for your own machine, [install Tebako](https://github.com/tamatebako/tebako#installation) and run:
 

@@ -147,12 +147,15 @@ highlight_code: false   # no server-side highlighting; code gets class="language
 ## CLI
 
 ```sh
-raindown FILE                 # write FILE.html beside FILE and re-render on save
-raindown FILE -o out.html     # write to another path
-raindown FILE --once          # render once, to stdout unless -o is given
-cat FILE | raindown FILE --stdin   # render stdin, without rewriting FILE
+raindown                      # watch the projects (folders with .raindown) in the current directory, writing back on save
+raindown DIRECTORY            # watch the projects in another directory, like ~/dev
+raindown FILE                 # watch one file, writing back to it on save
+raindown FILE --html          # render to HTML once, to stdout
+raindown FILE --html out.html # render to HTML once, to a file
+cat FILE | raindown FILE --stdin   # render stdin to HTML, without rewriting FILE
 raindown FILE --bare          # allow bare directives in a .md file
 raindown FILE -x              # run endpoint snippets that have no response yet
+raindown tui [PATH]           # browse a project's files and outlines in the terminal
 ```
 
 ## Docs

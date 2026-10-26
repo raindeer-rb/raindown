@@ -9,6 +9,7 @@ module Raindown
   # Runs the curl block under an endpoint directive and writes the response in the code block below it,
   # followed by the date it was fetched.
   # Only runs when that block is missing or empty, and the directive has :x/:execute or --execute is passed.
+  # Or with only: and a directive's line index, runs just that endpoint, replacing any response it has.
   #   <{ endpoint: :x }>
   #   ```sh
   #   curl https://api.example.com
@@ -28,10 +29,11 @@ module Raindown
       new(content:, bare: BareDirectives.enabled?(path:, bare:), execute:).rewrite
     end
 
-    def initialize(content:, bare: false, execute: false)
+    def initialize(content:, bare: false, execute: false, only: nil)
       @lines = content.lines
       @bare = bare
       @execute = execute
+      @only = only
     end
 
     def rewrite
@@ -41,7 +43,7 @@ module Raindown
         if (block = CodeBlocks.at(@lines, index))
           index = block[:close]
         elsif (args = directive_args(@lines[index]))
-          index = fill(index + 1, args)
+          index = fill(index + 1, args, directive: index)
         end
 
         index += 1
@@ -58,13 +60,18 @@ module Raindown
     end
 
     # Returns the index of the last line it handled.
-    def fill(index, args)
+    def fill(index, args, directive:)
       curl, output = CodeBlocks.endpoint(@lines, index)
       return index - 1 unless curl&.dig(:body)&.lstrip&.start_with?('curl')
-
-      return curl[:close] if (output && !output[:body].strip.empty?) || !execute?(args)
+      return curl[:close] unless run?(args, output, directive)
 
       write_output(curl:, output:)
+    end
+
+    def run?(args, output, directive)
+      return directive == @only if @only
+
+      (output.nil? || output[:body].strip.empty?) && execute?(args)
     end
 
     def execute?(args)
@@ -80,6 +87,9 @@ module Raindown
       @lines[start, output ? replaced_length(output) : 0] = block
       start + block.length - 1
     rescue Curl::Error => e
+      # The one endpoint that was asked for fails for the caller to show, like in the terminal UI.
+      raise if @only
+
       warn "Endpoint failed: #{e.message}"
       curl[:close]
     end

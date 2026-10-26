@@ -68,10 +68,10 @@ curl https://httpbin.org/uuid
 
 ```json
 {
-  "uuid": "1eefb9a5-442c-49cc-8bf8-63f55b6e5041"
+  "uuid": "3ca20551-9df0-4f92-8710-8e8df2ab9e85"
 }
 ```
-<!-- raindown:fetched 2026-10-14 -->
+<!-- raindown:fetched 2026-10-26 -->
 
 ## Tables
 

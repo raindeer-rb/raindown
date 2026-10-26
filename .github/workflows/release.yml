@@ -46,6 +46,11 @@ jobs:
           mv "$asset" "tebako${{ matrix.exe }}"
           chmod +x "tebako${{ matrix.exe }}"
 
+      # The curses gem compiles against ncurses, whose headers Ubuntu doesn't install by default.
+      - name: Install ncurses
+        if: ${{ runner.os == 'Linux' && !matrix.alpine }}
+        run: sudo apt-get update -q && sudo apt-get install -y -q libncurses-dev
+
       - uses: ruby/setup-ruby@v1
         if: ${{ !matrix.alpine }}
         with:
@@ -63,7 +68,7 @@ jobs:
         run: |
           # Ruby's configure, which tebako runs to build native extensions, needs bash, not busybox's sh.
           docker run --rm -v "$PWD:/work" -w /work -e TEBAKO_PLATFORM -e CONFIG_SHELL=/bin/bash alpine:3.22 sh -euc '
-            apk add --no-cache bash build-base curl git linux-headers openssl-dev ruby ruby-dev yaml-dev
+            apk add --no-cache bash build-base curl git linux-headers ncurses-dev openssl-dev ruby ruby-dev yaml-dev
             git config --global --add safe.directory /work
             gem install bundler --no-document
             bundle install
@@ -75,10 +80,10 @@ jobs:
         run: |
           set -euo pipefail
           bin="pkg/raindown-*-$TEBAKO_PLATFORM${{ matrix.exe }}"
-          # Commonmarker's musl extension needs libgcc, which bare Alpine doesn't include.
+          # Commonmarker's musl extension needs libgcc, and curses' needs ncurses, which bare Alpine doesn't include.
           run() {
             if [ "${{ matrix.alpine }}" = "true" ]; then
-              docker run --rm -v "$PWD:/work" -w /work alpine:3.22 sh -c 'apk add --no-cache -q libgcc && "$@"' sh $bin "$@"
+              docker run --rm -v "$PWD:/work" -w /work alpine:3.22 sh -c 'apk add --no-cache -q libgcc ncurses-libs && "$@"' sh $bin "$@"
             else
               $bin "$@"
             fi
@@ -87,8 +92,12 @@ jobs:
           help=$(run -h 2>&1 || true)
           echo "$help"
           grep -q 'Usage: raindown' <<< "$help"
-          run examples/markdown.md --once -o out.html
+          run examples/markdown.md --html out.html
           grep 'Table of contents' out.html
+          # Without a terminal the TUI stops once curses has loaded, which shows its extension was packaged.
+          tui=$(run tui examples < /dev/null 2>&1 || true)
+          echo "$tui"
+          grep -q 'needs a terminal' <<< "$tui"
 
       - uses: actions/upload-artifact@v4
         with:

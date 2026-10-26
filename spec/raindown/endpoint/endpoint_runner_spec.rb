@@ -97,4 +97,23 @@ RSpec.describe Raindown::EndpointRunner do
 
     expect { expect(rewrite(content)).to eq(content) }.to output(/Endpoint failed: curl: \(6\)/).to_stderr
   end
+
+  describe 'only:' do
+    let(:content) { "<{ endpoint: }>\n\n#{curl}\n```json\n{}\n```\n#{fetched}\n<{ endpoint: :x }>\n\n#{curl}" }
+
+    it 'runs just the endpoint on that line, replacing its response, even without :x' do
+      allow(Date).to receive(:today).and_return(Date.new(2026, 10, 20))
+
+      rewritten = described_class.new(content:, only: 0).rewrite
+
+      expect(rewritten).to start_with("<{ endpoint: }>\n\n#{curl}\n```json\n{\n  \"id\": 1\n}\n```\n<!-- raindown:fetched 2026-10-20 -->\n")
+      expect(rewritten.scan('```json').length).to eq(1)
+    end
+
+    it 'raises when curl fails, for the caller to show' do
+      allow(Raindown::Curl).to receive(:run).and_raise(Raindown::Curl::Error, 'curl: (6) Could not resolve host')
+
+      expect { described_class.new(content:, only: 0).rewrite }.to raise_error(Raindown::Curl::Error)
+    end
+  end
 end

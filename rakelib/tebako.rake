@@ -31,7 +31,9 @@ module TebakoBuild
     "#{GEMS_DIR}/cache/*.gem", # The gem archives, kept after the gems are installed.
     *OTHER_RUBIES.map { "#{GEMS_DIR}/gems/*/lib/*/#{it}" },
     # Native sources and headers (compiled into lib), type signatures and tests.
-    *%w[ext src include sig rbi spec test].map { "#{GEMS_DIR}/gems/*/#{it}" }
+    *%w[ext src include sig rbi spec test].map { "#{GEMS_DIR}/gems/*/#{it}" },
+    # curses builds PDCursesMod from its vendor folder on Windows, into lib like the other platforms' builds.
+    "#{GEMS_DIR}/gems/curses-*/vendor", "#{GEMS_DIR}/gems/curses-*/sample"
   ].freeze
 
   module_function

@@ -22,7 +22,7 @@ RSpec.describe 'Loading Prism' do
     script = <<~RUBY
       require 'raindown/cli'
       at_exit { $stderr.print(defined?(Prism::Node) ? 'Prism loaded' : 'Prism not loaded') }
-      Raindown::CLI.run([#{path.inspect}, '--once'])
+      Raindown::CLI.run([#{path.inspect}, '--html'])
     RUBY
     html, prism, status = Open3.capture3(RbConfig.ruby, '-I', File.expand_path('../../lib', __dir__), '-e', script)
     raise prism unless status.success?
