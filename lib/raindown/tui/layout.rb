@@ -1,25 +1,33 @@
 # frozen_string_literal: true
 
-require 'unicode/display_width'
+require_relative 'text'
 
 module Raindown
   module TUI
     # The screen as lines of styled segments, worked out from a Navigator with no terminal, so the Screen only paints them.
     # A title, the files pane beside the outline, a status line and a bar of buttons:
-    #    raindown  docs  guides/setup.md
-    #    ▾ guides/       │ # Setup
-    #      setup.md      │   toc: [+3]
-    #    README.md       │   ## Install
+    #    🌧️ Raindown  ~/docs › guides/setup.md
+    #    📊 Dashboard    │ # Setup
+    #    ▾ guides/       │   toc: [+3]
+    #      setup.md      │   ## Install
     #    Opened guides/setup.md
-    #    Tab Pane  Enter Open  x Run  e Edit  w Write back  r Reload  q Quit
+    #    Tab Pane  Enter Open  x Run  e Edit  w Write back  d Charts  r Reload  q Quit
     # Each line is exactly the width, in display columns. A segment with an event is clicked to send it.
+    # With the Dashboard chosen in the files, a DashboardPane of the project's charts is in place of the outline.
     class Layout
+      include Text
+
       Segment = Data.define(:text, :style, :event)
 
       BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['x', 'Run', :execute], ['e', 'Edit', :edit],
                  ['w', 'Write back', :write_back], ['r', 'Reload', :reload], ['q', 'Quit', :quit]].freeze
+      DASHBOARD_BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
+                           ['q', 'Quit', :quit]].freeze
       FILES_WIDTH = (16..32)
-      INDENT = '  '
+      INDENT = Text::INDENT
+      # Terminals draw the rain cloud one column wide or two, so the title line stops a column short of the edge,
+      # and doesn't wrap when it's drawn wider than it's measured.
+      NAME = '🌧️ Raindown'
       # The title, status and button lines.
       CHROME_HEIGHT = 3
 
@@ -34,29 +42,58 @@ module Raindown
       def lines
         return [status].first(height) if height < CHROME_HEIGHT + 1
 
-        [title, *panes, status, button_bar]
+        [title, *body, status, button_bar]
       end
 
+      # A third of the width, within FILES_WIDTH, and never more than half of a narrow screen.
       def files_width
-        (width / 3).clamp(FILES_WIDTH.begin, [FILES_WIDTH.end, width / 2].min)
+        [(width / 3).clamp(FILES_WIDTH), width / 2].min
       end
 
       private
 
+      def body = panes
+
+      def dashboard? = navigator.view == :dashboard
+
+      def body_height = height - CHROME_HEIGHT
+
       def title
-        path = navigator.path ? navigator.relative(navigator.path) : 'No Markdown files'
-        [segment(" raindown  #{File.basename(navigator.root)}  #{path}", :title)]
+        path = if dashboard? then 'Dashboard'
+               elsif navigator.path then navigator.relative(navigator.path)
+               else 'No Markdown files'
+               end
+        [segment(" #{NAME}  #{location} › #{path}", :title, width: width - 1)]
+      end
+
+      # The project's folder, from the home folder when it's in it, like ~/dev/raindown.
+      def location
+        home = Dir.home
+        root = navigator.root
+        root == home || root.start_with?(File.join(home, '')) ? root.sub(home, '~') : root
+      rescue ArgumentError
+        navigator.root
       end
 
       def panes
-        pane_height = height - CHROME_HEIGHT
+        pane_height = body_height
         files = navigator.visible(:files, pane_height)
-        outline = navigator.visible(:outline, pane_height)
+        main = main_pane(width - files_width - 1, pane_height)
 
         Array.new(pane_height) do |index|
-          [*cell(:files, *files, index, files_width), Segment.new(text: '│', style: :border, event: nil),
-           *cell(:outline, *outline, index, width - files_width - 1)]
+          [*cell(:files, *files, index, files_width), Segment.new(text: '│', style: :border, event: nil), *main[index]]
         end
+      end
+
+      # The outline's lines, or the dashboard's.
+      def main_pane(pane_width, pane_height)
+        if dashboard?
+          require_relative 'dashboard_pane'
+          return DashboardPane.new(navigator, width: pane_width, height: pane_height).lines
+        end
+
+        outline = navigator.visible(:outline, pane_height)
+        Array.new(pane_height) { |index| cell(:outline, *outline, index, pane_width) }
       end
 
       # A pane's row as its text, then its buttons, or blank below its last row.
@@ -97,7 +134,7 @@ module Raindown
         segments = []
         used = 0
 
-        BUTTONS.each do |key, label, event|
+        (dashboard? ? DASHBOARD_BUTTONS : BUTTONS).each do |key, label, event|
           pair = [Segment.new(text: " #{key} ", style: :key, event:), Segment.new(text: "#{label} ", style: :bar, event:)]
           pair_width = display_width(pair.map(&:text).join)
           break if used + pair_width > width
@@ -112,30 +149,6 @@ module Raindown
       # Text cut or padded to the width, with a cut shown by an ellipsis.
       def segment(text, style, width: self.width, event: nil)
         Segment.new(text: fit(printable(text), width), style:, event:)
-      end
-
-      def fit(text, width)
-        return '' if width <= 0
-        return text + (' ' * (width - display_width(text))) if display_width(text) <= width
-
-        cut = +''
-        cut_width = 0
-        text.each_char do |char|
-          break if cut_width + display_width(char) > width - 1
-
-          cut << char
-          cut_width += display_width(char)
-        end
-        "#{cut}…#{' ' * (width - 1 - cut_width)}"
-      end
-
-      # Tabs and control characters, like in a directive's output, would move the terminal's cursor.
-      def printable(text)
-        text.gsub("\t", INDENT).gsub(/[[:cntrl:]]/, '')
-      end
-
-      def display_width(text)
-        Unicode::DisplayWidth.of(text)
       end
     end
   end
