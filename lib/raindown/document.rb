@@ -2,6 +2,7 @@
 
 require 'commonmarker'
 
+require_relative '../raindown'
 require_relative 'bare_directives'
 require_relative 'code_blocks'
 require_relative 'endpoint/endpoint_runner'
@@ -17,9 +18,10 @@ module Raindown
 
     # A content directive: a node, like toc: or a project's Changelog:, or an endpoint.
     # It spans line to end_line, its end tag, or the last line of a bare block.
+    # Body is the lines inside it, between it and its end tag, like an endpoint's request and response.
     # Output is the lines Raindown writes back, like a node's Markdown or an endpoint's response, and is nil
     # when nothing's written yet. A self-closing directive like <{ :toc }> only renders, so it never writes.
-    Directive = Data.define(:name, :args, :line, :end_line, :output, :writes) do
+    Directive = Data.define(:name, :args, :line, :end_line, :body, :output, :writes) do
       def endpoint? = name == 'endpoint'
     end
 
@@ -27,6 +29,7 @@ module Raindown
     TEXT_NODES = %i[text code].freeze
     BREAK_NODES = %i[softbreak linebreak].freeze
     ENDPOINT_END_TAG = /\A {0,3}<\{\s*:endpoint\s*\}>[ \t]*$/
+    END_TAG = /\A {0,3}<\{\s*:[\w:]+\s*\}>[ \t]*$/
 
     def self.parse(markdown, bare: false)
       new(markdown:, bare:)
@@ -139,10 +142,18 @@ module Raindown
       first..last if first <= last
     end
 
-    # From a range of indexes to line numbers.
+    # From a range of indexes to line numbers. The body is the lines after the directive, up to its end tag,
+    # or to the end of a bare block, which has none.
     def directive(name, args, span, output:, writes:)
-      output = (output.begin + 1)..(output.end + 1) if output
-      Directive.new(name:, args:, line: span.begin + 1, end_line: span.end + 1, output:, writes:)
+      end_tag = span.end > span.begin && @lines[span.end].match?(END_TAG)
+      body = trimmed(span.begin + 1, end_tag ? span.end - 1 : span.end)
+
+      Directive.new(name:, args:, line: span.begin + 1, end_line: span.end + 1, body: lines(body), output: lines(output),
+                    writes:)
+    end
+
+    def lines(range)
+      (range.begin + 1)..(range.end + 1) if range
     end
   end
 end
