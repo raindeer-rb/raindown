@@ -6,16 +6,18 @@ module Raindown
   module TUI
     # The dashboard, right of the files: a card for each of the projects' charts, as wide as its chart,
     # with as many in a row as fit. With more than one project, each project's charts are under its path.
-    # A card has its file and heading, and its directive, both cut to the chart's width, then the chart:
-    #    raindown.rd › Charts                 raindown.rd › Commits
-    #    chart: 'data/downloads.csv'          chart: 'data/commits.csv' minus: 'deleted'
-    #    Jun  ██████▊              640        c2f98fc  -18  █│███▊      +96
-    #    Jul  █████████████      1,240        b1a573a   -0   │▏          +1
+    # A card has its file and heading, and its directive, both cut to the chart's width, then the chart,
+    # in a border with rounded corners:
+    #    ╭─────────────────────────────╮  ╭────────────────────────────────╮
+    #    │ raindown.rd › Charts        │  │ raindown.rd › Commits          │
+    #    │ chart: 'data/downloads.csv' │  │ chart: 'data/commits.csv' min… │
+    #    │ Jun  ██████▊           640  │  │ c2f98fc  -18  █│███▊      +96  │
+    #    ╰─────────────────────────────╯  ╰────────────────────────────────╯
     # Its lines are the pane's width and height, which the Layout puts beside the files.
     class DashboardPane < Layout
-      # Columns between the cards, and the narrowest a card is.
-      GAP = 3
-      MIN_CARD_WIDTH = 24
+      # Columns between the cards, and the narrowest a card is, with its border.
+      GAP = 2
+      MIN_CARD_WIDTH = 28
 
       def lines
         cards = dashboard.cards
@@ -47,7 +49,7 @@ module Raindown
         used = 1
 
         indexes.each do |index|
-          card_width = cards[index].width(within: card_widths) + (rows.last.empty? ? 0 : GAP)
+          card_width = cards[index].box_width(within: card_widths) + (rows.last.empty? ? 0 : GAP)
           if used + card_width > width && rows.last.any?
             rows << []
             used = 1
@@ -72,9 +74,9 @@ module Raindown
         (lines + blank(height)).first(height)
       end
 
-      # The tallest card's lines, and one line below it.
+      # The tallest card's lines, in its border, and one line below it.
       def row_height(row, cards)
-        row.map { cards[it].height }.max + 1
+        row.map { cards[it].box_height }.max + 1
       end
 
       def row_line(row, cards, line)
@@ -82,19 +84,20 @@ module Raindown
 
         row.each_with_index do |index, column|
           segments << segment('', :blank, width: GAP) unless column.zero?
-          segments << card_line(cards[index], index, line)
+          segments.concat(card_line(cards[index], index, line))
         end
 
         [*segments, segment('', :blank, width: width - segments.sum { display_width(it.text) })]
       end
 
-      # A card opens chart source when it's clicked, like Enter.
+      # A card opens chart source when it's clicked, like Enter, but not the space below a card shorter than its row.
       # The selected card's title is highlighted, like a selected row.
       def card_line(card, index, line)
-        text, style = card.parts[line] || ['', :blank]
-        style = row_style(:dashboard, nil, true) if style == :heading && dashboard.cursor == index
-
-        segment(text, style, width: card.width(within: card_widths), event: Click.new(pane: :dashboard, index:, action: :enter))
+        title_style = dashboard.cursor == index ? row_style(:dashboard, nil, true) : :heading
+        event = Click.new(pane: :dashboard, index:, action: :enter) if line < card.box_height
+        card.format_line(line, box_width: card.box_width(within: card_widths), title_style:).map do |text, style, part_width|
+          segment(text, style, width: part_width, event:)
+        end
       end
 
       # A row of cards' lines, under its project's heading when it's the project's first row.
