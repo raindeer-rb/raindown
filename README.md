@@ -28,9 +28,9 @@ raindown ~/dev
 # Watch one file:
 raindown README.md
 
-# Render to HTML once, to stdout or with -o to a file:
-raindown README.md --once
-raindown README.md --once -o site/index.html
+# Render to HTML once, to stdout or to a file:
+raindown README.md --html
+raindown README.md --html site/index.html
 
 # Render Markdown from stdin without touching the file (for editor previews):
 cat draft.rd | raindown draft.rd --stdin

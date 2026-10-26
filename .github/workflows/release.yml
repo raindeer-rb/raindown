@@ -87,7 +87,7 @@ jobs:
           help=$(run -h 2>&1 || true)
           echo "$help"
           grep -q 'Usage: raindown' <<< "$help"
-          run examples/markdown.md --once -o out.html
+          run examples/markdown.md --html out.html
           grep 'Table of contents' out.html
 
       - uses: actions/upload-artifact@v4

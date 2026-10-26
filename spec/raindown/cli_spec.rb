@@ -50,23 +50,15 @@ RSpec.describe Raindown::CLI do
       expect(Raindown::Supervisor).to have_received(:new).with(directory: '.', bare: true, execute: false)
     end
 
-    it 'aborts when watching is given an output path, as watching only writes back' do
-      [[path, '-o', output_path], [@dir, '--output', output_path]].each do |args|
-        expect { described_class.run(args) }.to raise_error(SystemExit).and output(/-o only works with --once or --stdin/).to_stderr
-      end
-
-      expect(Raindown::Watcher).not_to have_received(:new)
+    it 'aborts when --html is given a directory' do
+      expect { described_class.run([@dir, '--html']) }.to raise_error(SystemExit).and output(/not a directory/).to_stderr
     end
 
-    it 'aborts when --once is given a directory' do
-      expect { described_class.run([@dir, '--once']) }.to raise_error(SystemExit).and output(/not a directory/).to_stderr
-    end
-
-    context 'with --once' do
+    context 'with --html' do
       it 'renders to stdout without watching' do
         File.write(path, "# Title\n\n<{ toc: }>\n<{ :toc }>\n\n## Section\n")
 
-        expect { described_class.run([path, '--once']) }.to output(/Table of contents/).to_stdout
+        expect { described_class.run([path, '--html']) }.to output(/Table of contents/).to_stdout
         expect(File.read(path)).to include('- [Section](#section)')
         expect(Raindown::Watcher).not_to have_received(:new)
       end
@@ -74,7 +66,7 @@ RSpec.describe Raindown::CLI do
       it 'writes to the given output path with the other options in any order' do
         rd = File.join(@dir, 'sample.rd').tap { |file| File.write(file, "# Title\n\n:toc\n") }
 
-        [['--once', '-o', output_path], ['-x', '--output', output_path, '--once', '--bare']].each do |args|
+        [['--html', output_path], ['-x', '--html', output_path, '--bare'], ['--bare', '--html', output_path, '-x']].each do |args|
           File.delete(output_path) if File.exist?(output_path)
           described_class.run([rd, *args])
 
@@ -107,7 +99,7 @@ RSpec.describe Raindown::CLI do
       end
 
       it 'writes to the given output path' do
-        run_with_stdin("# Title\n", [path, '--stdin', '-o', output_path])
+        run_with_stdin("# Title\n", [path, '--stdin', '--html', output_path])
 
         expect(File.read(output_path)).to include('Title')
       end
@@ -126,7 +118,7 @@ RSpec.describe Raindown::CLI do
     it 'shows an error in the file as one line' do
       File.write(path, "# Title\n\n<{ toc: }>\n")
 
-      expect { described_class.run([path, '--once']) }
+      expect { described_class.run([path, '--html']) }
         .to raise_error(SystemExit).and output("raindown: #{path}: <{ toc: }> on line 3 needs <{ :toc }>\n").to_stderr
     end
 
@@ -134,7 +126,7 @@ RSpec.describe Raindown::CLI do
       File.write(path, "# Title\n\n<{ toc: }>\n")
       stub_const('ENV', ENV.to_h.merge('RAINDOWN_DEBUG' => '1'))
 
-      expect { described_class.run([path, '--once']) }.to raise_error(Raindown::NodeBlocks::MissingEndTag)
+      expect { described_class.run([path, '--html']) }.to raise_error(Raindown::NodeBlocks::MissingEndTag)
     end
 
     it 'shows the version with -v or --version' do

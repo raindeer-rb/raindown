@@ -14,7 +14,7 @@ module Raindown
 
     USAGE = <<~TEXT
       Usage: raindown [PATH] [options]
-             raindown FILE --once [-o OUTPUT]
+             raindown FILE --html [OUTPUT]
              raindown init [DIRECTORY]
 
       Watches PATH and writes back to its Markdown files as they're saved, like their tables of contents and tables.
@@ -24,10 +24,9 @@ module Raindown
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
 
       Options:
-        --once              Render FILE to HTML once, printing to stdout unless -o is given
-        -o, --output PATH   Write the HTML from --once or --stdin to PATH
-        --stdin             Render Markdown from stdin once, without formatting FILE, which only needs
-                            its extension (to allow bare directives) and can be unsaved
+        --html [OUTPUT]     Render FILE to HTML once, writing to OUTPUT or else printing to stdout
+        --stdin             Render Markdown from stdin to HTML once, without formatting FILE, which only needs
+                            its extension (to allow bare directives) and can be unsaved. Add --html OUTPUT to write a file
         --bare              Allow bare directives like :toc in Markdown files
         -x, --execute       Run endpoint curl snippets that have no output yet
         -h, --help          Show this message
@@ -46,8 +45,9 @@ module Raindown
       # highlight_code: false
     YAML
 
-    OPTIONS = { output: ['-o :output', '--output :output'], bare: ['--bare'], execute: ['-x', '--execute'],
-                once: ['--once'], stdin: ['--stdin'] }.freeze
+    # "--html OUTPUT" is matched as "--html-to OUTPUT" (see run), so a flag after a bare --html isn't read as the OUTPUT.
+    OPTIONS = { html_to: ['--html-to :output'], html: ['--html'], bare: ['--bare'], execute: ['-x', '--execute'],
+                stdin: ['--stdin'] }.freeze
 
     # Trees matches tokens in order, so there's a line for every order and spelling of the options.
     OPTION_LINES = (0..OPTIONS.size).flat_map { |count| OPTIONS.keys.permutation(count).to_a }.flat_map do |names|
@@ -57,15 +57,16 @@ module Raindown
     OPTION_LINES.each do |names, flags|
       # Endpoints run while formatting, which --stdin skips.
       next if names.include?(:stdin) && names.include?(:execute)
+      next if names.include?(:html) && names.include?(:html_to)
 
       command = if names.include?(:stdin) then :render_stdin
-                elsif names.include?(:once) then :render
+                elsif names.intersect?(%i[html html_to]) then :render
                 else :watch
                 end
       options = { bare: names.include?(:bare), execute: names.include?(:execute) }
       pattern = [':path', *flags].join(' ')
 
-      if names.include?(:output)
+      if names.include?(:html_to)
         line(pattern) { |path, output| execute { send(command, path, output, **options) } }
       else
         line(pattern) { |path| execute { send(command, path, **options) } }
@@ -80,6 +81,7 @@ module Raindown
 
       # Without a path, like "raindown" or "raindown -x", the current directory is watched.
       argv = ['.', *argv] if argv.empty? || argv.first.start_with?('-')
+      argv = html_output(argv)
 
       super || abort("Unknown arguments: #{argv.join(' ')}\n\n#{USAGE}")
     rescue StandardError => e
@@ -91,6 +93,15 @@ module Raindown
       raise error if ENV['RAINDOWN_DEBUG']
 
       abort("raindown: #{path}: #{error.message}")
+    end
+
+    # "--html out.html" names an OUTPUT, while "--html --bare" doesn't, as OUTPUT never starts with "-".
+    def self.html_output(argv)
+      index = argv.index('--html') || (return argv)
+      output = argv[index + 1]
+      return argv if output.nil? || output.start_with?('-')
+
+      [*argv[0...index], '--html-to', *argv[(index + 1)..]]
     end
 
     # Creates the .raindown folder that marks a project's root and holds its config.yml and nodes.
@@ -110,7 +121,7 @@ module Raindown
 
       def render(path, output = nil, bare: false, execute: false)
         ensure_exists(path)
-        abort('--once renders a file, not a directory') if File.directory?(path)
+        abort('--html renders a file, not a directory') if File.directory?(path)
         Nodes.load(path)
 
         metadata = Pages.for(path)
@@ -124,9 +135,8 @@ module Raindown
                                       **Config.render_options(path)))
       end
 
-      # Watching only writes back to the files, so -o is for --once and --stdin, which render HTML.
-      def watch(path, output = nil, bare: false, execute: false)
-        abort('-o only works with --once or --stdin, as watching writes back to the files') if output
+      # Watching only writes back to the files, while --html and --stdin render HTML.
+      def watch(path, bare: false, execute: false)
         ensure_exists(path)
         return Supervisor.new(directory: path, bare:, execute:).start if File.directory?(path)
 
