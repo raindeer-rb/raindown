@@ -35,14 +35,14 @@ module Raindown
       folder && File.dirname(folder)
     end
 
-    # The project's Markdown files, sorted. Ignored folders and the projects inside it are left out,
-    # since those projects have nodes of their own.
-    def files(root)
+    # The project's Markdown files, sorted, leaving out ignored folders. The projects inside it are left out too,
+    # since they have nodes of their own, unless they're asked for, like by the terminal UI, which lists them all.
+    def files(root, nested: false)
       files = []
 
       Find.find(root) do |path|
         if File.directory?(path)
-          Find.prune if path != root && (ignored?(File.basename(path)) || File.directory?(File.join(path, Nodes::FOLDER)))
+          Find.prune if path != root && (ignored?(File.basename(path)) || (!nested && project?(path)))
         elsif markdown?(path, root:)
           files << path
         end
@@ -62,6 +62,10 @@ module Raindown
     # Whether a file is one of a project's own nodes, which load when its watcher starts.
     def node?(path, root:)
       File.expand_path(path).start_with?(File.join(root, Nodes::FOLDER, '')) && %w[.rb .rbx].include?(File.extname(path))
+    end
+
+    def project?(folder)
+      File.directory?(File.join(folder, Nodes::FOLDER))
     end
 
     def ignored?(folder)

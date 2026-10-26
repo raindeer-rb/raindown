@@ -61,6 +61,14 @@ RSpec.describe Raindown::Projects do
 
       expect(described_class.files(root)).to eq([File.join(root, 'a.md'), File.join(root, 'sub', 'b.rd')])
     end
+
+    it 'lists the files of the projects inside it when asked' do
+      root = project('docs')
+      File.write(File.join(root, 'a.md'), '')
+      File.write(File.join(project('docs/guides'), 'b.md'), '')
+
+      expect(described_class.files(root, nested: true)).to eq([File.join(root, 'a.md'), File.join(root, 'guides', 'b.md')])
+    end
   end
 
   describe '.markdown?' do
