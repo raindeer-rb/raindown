@@ -7,11 +7,11 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 <{ Commits: limit=5 }>
 
 ```
-ecf65be   -6        █│█▊                       +14
-3e2c2ab   -0         │████████████████████    +163
-5021033  -60 ▐███████│██████████████████████▋ +184
-913fa60   -1        ▕│█                         +8
-69ce897  -47   ██████│██████████████████      +146
+91dd565  -23 ▐│█▊                               +100
+b36e20a   -2 ▕│▏                                  +2
+531323e  -14 ▕│▎                                 +14
+3a46cc7  -35 ▐│█████████████████████████████▍ +1,692
+0949650   -1 ▕│█▋                                +94
 ```
 
 <{ :Commits }>
@@ -44,7 +44,9 @@ With `--stdin`, FILE only decides whether bare directives are allowed (by its ex
 
 Watching a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
 
-`raindown tui` shows a project's Markdown files beside an outline of the open file's headings and directives. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. The mouse works too.
+`raindown tui` shows a project's Markdown files beside an outline of the open file's headings and directives. It opens on the Dashboard (below), or on the file you name, like `raindown tui README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Clicking works too, while scrolling does nothing.
+
+**Dashboard**, at the top of the files (or `d`), shows every chart in the project beside them, each in a card under its file and heading. The charts are drawn from their data every few seconds, so editing a CSV file updates its chart without a save. Enter (or clicking a card's title) opens the chart's file in the outline, on its directive.
 
 ### Directives
 
