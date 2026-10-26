@@ -1,33 +1,24 @@
 # frozen_string_literal: true
 
-require_relative '../bare_directives'
-require_relative '../chart/chart'
-require_relative '../document'
-require_relative '../front_matter'
-require_relative '../node_blocks'
-require_relative '../pages'
-require_relative '../projects'
-
 module Raindown
   module TUI
-    # Every chart in a project's Markdown files, drawn from its data, as cards in a grid with a cursor.
-    # A chart is a chart: directive, or a project's own node that's a Raindown::Chart, like "Sales < Raindown::Chart".
-    # Charts are drawn again every few seconds, so they follow changes to their data, like a CSV file, without a save.
+    # Every chart in the projects' Markdown files, drawn from its data by its project's Worker, as cards in a grid
+    # with a cursor. A chart is a chart: directive, or a project's own node that's a Raindown::Chart,
+    # like "Sales < Raindown::Chart". Charts are drawn again every few seconds, so they follow changes to their data,
+    # like a CSV file, without a save.
     # Handle returns the Navigator's next step: nil, or [:open, path, line] or [:edit, path, line] for a chart's directive.
     class Dashboard
-      Chart = Data.define(:path, :line, :heading, :directive, :node)
-      Card = Data.define(:chart, :lines)
-
       # Seconds between drawing the charts again.
       REDRAW = 2
       MOVES = %i[up down left right].freeze
 
-      attr_reader :root, :charts, :errors, :cursor
+      attr_reader :root, :errors, :cursor
       # The cards' indexes in each row, which the Layout sets as it draws them, so up and down move a row.
       attr_writer :rows
 
-      def initialize(root:)
+      def initialize(root:, workers:)
         @root = root
+        @workers = workers
         @cursor = 0
         @offset = 0
         @rows = []
@@ -36,18 +27,19 @@ module Raindown
 
       # Finds the charts again, like when a file is saved or added.
       def load
-        @errors = []
-        @charts = Projects.files(root, nested: true).flat_map { |path| charts_in(path) }
-        @cursor = @cursor.clamp(0, [@charts.length - 1, 0].max)
-        draw
+        draw(find: true)
+        @cursor = @cursor.clamp(0, [@cards.length - 1, 0].max)
       end
+
+      # The charts, as each project's Worker drew them.
+      def charts = @cards
 
       def cards
         draw if Process.clock_gettime(Process::CLOCK_MONOTONIC) - @drawn_at >= REDRAW
         @cards
       end
 
-      def selected = @charts[@cursor]
+      def selected = @cards[@cursor]
 
       def first_in_row?
         @rows.empty? || @rows.any? { it.first == @cursor }
@@ -75,42 +67,18 @@ module Raindown
 
       private
 
-      def charts_in(path)
-        content = File.read(path, encoding: Encoding::UTF_8)
-        bare = BareDirectives.enabled?(path:, content:)
-        lines = content.lines
-        headings = Document.parse(content, bare:).headings
-
-        NodeBlocks.find(lines, front_matter: FrontMatter.parse(content).first, bare:)
-                  .select { |block| block[:node].is_a?(Raindown::Chart) }
-                  .map { |block| chart(block, path:, lines:, headings:) }
-      rescue StandardError => e
-        @errors << "#{path.delete_prefix(File.join(root, ''))}: #{e.message}"
-        []
-      end
-
-      # The chart, under the heading above it.
-      def chart(block, path:, lines:, headings:)
-        line = block[:open] + 1
-        directive = lines[block[:open]].strip.delete_prefix('<{').delete_suffix('}>').strip
-
-        Chart.new(path:, line:, heading: headings.select { it.line < line }.last&.text, directive:, node: block[:node])
-      end
-
-      # Draws each chart as its Markdown would be written back, with the files its project lists.
-      def draw
-        pages = {}
-        @cards = @charts.map do |chart|
-          Card.new(chart:, lines: lines(chart, pages[File.dirname(chart.path)] ||= Pages.for(chart.path)))
+      def draw(find: false)
+        @cards = []
+        @errors = []
+        @workers.each do |worker|
+          answer = worker.call(:charts, find:)
+          @cards.concat(answer[:cards])
+          @errors.concat(answer[:errors])
+        rescue Worker::Error => e
+          @errors << "#{File.basename(worker.root)}: #{e.message}"
         end
+        @cards.sort_by! { [it.path, it.line] }
         @drawn_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      end
-
-      def lines(chart, metadata)
-        points = chart.node.points(metadata:)
-        points.empty? ? ['No data'] : chart.node.draw(points).map(&:rstrip)
-      rescue StandardError => e
-        ["Can't chart: #{e.message}"]
       end
 
       # Left and right move along the cards, and up and down to the card in the same place in the row above or below.
@@ -127,7 +95,7 @@ module Raindown
       end
 
       def select(index)
-        @cursor = index.clamp(0, [@charts.length - 1, 0].max)
+        @cursor = index.clamp(0, [@cards.length - 1, 0].max)
         nil
       end
 

@@ -17,7 +17,7 @@ module Raindown
       end
 
       def run_endpoint(directive)
-        changed = Actions.execute(path, directive)
+        changed = @workers.for(path).call(:execute, path, directive.line)
         @outline.read
         info(changed ? "Ran the endpoint on line #{directive.line}" : 'The response is the same')
       rescue StandardError => e
@@ -39,14 +39,16 @@ module Raindown
       def write_back
         return error('Open a file to write back') unless path
 
-        changed = Actions.write_back(path)
+        changed = @workers.for(path).call(:write_back, path)
         @outline.read
         info(changed ? "Updated #{relative(path)}" : "#{relative(path)} is up to date")
       rescue StandardError => e
         error(e.message)
       end
 
+      # The workers start again too, loading their projects' nodes again, like when one of them has changed.
       def reload
+        @workers.restart
         @files.load
         @outline&.read if path && File.exist?(path)
         dashboard.load if view == :dashboard

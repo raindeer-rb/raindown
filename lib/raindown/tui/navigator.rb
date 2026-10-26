@@ -5,6 +5,7 @@ require_relative 'commands'
 require_relative 'outline'
 require_relative 'pane'
 require_relative 'views'
+require_relative 'workers'
 
 module Raindown
   module TUI
@@ -26,7 +27,8 @@ module Raindown
 
       attr_reader :focus, :status
 
-      def initialize(root:, path: nil)
+      def initialize(root:, path: nil, workers: Workers.new(root:))
+        @workers = workers
         @files = FileTree.new(root:)
         @focus = :files
         @panes = { files: Pane.new { @files.rows }, outline: Pane.new { @outline ? @outline.rows : [] } }
@@ -74,7 +76,8 @@ module Raindown
       end
 
       def show(path)
-        @outline = Outline.new(File.expand_path(path))
+        path = File.expand_path(path)
+        @outline = Outline.new(path, worker: @workers.for(path))
         @panes[:outline].reset
       end
 

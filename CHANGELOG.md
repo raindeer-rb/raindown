@@ -15,6 +15,7 @@ Minor features that don't break backwards compatibility are released as patches.
 ### Changed
 
 - `raindown tui` starts with its folders folded
+- `raindown tui` shows the projects inside its folder too, each with its own nodes in a process of its own, like watching
 - `raindown tui` expands a directive to everything inside it, so an endpoint shows its request as well as its response
 - `raindown tui` has a blue title, and selects in a lighter blue
 

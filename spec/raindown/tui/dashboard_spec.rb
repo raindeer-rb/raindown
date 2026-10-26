@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown/tui/dashboard'
+require 'raindown/tui/workers'
 require 'fileutils'
 require 'tmpdir'
 
@@ -25,7 +26,7 @@ RSpec.describe Raindown::TUI::Dashboard do
     end
   end
 
-  let(:dashboard) { described_class.new(root: @root) }
+  let(:dashboard) { described_class.new(root: @root, workers: Raindown::TUI::Workers.new(root: @root)) }
 
   before do
     write('data/sales.csv', "month,sales\nJan,4\nFeb,8\n")
@@ -56,7 +57,7 @@ RSpec.describe Raindown::TUI::Dashboard do
     write('missing.md', "<{ chart: 'data/missing.csv' }>\n<{ :chart }>\n")
 
     expect(dashboard.errors).to eq(['broken.md: <{ chart: }> on line 1 needs <{ :chart }>'])
-    expect(dashboard.cards.find { it.chart.path.end_with?('missing.md') }.lines.first).to start_with("Can't chart")
+    expect(dashboard.cards.find { it.path.end_with?('missing.md') }.lines.first).to start_with("Can't chart")
   end
 
   describe '#handle' do

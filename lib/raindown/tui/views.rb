@@ -11,7 +11,7 @@ module Raindown
       def view = @view || :browser
 
       def dashboard
-        @dashboard ||= Dashboard.new(root:)
+        @dashboard ||= Dashboard.new(root:, workers: @workers)
       end
 
       # The pane right of the files, which the cursor moves to with Tab.

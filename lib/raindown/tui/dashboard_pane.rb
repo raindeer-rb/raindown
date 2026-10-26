@@ -91,9 +91,8 @@ module Raindown
       end
 
       def card_lines(card)
-        chart = card.chart
-        title = [navigator.relative(chart.path), chart.heading].compact.join(' › ')
-        [title, chart.directive, *card.lines]
+        title = [navigator.relative(card.path), card.heading].compact.join(' › ')
+        [title, card.directive, *card.lines]
       end
 
       def blank(count, message = '')
