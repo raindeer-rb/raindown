@@ -5,6 +5,7 @@ require 'curses'
 require_relative 'input'
 require_relative 'layout'
 require_relative 'quiet'
+require_relative 'ncurses_shim'
 require_relative 'styles'
 
 module Raindown
@@ -52,7 +53,7 @@ module Raindown
 
       def start
         ENV['ESCDELAY'] ||= '25'
-        Curses.init_screen
+        NcursesShim.starting { Curses.init_screen }
         @styles = Styles.start
         Curses.noecho
         Curses.cbreak
