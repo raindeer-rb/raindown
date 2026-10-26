@@ -19,7 +19,9 @@ module Raindown
 
       path = File.expand_path(path)
       root = Projects.root(path) || (File.directory?(path) ? path : File.dirname(path))
-      Nodes.load(File.join(root, Nodes::FOLDER))
+      # The projects inside it are shown too, with their own nodes. Unlike when watching, they share one process,
+      # so two projects' nodes of the same name are one class.
+      [root, *Projects.roots(root)].uniq.each { Nodes.load(File.join(it, Nodes::FOLDER)) }
 
       Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)))).run
     end
