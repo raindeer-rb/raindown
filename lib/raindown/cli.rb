@@ -16,12 +16,15 @@ module Raindown
       Usage: raindown [PATH] [options]
              raindown FILE --html [OUTPUT]
              raindown init [DIRECTORY]
+             raindown tui [PATH]
 
       Watches PATH and writes back to its Markdown files as they're saved, like their tables of contents and tables.
       PATH is a file, or a directory (default: current directory) whose projects with a .raindown folder are watched.
 
       Commands:
         init [DIRECTORY]    Create a .raindown folder for the project's config and nodes (default: current directory)
+        tui [PATH]          Browse a project's files and outlines in the terminal, fold directives, run endpoints
+                            and open the editor at a line
 
       Options:
         --html [OUTPUT]     Render FILE to HTML once, writing to OUTPUT or else printing to stdout
@@ -73,11 +76,8 @@ module Raindown
       end
     end
 
-    # The :path line would match help, version and init as the file, so they're checked first.
     def self.run(argv)
-      abort(USAGE) if argv.intersect?(%w[-h --help])
-      return puts(VERSION) if argv.intersect?(%w[-v --version])
-      return init(argv[1]) if argv.first == 'init' && argv.size <= 2
+      return if command(argv)
 
       # Without a path, like "raindown" or "raindown -x", the current directory is watched.
       argv = ['.', *argv] if argv.empty? || argv.first.start_with?('-')
@@ -86,6 +86,20 @@ module Raindown
       super || abort("Unknown arguments: #{argv.join(' ')}\n\n#{USAGE}")
     rescue StandardError => e
       report(e, path: argv.first)
+    end
+
+    # The :path line would match help, version, init and tui as the file, so they're checked first.
+    # Returns true when argv was one of them.
+    def self.command(argv)
+      abort(USAGE) if argv.intersect?(%w[-h --help])
+
+      if argv.intersect?(%w[-v --version]) then puts(VERSION)
+      elsif argv.first == 'init' && argv.size <= 2 then init(argv[1])
+      elsif argv.first == 'tui' && argv.size <= 2 then tui(argv[1] || '.')
+      else return false
+      end
+
+      true
     end
 
     # Shows an error in a file as one line, rather than a backtrace, unless RAINDOWN_DEBUG is set.
@@ -114,6 +128,14 @@ module Raindown
       File.write(config, CONFIG)
       puts "Created #{config}"
       puts 'Put your own nodes in the same folder. See https://raindown.dev/docs/nodes'
+    end
+
+    # The terminal UI loads curses, so it's only required when it starts.
+    def self.tui(path)
+      abort("File not found: #{path}") unless File.exist?(path)
+
+      require_relative 'tui'
+      TUI.start(path)
     end
 
     class << self

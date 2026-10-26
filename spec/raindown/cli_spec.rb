@@ -160,6 +160,26 @@ RSpec.describe Raindown::CLI do
       end
     end
 
+    describe 'tui' do
+      before do
+        require 'raindown/tui'
+        allow(Raindown::TUI).to receive(:start)
+      end
+
+      it 'starts the terminal UI on the path, or the current directory' do
+        described_class.run(['tui', path])
+        expect(Raindown::TUI).to have_received(:start).with(path)
+
+        described_class.run(['tui'])
+        expect(Raindown::TUI).to have_received(:start).with('.')
+      end
+
+      it 'stops when the path does not exist' do
+        expect { described_class.run(%w[tui missing.md]) }.to raise_error(SystemExit).and output(/File not found/).to_stderr
+        expect(Raindown::TUI).not_to have_received(:start)
+      end
+    end
+
     it 'shows the usage with -h or --help' do
       [['-h'], ['--help'], [path, '--help']].each do |args|
         expect { described_class.run(args) }.to raise_error(SystemExit).and output(/Usage: raindown \[PATH\]/).to_stderr

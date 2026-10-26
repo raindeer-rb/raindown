@@ -35,6 +35,22 @@ module Raindown
       folder && File.dirname(folder)
     end
 
+    # The project's Markdown files, sorted. Ignored folders and the projects inside it are left out,
+    # since those projects have nodes of their own.
+    def files(root)
+      files = []
+
+      Find.find(root) do |path|
+        if File.directory?(path)
+          Find.prune if path != root && (ignored?(File.basename(path)) || File.directory?(File.join(path, Nodes::FOLDER)))
+        elsif markdown?(path, root:)
+          files << path
+        end
+      end
+
+      files.sort
+    end
+
     # Whether a file is Markdown in its project, rather than in an ignored or hidden folder like node_modules.
     def markdown?(path, root:)
       return false unless Pages::EXTENSIONS.include?(File.extname(path).delete_prefix('.').downcase)

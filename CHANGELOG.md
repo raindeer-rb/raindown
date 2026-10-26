@@ -12,9 +12,14 @@ Minor features that don't break backwards compatibility are released as patches.
 - `raindown DIRECTORY`, or `raindown` for the current directory, watches every project in it with a `.raindown` folder
 - Each project's nodes load in a process of their own, and reload when they change
 - `Raindown::Document.parse(markdown).headings` reads a file's headings with their level, text and line
+- `Raindown::Document#directives` reads a file's nodes and endpoints, with their lines and the lines they write back
+- `raindown tui [PATH]` browses a project's files and outlines in the terminal, folds directives, runs endpoints
+  and opens the editor at a line
 
 ### Changed
 
+- Raindown depends on the curses gem, which compiles against ncurses, so Linux needs its headers to install the gem
+  (like `libncurses-dev` or `ncurses-dev`). Alpine and other musl distros need `ncurses-libs` to run the binary
 - Watching only writes back to files, without writing HTML
 - `--html [OUTPUT]` renders HTML once, replacing `--once` and `-o`
 

@@ -38,21 +38,31 @@ module Raindown
     # Each block outside code and front matter as { open:, close:, last:, node: }, where close is nil for a bare block.
     # A self-closing node is a block of one line with self_closing: true.
     def find(lines, front_matter: {}, bare: false)
-      blocks = []
+      variables = Variables.new(front_matter)
+
+      spans(lines, bare:).map do |span|
+        span.except(:name, :class, :args).merge(node: Nodes.instance(span[:class], *args(span[:args], variables)))
+      end
+    end
+
+    # Each block like find's, with the node's name, class and props text in place of the node,
+    # so a block can be found without making its node, like for a document's outline.
+    def spans(lines, bare: false)
+      spans = []
       index = FrontMatter.line_count(lines)
 
       while index < lines.length
         if (code = CodeBlocks.at(lines, index))
           index = code[:close]
-        elsif (block = block_at(lines, index, front_matter:, bare:))
-          blocks << block
-          index = block[:last]
+        elsif (span = span_at(lines, index, bare:))
+          spans << span
+          index = span[:last]
         end
 
         index += 1
       end
 
-      blocks
+      spans
     end
 
     # Swaps each block for its node's HTML, through a placeholder, or for its Markdown when it has no HTML of its own.
@@ -80,15 +90,15 @@ module Raindown
       "#{Directives.marker(line)}\n"
     end
 
-    def block_at(lines, index, front_matter:, bare:)
+    def span_at(lines, index, bare:)
       found, pattern = directive(lines[index], bare:)
       return unless found && (klass = Nodes.node_class(found[2]))
 
-      node = Nodes.instance(klass, *args(found[3].to_s, Variables.new(front_matter)))
+      span = { name: found[2], class: klass, args: found[3].to_s }
       case pattern
-      when :open then end_tag(lines, index, found[2]).then { |close| { open: index, close:, last: close, node: } }
-      when :bare_open then bare_block(lines, index, node)
-      else { open: index, close: nil, last: index, node:, self_closing: true }
+      when :open then end_tag(lines, index, found[2]).then { |close| { open: index, close:, last: close, **span } }
+      when :bare_open then { **bare_block(lines, index), **span }
+      else { open: index, close: nil, last: index, self_closing: true, **span }
       end
     end
 
@@ -106,11 +116,11 @@ module Raindown
     end
 
     # A bare block holds the lines straight below it, up to the next blank line, with fenced code kept whole.
-    def bare_block(lines, open, node)
+    def bare_block(lines, open)
       last = open
       last = CodeBlocks.at(lines, last + 1)&.fetch(:close) || (last + 1) while lines[last + 1] && !lines[last + 1].strip.empty?
 
-      { open:, close: nil, last:, node: }
+      { open:, close: nil, last: }
     end
 
     def end_tag(lines, open, name)

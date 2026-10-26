@@ -50,6 +50,19 @@ RSpec.describe Raindown::Projects do
     end
   end
 
+  describe '.files' do
+    it "lists the project's Markdown files, leaving out ignored folders and the projects inside it" do
+      root = project('docs')
+      %w[a.md sub/b.rd node_modules/c.md .github/d.md notes.txt].each do |file|
+        FileUtils.mkdir_p(File.dirname(File.join(root, file)))
+        File.write(File.join(root, file), '')
+      end
+      File.write(File.join(project('docs/guides'), 'e.md'), '')
+
+      expect(described_class.files(root)).to eq([File.join(root, 'a.md'), File.join(root, 'sub', 'b.rd')])
+    end
+  end
+
   describe '.markdown?' do
     it 'is true for Markdown and Raindown files in the project, but not in its ignored folders' do
       root = project('docs')
