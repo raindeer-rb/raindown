@@ -32,8 +32,8 @@ module Raindown
       new(markdown:, bare:)
     end
 
-    # Raindown files read bare directives. A project's own nodes are only directives once they're loaded,
-    # like with Nodes.load(path), the same as when the file renders.
+    # Raindown files read bare directives, as do Markdown files with "raindown: true" front matter.
+    # A project's own nodes are only directives once they're loaded, like with Nodes.load(path), the same as when the file renders.
     def self.read(path)
       new(markdown: File.read(path, encoding: Encoding::UTF_8), bare: BareDirectives.file?(path))
     end
@@ -41,7 +41,7 @@ module Raindown
     def initialize(markdown:, bare: false)
       @markdown = markdown
       @lines = markdown.lines
-      @bare = bare
+      @bare = bare || BareDirectives.front_matter?(markdown)
     end
 
     # The headings in the order they appear, with their source text, like "Notes for {name}" before it's rendered.

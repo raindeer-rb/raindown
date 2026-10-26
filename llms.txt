@@ -14,9 +14,9 @@ Raindown renders a `.md`, `.rd` or `.raindown` file to HTML, and on each render 
 - Content directives (`toc:`, `files:`, `chart:`, `endpoint:`, custom nodes) sit on their own lines with blank lines around them. They show in bold in the HTML unless `hide_directives: true` is set.
 - Capitalised content directives are likely custom nodes. If there is a custom node in the .raindown folder of the same name then it's a custom class, if not it's just manually entered text.
 
-## Bare directives (.rd and .raindown files only)
+## Bare directives (.rd and .raindown files, or raindown: true)
 
-In a `.rd` or `.raindown` file (or a `.md` file rendered with `--bare`), a directive alone on its line needs no delimiters and no end tag. A bare block directive covers the Markdown block below it, up to the next blank line:
+In a `.rd` or `.raindown` file (or a `.md` file with `raindown: true` in its front matter, or rendered with `--bare`), a directive alone on its line needs no delimiters and no end tag. A bare block directive covers the Markdown block below it, up to the next blank line:
 
 ```
 :toc
@@ -27,7 +27,7 @@ This is a draft.
 chart: '3 5 2 8'
 ```
 
-Use delimiters and an end tag when a block spans blank lines, like several paragraphs. Delimited syntax works in every file type; bare syntax does not work in plain `.md` files.
+Use delimiters and an end tag when a block spans blank lines, like several paragraphs. Delimited syntax works in every file type; bare syntax does not work in `.md` files without `raindown: true`.
 
 ## Front matter and variables
 

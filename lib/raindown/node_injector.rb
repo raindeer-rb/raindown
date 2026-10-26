@@ -18,7 +18,7 @@ module Raindown
 
     def initialize(content:, path: nil, bare: false, metadata: NoMetadata)
       @content = content
-      @bare = BareDirectives.enabled?(path:, bare:)
+      @bare = BareDirectives.enabled?(path:, content:, bare:)
       @metadata = metadata
     end
 

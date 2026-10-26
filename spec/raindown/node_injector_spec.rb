@@ -13,6 +13,11 @@ RSpec.describe Raindown::NodeInjector do
       .to eq("<{ SpecReleases: limit=2 }>\n\n- **1.2.0** Bare\n- **1.1.0** Fetched\n\n<{ :SpecReleases }>\n\nText.\n")
   end
 
+  it 'writes bare nodes in Markdown with raindown: true front matter' do
+    expect(rewrite("---\nraindown: true\n---\n\nSpecReleases: limit=1\n"))
+      .to eq("---\nraindown: true\n---\n\nSpecReleases: limit=1\n- **1.2.0** Bare\n")
+  end
+
   it 'writes a bare node straight below it' do
     expect(rewrite("SpecReleases: limit=1\n\nText.\n", path: 'notes.rd')).to eq("SpecReleases: limit=1\n- **1.2.0** Bare\n\nText.\n")
   end

@@ -1,8 +1,12 @@
+---
+raindown: true
+---
+
 # Raindown Example
 
-Run `raindown examples/markdown.md` and edit this file to see `examples/markdown.html` update on save.
+Run `raindown examples/markdown.md` and edit this file to see Raindown write back to it on save, or add `--html examples/markdown.html` to render it.
 
-This is a Markdown file (`.md`), so directives sit between `<{` and `}>`.
+This is a Markdown file (`.md`) with `raindown: true` front matter, so its directives could also be written bare on their own line, like in a Raindown file. Here they sit between `<{` and `}>`.
 
 <{ toc: }>
 
