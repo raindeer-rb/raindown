@@ -85,12 +85,13 @@ module Raindown
       # A folder, and the tree inside it unless it's folded.
       def folder_rows(name, children, prefix, depth)
         folder = File.join(base, prefix, name)
-        folded = !@expanded.include?(folder)
+        expanded = @expanded.include?(folder)
         project = @projects.include?(folder)
-        row = Row.new(text: "#{folded ? '▸' : '▾'} #{"#{PROJECT} " if project}#{name}/", depth:,
+        row = Row.new(text: [expanded ? '▾' : '▸', (PROJECT if project), "#{name}/"].compact.join(' '), depth:,
                       kind: project ? :project : :folder, target: folder, fold: -> { toggle(folder) })
+        return [row] unless expanded
 
-        [row, *(tree_rows(children, File.join(prefix, name), depth + 1) unless folded)]
+        [row, *tree_rows(children, File.join(prefix, name), depth + 1)]
       end
     end
   end
