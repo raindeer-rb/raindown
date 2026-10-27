@@ -76,8 +76,8 @@ module Raindown
 
       def endpoint(path, lines, directive)
         snippet = CodeBlocks.endpoint(lines, directive.line).first&.dig(:body)
-        method, url = Curl.request(snippet.to_s)
-        Endpoint.new(project: root, path:, line: directive.line, method:, url:) if url
+        request = Curl.request(snippet.to_s)
+        Endpoint.new(project: root, path:, line: directive.line, **request.to_h) if request
       end
 
       def charts_in(path)

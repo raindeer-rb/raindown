@@ -6,7 +6,7 @@ require_relative 'worker'
 module Raindown
   module TUI
     # An endpoint opened from the files, beside them: its request, and the response its file has, read by its project's
-    # Worker, which scrolls. A key's next step, for the Navigator, is nil, an Open or Edit of its directive, or its endpoint to run.
+    # Worker, which scrolls. A key's next step, for the Navigator, is nil, an Open or Edit of its directive, or an Execute of it.
     class EndpointView
       # The date a response was fetched, on the line after it.
       FETCHED = /raindown:fetched (\S+)/
@@ -44,7 +44,7 @@ module Raindown
         when :up, :down then scroll(key == :up ? -1 : 1)
         when :enter then Open.new(path: endpoint.path, line: endpoint.line)
         when :edit then Edit.new(path: endpoint.path, line: endpoint.line)
-        when :execute then endpoint
+        when :execute then Execute.new(path: endpoint.path, line: endpoint.line, name: endpoint.text)
         end
       end
 

@@ -13,8 +13,9 @@ module Raindown
     # Shows the message while the task runs, like an endpoint's request.
     Wait = Data.define(:message, :task)
 
-    # What the Dashboard asks of the Navigator for a chart: to open its file in the outline at its directive, or edit it.
+    # What a row or a view asks of the Navigator: to open a file in the outline at a directive, edit it, or run an endpoint.
     Open = Data.define(:path, :line)
     Edit = Data.define(:path, :line)
+    Execute = Data.define(:path, :line, :name)
   end
 end

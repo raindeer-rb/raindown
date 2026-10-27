@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../projects'
+require_relative 'events'
 require_relative 'row'
 
 module Raindown
@@ -11,7 +12,7 @@ module Raindown
     # A scope narrows it to one project's own files, from the project's folder, like when it's chosen in the header.
     class FileTree
       # A chart, which every terminal draws two columns wide.
-      DASHBOARD = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: :dashboard)
+      DASHBOARD = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: :dashboard, open: :dashboard)
       # A blank line between the Dashboard and the files.
       SEPARATOR = Row.new(text: '', depth: 0, kind: :separator, target: nil)
 
@@ -77,8 +78,10 @@ module Raindown
         folders, files = tree.partition { |_name, children| children.any? }
 
         folders.sort.flat_map { |name, children| folder_rows(name, children, prefix, depth) } +
-          files.sort.map { |name, _| Row.new(text: name, depth:, kind: :file, target: File.join(base, prefix, name)) }
+          files.sort.map { |name, _| file_row(name, File.join(base, prefix, name), depth) }
       end
+
+      def file_row(name, path, depth) = Row.new(text: name, depth:, kind: :file, target: path, open: Open.new(path:, line: nil))
 
       # A folder, and the tree inside it unless it's folded.
       def folder_rows(name, children, prefix, depth)
@@ -86,7 +89,7 @@ module Raindown
         folded = !@expanded.include?(folder)
         project = @projects.include?(folder)
         row = Row.new(text: "#{folded ? '▸' : '▾'} #{"#{PROJECT} " if project}#{name}/", depth:,
-                      kind: project ? :project : :folder, target: folder)
+                      kind: project ? :project : :folder, target: folder, fold: -> { toggle(folder) })
 
         [row, *(tree_rows(children, File.join(prefix, name), depth + 1) unless folded)]
       end

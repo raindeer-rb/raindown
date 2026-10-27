@@ -76,7 +76,7 @@ module Raindown
         return menu_event(name) if menu
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
-        return view_effect(view.next_step(name)) if @focus == view.name && view.next_step?(name)
+        return take_step(view.next_step(name)) if @focus == view.name && view.next_step?(name)
 
         browser_event(name)
       end
@@ -119,30 +119,12 @@ module Raindown
       end
 
       # Enter opens what's selected, or folds it, and Space only folds.
-      # A line of output, or a directive without any, opens in the editor.
       def activate(name)
         row = selected
-        return edit if name == :enter && editable?(row)
-        return open_row(row) if name == :enter && %i[dashboard file endpoint].include?(row&.kind)
+        return take_step(row.open) if name == :enter && row&.open
 
-        case row&.kind
-        when :folder, :project then @files.toggle(row.target)
-        when :heading then @outline.fold(row.target)
-        when :directive then @outline.expand(row.target) if row.target.body
-        end
+        row&.fold&.call
         nil
-      end
-
-      def open_row(row)
-        case row.kind
-        when :dashboard then open_dashboard
-        when :endpoint then open_endpoint(row.target)
-        else open_file(row.target)
-        end
-      end
-
-      def editable?(row)
-        row&.kind == :body || (row&.kind == :directive && !row.target.body)
       end
     end
   end

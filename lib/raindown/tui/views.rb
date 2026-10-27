@@ -49,14 +49,16 @@ module Raindown
         @view.errors.empty? ? info(found) : error("#{found}, but couldn't read #{@view.errors.join(', ')}")
       end
 
-      # What the dashboard or an endpoint asks for, to open or edit a directive, or run an endpoint.
-      def view_effect(effect)
-        case effect
-        when Endpoint then run(effect.path, effect.line, effect.text)
-        when Open then open_at(effect.path, effect.line)
+      # What a row or a view asks for: to open a view, a file at a directive, or the editor at a line, or run an endpoint.
+      def take_step(step)
+        case step
+        when :dashboard then open_dashboard
+        when Endpoint then open_endpoint(step)
+        when Execute then run(step.path, step.line, step.name)
+        when Open then open_at(step.path, step.line)
         when Edit
-          show(effect.path)
-          Run.new(command: Actions.edit_command(effect.path, line: effect.line))
+          show(step.path) unless step.path == path
+          Run.new(command: Actions.edit_command(step.path, line: step.line))
         end
       end
 

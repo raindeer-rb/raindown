@@ -5,10 +5,10 @@ require 'raindown/endpoint/curl'
 RSpec.describe Raindown::Curl do
   describe '.request' do
     it "reads a snippet's method and URL, which is a POST when it sends data, as with curl" do
-      expect(described_class.request('curl https://httpbin.org/uuid')).to eq(['GET', 'https://httpbin.org/uuid'])
-      expect(described_class.request('curl -sSL -XDELETE https://a.io/x')).to eq(['DELETE', 'https://a.io/x'])
-      expect(described_class.request("curl -d 'a=1' https://a.io/p")).to eq(['POST', 'https://a.io/p'])
-      expect(described_class.request('curl -I https://a.io')).to eq(['HEAD', 'https://a.io'])
+      expect(described_class.request('curl https://httpbin.org/uuid')).to eq(described_class::Request.new(method: 'GET', url: 'https://httpbin.org/uuid'))
+      expect(described_class.request('curl -sSL -XDELETE https://a.io/x')).to eq(described_class::Request.new(method: 'DELETE', url: 'https://a.io/x'))
+      expect(described_class.request("curl -d 'a=1' https://a.io/p")).to eq(described_class::Request.new(method: 'POST', url: 'https://a.io/p'))
+      expect(described_class.request('curl -I https://a.io')).to eq(described_class::Request.new(method: 'HEAD', url: 'https://a.io'))
     end
 
     it "is nil for a snippet that isn't a curl request" do

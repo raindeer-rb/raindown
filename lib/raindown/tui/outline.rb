@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../document'
+require_relative 'events'
 require_relative 'row'
 require_relative 'worker'
 
@@ -88,18 +89,25 @@ module Raindown
       def heading_row(heading)
         folded = @folded.include?(heading.line) ? ' …' : ''
         Row.new(text: "#{'#' * heading.level} #{heading.text}#{folded}", depth: heading.level - min_level, kind: :heading,
-                target: heading)
+                target: heading, fold: -> { fold(heading) })
       end
 
       def directive_rows(directive, depth:)
         expanded = @expanded.include?(directive.line)
         row = Row.new(text: directive_text(directive), depth:, kind: :directive, target: directive,
-                      buttons: buttons(directive, expanded:))
+                      buttons: buttons(directive, expanded:), **directive_action(directive))
         return [row] unless expanded
 
         [row, *directive.body.map do |number|
-          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number)
+          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number, open: Edit.new(path:, line: number))
         end]
+      end
+
+      # A directive with a body expands it, and one without opens in the editor, like a line of its body.
+      def directive_action(directive)
+        if directive.body then { fold: -> { expand(directive) } }
+        else { open: Edit.new(path:, line: directive.line) }
+        end
       end
 
       def buttons(directive, expanded:)

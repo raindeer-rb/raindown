@@ -10,6 +10,7 @@ module Raindown
   # are allowed: nothing that reads or writes local files, loads a config, or uses another protocol.
   module Curl
     class Error < StandardError; end
+    Request = Data.define(:method, :url)
 
     TIMEOUT = '30'
     # --disable must come first and skips ~/.curlrc. The protocol options stop redirects to file:// and the like.
@@ -64,7 +65,7 @@ module Raindown
       raise Error, 'curl is not installed'
     end
 
-    # The snippet's method and URL, like ["GET", "https://httpbin.org/uuid"], or nil when it can't be read.
+    # The snippet's method and URL, like GET https://httpbin.org/uuid, or nil when it can't be read.
     # A snippet that sends data is a POST, unless it says otherwise, as with curl.
     def request(snippet)
       args = arguments(snippet)
@@ -72,7 +73,8 @@ module Raindown
       method = args[args.index('--request') + 1] if args.include?('--request')
       method ||= 'HEAD' if args.include?('--head')
       method ||= 'POST' if args.intersect?(VALUE_CHECKS.keys.grep(/data|json/))
-      [(method || 'GET').upcase, url]
+
+      Request.new(method: (method || 'GET').upcase, url:) if url
     rescue Error
       nil
     end
