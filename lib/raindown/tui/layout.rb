@@ -74,8 +74,8 @@ module Raindown
         [spacer, *Array.new(body_height - 1) { |index| [*nav[index], divider(main[index]), *main[index]] }]
       end
 
-      # A blank line above the panes, for spacing.
-      def spacer = [segment('', :blank, width: nav_width), divider([]), segment('', :blank, width: width - nav_width - 1)]
+      # A line above the panes, for spacing, blank but for what the main pane's renderer puts in its side of it.
+      def spacer = [segment('', :blank, width: nav_width), divider([]), *view_renderer.spacer]
 
       # The divider is on the background of the outline's row beside it, when that's highlighted, so they meet.
       def divider(main_line)

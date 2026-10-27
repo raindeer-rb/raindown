@@ -543,15 +543,17 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'opens with f, and notes down a feeling with 1 to 5, drawing the chart in the feelings page' do
       navigator.next_step(:feelings)
       expect([view_name(navigator), navigator.focus]).to eq(['FeelingsView', :main])
-      expect(navigator.status).to eq([:info, "2 methods to feel in #{File.basename(@root)}"])
+      expect(navigator.status).to eq([:info, "This week's code to feel, #{Raindown::TUI::Batch.this_week}"])
 
+      label = navigator.view.selected.label
       navigator.next_step(:bin5)
-      expect(navigator.status).to eq([:info, 'Felt numb about Square#area'])
+      expect(navigator.status).to eq([:info, "Felt numb about #{label}"])
       expect(File.read(File.join(@root, 'docs', 'code-feelings.md'))).to include("numb    #{'█' * 30} 1")
     end
 
     it "takes every key as the note while it asks why, even ones like q, and doesn't write back the code after the editor" do
       navigator.next_step(:feelings)
+      label = navigator.view.selected.label
       navigator.next_step(:bin4)
       expect(navigator.typing?).to be(true)
 
@@ -561,7 +563,7 @@ RSpec.describe Raindown::TUI::Navigator do
 
       expect(navigator.next_step(:edit)).to be_a(Raindown::TUI::Run)
       navigator.ran
-      expect(navigator.status).to eq([:info, 'Felt malice about Square#area'])
+      expect(navigator.status).to eq([:info, "Felt malice about #{label}"])
     end
 
     it 'asks Claude Code to fix the selected method with x, when it is installed' do
@@ -574,9 +576,10 @@ RSpec.describe Raindown::TUI::Navigator do
       write('bin/claude', "#!/bin/sh\n")
       File.chmod(0o755, File.join(bin, 'claude'))
       claude_in_path(bin)
-      command = navigator.next_step(:execute).command
-      expect(command).to eq(['claude', "Refactor Square#area in #{@root}/lib/shapes.rb:2. It needs a second look. " \
-                                       "Keep its behaviour, follow the project's CLAUDE.md if it has one, and run the specs."])
+      method = navigator.view.selected
+      expect(navigator.next_step(:execute).command)
+        .to eq(['claude', "Refactor #{method.label} in #{@root}/lib/shapes.rb:#{method.line}. It needs a second look. " \
+                          "Keep its behaviour, follow the project's CLAUDE.md if it has one, and run the specs."])
     end
   end
 end

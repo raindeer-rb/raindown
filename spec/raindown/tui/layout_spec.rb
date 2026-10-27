@@ -294,6 +294,8 @@ RSpec.describe Raindown::TUI::Layout do
 
   describe 'code feelings' do
     def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+    # The grid's first line, below the line above the panes, which has the batch's progress.
+    def grid_line(lines) = lines[2]
 
     before do
       FileUtils.mkdir_p(File.join(@root, 'lib'))
@@ -306,13 +308,33 @@ RSpec.describe Raindown::TUI::Layout do
       main = main(lines)
 
       expect(text(lines).first).to include('› Code feelings')
-      expect(lines[2].select { it.style == :selected }.map(&:text).join).to match(/\A \d \z/)
+      expect(grid_line(lines).select { it.style == :selected }.map(&:text).join).to match(/\A \d \z/)
+      expect(main(lines)[1].strip).to eq('0% refined')
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
       expect(main.find { it.include?('def area') }).to start_with(' │ def area').and end_with('│')
       expect(lines.flatten.find { it.text == 'def' }.style).to eq(:code_keyword)
       expect(main.find { it.include?('WOE') }.split.grep(/[A-Z]{3,}/)).to eq(%w[WOE FROLIC DREAD MALICE NUMB])
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).not_to include('drift')
       expect(text(lines).map { width(it) }).to all(eq(90))
+    end
+
+    it 'leaves felt methods blank, but still there to select, which shows their digits and code again' do
+      File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
+      both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      # The first draw fills the batch, as the screen draws before any key.
+      described_class.new(both, width: 90, height: 24).lines
+      felt = both.view.selected
+      both.next_step(:bin5)
+      both.next_step(:right)
+      cell = lambda do |index|
+        grid_line(described_class.new(both, width: 90, height: 24).lines).find { it.event == click(:main, index, :focus) }
+      end
+
+      expect([cell[0].text, cell[0].style, cell[0].event]).to eq(['   ', :menu, click(:main, 0, :focus)])
+
+      both.next_step(:left)
+      expect([cell[0].text, cell[0].style]).to match([/\A \d \z/, :selected])
+      expect(text(described_class.new(both, width: 90, height: 24).lines).join).to include(felt.label)
     end
 
     it 'wraps a long note in as many lines as it takes, lined up after the question' do
@@ -328,9 +350,10 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'draws the cells the mouse is over in bold, and the selected ones highlighted' do
       File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
-      navigator.next_step(:reload)
-      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
-      cells = described_class.new(navigator, width: 90, height: 24).lines[2].select { it.event&.pane == :main }
+      # A reload keeps the batch, so it's picked again with both files.
+      both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      both.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
+      cells = grid_line(described_class.new(both, width: 90, height: 24).lines).select { it.event&.pane == :main }
 
       expect(cells.map { [it.event.index, it.style] }).to eq([[0, :selected], [1, :hover]])
     end

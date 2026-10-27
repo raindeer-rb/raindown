@@ -23,8 +23,9 @@ module Raindown
 
       # Columns a digit takes, with a space either side.
       CELL = 3
-      # The bins' lines.
+      # The bins' lines, and the code box's lines of code that a batch is sized for.
       BIN_LINES = 4
+      FILLED_CODE_LINES = 1
       # The drift from which a method's cells flicker, and the ticks, half a second each, between a cell's flickers.
       RESTLESS = 7
       FLICKER_TICKS = 12
@@ -32,10 +33,17 @@ module Raindown
       NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2 }.freeze
       NOISE_ROLL = 20
       BUTTONS = [['Tab', 'Pane', :tab], ['1-5', 'Feel', nil], ['e', 'Edit', :edit], ['x', 'Fix', :execute],
-                 ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
+                 ['n', 'Next files', :next], ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
 
       def buttons = BUTTONS
       def page = 'Code feelings'
+
+      # How much of the batch has been refined, on the right of the line above the panes, or to move on once it all has.
+      def spacer
+        progress = "#{view.batch.progress} "
+        progress_width = display_width(progress)
+        padded([segment('', :blank, width: [width - progress_width, 0].max), segment(progress, :body, width: progress_width)])
+      end
 
       def lines
         return blank(" No functions or methods in #{File.basename(navigator.root)} to feel") if view.code_methods.empty?
@@ -51,11 +59,15 @@ module Raindown
       # The rows of the grid around the selected method's.
       def grid(rows)
         columns = [(width - 1) / CELL, 1].max
-        cells = view.cells(columns)
+        cells = view.cells(columns, filled_rows)
         first = first_row(cells, columns, rows)
 
         Array.new(rows) { |row| grid_line(cells, (first + row) * columns, columns) }
       end
+
+      # The grid's rows with a code box of FILLED_CODE_LINES, between its top and bottom, which a batch fills. A taller box
+      # takes rows from the grid, which then scrolls to keep the selected method in view.
+      def filled_rows = [height - BIN_LINES - 2 - FILLED_CODE_LINES, 1].max
 
       # The first row that shows, with the selected method's row in the middle where there's room.
       def first_row(cells, columns, rows)
@@ -69,12 +81,24 @@ module Raindown
           next unless owner
 
           click = Click.new(pane:, index: owner, action: :focus)
-          style = :menu
-          style = :hover if navigator.hovered == click
-          style = :selected if owner == view.cursor
-          segment(" #{digit(owner, index)} ", style, width: CELL, event: click)
+          segment(cell_text(owner, index), cell_style(owner, click), width: CELL, event: click)
         end
         padded([segment('', :blank, width: 1), *segments])
+      end
+
+      # The cell's digit, or blank once its method's felt, but still there to select, which shows it again with its code.
+      def cell_text(owner, index)
+        return ' ' * CELL if owner != view.cursor && view.batch.felt?(view.code_methods[owner])
+
+        " #{digit(owner, index)} "
+      end
+
+      # The selected method highlighted, and the one the mouse is over in bold blue.
+      def cell_style(owner, click)
+        return :selected if owner == view.cursor
+        return :hover if navigator.hovered == click
+
+        :menu
       end
 
       # Near the method's drift, from 0 to 9: a cell's checksum rolls a small chance of it being one or two away.

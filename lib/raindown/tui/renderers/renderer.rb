@@ -10,6 +10,9 @@ module Raindown
     Renderer = Struct.new(:navigator, :pane, :width, :height) do
       include Rows
       include Text
+
+      # Its side of the line above the panes, which is blank unless it has something to say there, like a progress.
+      def spacer = [segment('', :blank)]
     end
   end
 end

@@ -25,20 +25,21 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect(view.cells(2)).to eq([0, 1, 2])
 
     view.next_step(:down)
-    expect(view.selected.label).to eq('Square#draw')
+    expect(view.cursor).to eq(2)
     view.next_step(:up)
     expect(view.cursor).to eq(0)
 
     view.next_step(:right)
     view.next_step(:down)
-    expect(view.selected.label).to eq('Square#side')
+    expect(view.cursor).to eq(1)
   end
 
-  it "notes down a frolic or numb feeling straight away, and moves on, so the next method's shown" do
+  it 'notes down a frolic or numb feeling straight away, staying on the method' do
+    first = view.selected
     step = view.next_step(:bin2)
 
     expect(step).to eq(Raindown::TUI::Felt.new(feeling: step.feeling, page: File.join(@root, 'docs', 'code-feelings.md')))
-    expect([step.feeling.temper, step.feeling.method.label, view.cursor]).to eq(['frolic', 'Square#area', 1])
+    expect([step.feeling.temper, step.feeling.method, view.cursor]).to eq(['frolic', first, 0])
     expect(view.log.counts['frolic']).to eq(1)
   end
 
@@ -56,7 +57,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
   end
 
   it 'opens the selected method in the editor, or asks to fix it with how it last felt' do
-    expect(view.next_step(:edit)).to eq(Raindown::TUI::Edit.new(path: File.join(@root, 'lib', 'shapes.rb'), line: 2))
+    expect(view.next_step(:edit)).to eq(Raindown::TUI::Edit.new(path: File.join(@root, 'lib', 'shapes.rb'), line: view.selected.line))
     expect(view.next_step(:execute).feeling.temper).to be_nil
 
     view.next_step(:bin3)
@@ -74,6 +75,36 @@ RSpec.describe Raindown::TUI::FeelingsView do
     view.next_step(:toggle)
     view.next_step(:right)
     expect(view.expanded).to be(false)
+  end
+
+  it "works through as many files as fill the grid, the week's order, and moves on to the next with n" do
+    FileUtils.mkdir_p(File.join(@root, 'more'))
+    5.times { File.write(File.join(@root, 'more', "f#{it}.rb"), "def f#{it} = 1\n") }
+    view.load
+    view.cells(2, 2)
+    batch = view.batch.files
+
+    expect([view.code_methods.sum(&:size), view.code_methods.map(&:path).uniq.sort]).to eq([4, batch.sort])
+    expect(view.batch.progress).to eq('0% refined')
+
+    view.code_methods.length.times do
+      view.next_step(:bin5)
+      view.next_step(:right)
+    end
+    expect(view.batch.progress).to eq('100% refined · N for the next files')
+
+    view.next_step(:next)
+    expect([view.batch.files & batch, view.cursor]).to eq([[], 0])
+  end
+
+  it 'picks the same files all week' do
+    8.times { File.write(File.join(@root, "f#{it}.rb"), "def f#{it} = 1\n") }
+    every = Raindown::TUI::CodeMethods.list(@root)
+    pick = ->(date) { Raindown::TUI::Batch.pick(every, log: view.log, cells: 1, week: Raindown::TUI::Batch.this_week(date)).files }
+
+    expect([Raindown::TUI::Batch.this_week(Date.new(2026, 10, 27)), pick.call(Date.new(2026, 10, 26))])
+      .to eq(['2026-W44', pick.call(Date.new(2026, 11, 1))])
+    expect((1..8).map { pick.call(Date.new(2026, 11, 1) + (7 * it)) }.uniq.length).to be > 1
   end
 
   it 'drifts with each tick, and leaves Tab, and left from the first method, to the files' do

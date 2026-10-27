@@ -2,6 +2,7 @@
 
 require 'json'
 require 'open3'
+require 'zlib'
 
 module Raindown
   module TUI
@@ -16,6 +17,9 @@ module Raindown
 
       # What drift ranks: long methods in files that keep changing weigh most.
       def weight = lines.length * (changes + 1)
+
+      # Its code's checksum, which changes when its code does, but not its indent, trailing spaces or blank lines.
+      def checksum = Zlib.crc32(lines.map(&:strip).reject(&:empty?).join("\n")).to_s(16)
     end
 
     # Every function and method in a project's code, in any language: from Universal Ctags when it's installed,

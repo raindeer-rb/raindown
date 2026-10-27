@@ -10,3 +10,4 @@ when,where,method,temper,note,commit
 2026-10-27,lib/raindown/pre_renderer.rb:31,PreRenderer#render_body,numb,,e831696
 2026-10-27,lib/raindown/document.rb:74,Document#nodes,dread,the array assignment and the conditional in one line looks confusing when coupled with the walk,e831696
 2026-10-27,lib/raindown/node_blocks.rb:79,NodeBlocks#rendered_lines,dread,the empty if/else again with a really long line for the else,0a3ddf8
+2026-10-28,lib/raindown/endpoint/curl.rb:70,Curl#request,malice,"it's just ugly, I don't know what's going on here, so many ifs and a nested or and memoization",52c8320

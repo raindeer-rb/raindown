@@ -66,17 +66,21 @@ module Raindown
     end
 
     # The snippet's method and URL, like GET https://httpbin.org/uuid, or nil when it can't be read.
-    # A snippet that sends data is a POST, unless it says otherwise, as with curl.
     def request(snippet)
       args = arguments(snippet)
-      url = args.find { it.match?(URL) }
-      method = args[args.index('--request') + 1] if args.include?('--request')
-      method ||= 'HEAD' if args.include?('--head')
-      method ||= 'POST' if args.intersect?(VALUE_CHECKS.keys.grep(/data|json/))
-
-      Request.new(method: (method || 'GET').upcase, url:) if url
+      Request.new(method: request_method(args), url: args.find { it.match?(URL) })
     rescue Error
       nil
+    end
+
+    # A snippet that sends data is a POST, unless it says otherwise, as with curl.
+    def request_method(args)
+      index = args.index('--request')
+      return args[index + 1].upcase if index
+      return 'HEAD' if args.include?('--head')
+      return 'POST' if args.intersect?(VALUE_CHECKS.keys.grep(/data|json/))
+
+      'GET'
     end
 
     def arguments(snippet)

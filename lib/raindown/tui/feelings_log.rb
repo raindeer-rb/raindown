@@ -27,7 +27,9 @@ module Raindown
     # A write-back draws the chart, from .raindown/tempers.csv.
     class FeelingsLog
       TEMPERS = %w[woe frolic dread malice numb].freeze
-      HEADER = %w[when where method temper note commit].freeze
+      HEADER = %w[when where method temper note commit checksum].freeze
+      # The page's table leaves out the checksum.
+      TABLE = %w[when where method temper note commit].freeze
 
       attr_reader :page
 
@@ -38,21 +40,28 @@ module Raindown
         @page = File.join(root, 'docs', 'code-feelings.md')
       end
 
+      # Adds the feeling, as the newest, in place of one about the method before, unless its code's changed since,
+      # which keeps that one too.
       def add(feeling)
-        FileUtils.mkdir_p(File.dirname(@csv))
-        header = !File.exist?(@csv)
-        CSV.open(@csv, 'a') do |csv|
-          csv << HEADER if header
-          csv << [Date.today.iso8601, where(feeling.method), feeling.method.label, feeling.temper, feeling.note, commit]
-        end
+        method = feeling.method
+        row = HEADER.zip([Date.today.iso8601, where(method), method.label, feeling.temper, feeling.note, commit, method.checksum]).to_h
+        write_rows(rows.reject { felt_row?(it, method) } + [row])
         write_tempers
         write_page
       end
 
+      # Read once, and again after a feeling's added.
       def rows
         return [] unless File.exist?(@csv)
 
-        CSV.read(@csv, headers: true).map(&:to_h)
+        @rows ||= CSV.read(@csv, headers: true).map(&:to_h)
+      end
+
+      # Whether the method's been felt, by its file, name and code's checksum, wherever its line is now. A row from before
+      # checksums were kept has none, so it counts until the method's felt again.
+      def felt?(method)
+        @felt ||= rows.to_set { [it['where'].sub(/:\d+\z/, ''), it['method'], it['checksum'].to_s] }
+        [method.checksum, ''].any? { @felt.include?([relative(method.path), method.label, it]) }
       end
 
       # How many feelings there are of each temper, in the bins' order.
@@ -63,7 +72,23 @@ module Raindown
 
       private
 
-      def where(method) = "#{method.path.delete_prefix(File.join(@root, ''))}:#{method.line}"
+      def felt_row?(row, method)
+        row['where'].sub(/:\d+\z/, '') == relative(method.path) && row['method'] == method.label &&
+          [method.checksum, ''].include?(row['checksum'].to_s)
+      end
+
+      def write_rows(rows)
+        FileUtils.mkdir_p(File.dirname(@csv))
+        CSV.open(@csv, 'w') do |csv|
+          csv << HEADER
+          rows.each { csv << it.values_at(*HEADER) }
+        end
+        @rows = @felt = nil
+      end
+
+      def where(method) = "#{relative(method.path)}:#{method.line}"
+
+      def relative(path) = path.delete_prefix(File.join(@root, ''))
 
       def commit
         sha, status = Open3.capture2('git', '-C', @root, 'rev-parse', '--short', 'HEAD', err: File::NULL)
@@ -97,7 +122,7 @@ module Raindown
       end
 
       def table_row(row)
-        cells = row.values_at(*HEADER).map { it.to_s.gsub('|', '\|') }
+        cells = row.values_at(*TABLE).map { it.to_s.gsub('|', '\|') }
         "| #{cells.join(' | ')} |"
       end
     end

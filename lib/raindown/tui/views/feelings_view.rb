@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../batches'
 require_relative '../code_methods'
 require_relative '../events'
 require_relative '../feelings_log'
@@ -9,31 +10,29 @@ module Raindown
     # Code feelings, like Severance's macrodata refinement: the project's functions and methods, in any language,
     # as clusters of digits in a grid, where long methods, and ones whose files keep changing, drift. The cursor moves
     # between them, the selected one's code shows below the grid, its first lines or with Enter all that fits, and 1 to 5
-    # sort how it feels into a bin: woe, frolic, dread, malice or numb, which notes it down in the FeelingsLog. Frolic and
-    # numb move on to the next method, while woe, dread and malice ask why first, typed until Enter, or Esc to leave it
-    # out, and stay on it. E opens the method in the editor, and X asks Claude Code to fix it, and either way it's read
-    # again after, to be felt again.
+    # sort how it feels into a bin: woe, frolic, dread, malice or numb, which notes it down in the FeelingsLog, staying on
+    # it. Woe, dread and malice ask why first, typed until Enter, or Esc to leave it out. E opens the method in the
+    # editor, and X asks Claude Code to fix it, and either way it's read again after, to be felt again.
     class FeelingsView
       BINS = { bin1: 'woe', bin2: 'frolic', bin3: 'dread', bin4: 'malice', bin5: 'numb' }.freeze
       # The tempers that ask why.
       NOTED = %w[woe dread malice].freeze
       # Its own keys, besides the bins: Enter and Space show all of the selected method's code, or its first lines again.
-      KEYS = %i[up down left right edit execute tick enter toggle expand].freeze
+      KEYS = %i[up down left right edit execute tick enter toggle expand next].freeze
 
-      # The temper being noted, and the note typed so far, while it's asking why.
-      attr_reader :noting, :note, :code_methods, :cursor, :tick, :log
-      # Whether the selected method's code shows all that fits, rather than its first lines, until another's selected.
-      attr_reader :expanded
+      # The temper being noted, and the note typed so far, while it's asking why, and whether the selected method's code
+      # shows all that fits, until another's selected.
+      attr_reader :noting, :note, :cursor, :tick, :log, :expanded
 
       def initialize(root:)
         @root = root
         @log = FeelingsLog.new(root:)
-        @code_methods = []
-        @felt = {}
+        @last_feelings = {}
         @cursor = 0
         @tick = 0
         @cells = []
         @columns = 1
+        @batches = Batches.new(log: @log)
       end
 
       def renderer = FeelingsRenderer
@@ -42,12 +41,17 @@ module Raindown
       def path = nil
       def changed? = false
       def typing? = !noting.nil?
-      def status(_navigator) = [:info, "#{code_methods.length} methods to feel in #{File.basename(@root)}"]
+      def status(_navigator) = [:info, "This week's code to feel, #{batch.week}"]
 
+      # Reads the code again, keeping the batch, like after a method's edited or fixed, or picks one the first time.
       def load
-        @code_methods = CodeMethods.list(@root)
+        @batches.read(CodeMethods.list(@root))
         self.cursor = @cursor
       end
+
+      # The Batch of files whose methods are in the grid.
+      def batch = @batches.current
+      def code_methods = batch.code_methods
 
       def selected = code_methods[@cursor]
 
@@ -59,7 +63,9 @@ module Raindown
 
       # Each cell's method, by its index, in reading order, in a grid as many cells across as the columns.
       # They're kept, so up and down move a row.
-      def cells(columns)
+      # The first time the grid's drawn, with its rows, the batch is picked again to fill them.
+      def cells(columns, rows = nil)
+        @cursor = 0 if rows && @batches.fill(columns * rows)
         @columns = columns
         @cells = code_methods.each_with_index.flat_map { |method, index| [index] * method.size }
       end
@@ -90,10 +96,21 @@ module Raindown
         when :up then move_row(-1)
         when :down then move_row(1)
         when :edit then Edit.new(path: selected.path, line: selected.line)
-        when :execute then Fix.new(feeling: @felt[@cursor] || Feeling.new(method: selected, temper: nil, note: nil))
+        when :execute then fix
         when :enter, :toggle, :expand then (@expanded = !@expanded).then { nil }
+        when :next then next_files
         end
       end
+
+      # Moves on to the next batch.
+      def next_files
+        @batches.next
+        @cursor = 0
+        nil
+      end
+
+      # Asks to fix the method, with how it last felt, by its file and name, which stay the same when its lines change.
+      def fix = Fix.new(feeling: @last_feelings[[selected.path, selected.label]] || Feeling.new(method: selected, temper: nil, note: nil))
 
       def move(by)
         self.cursor = @cursor + by
@@ -107,9 +124,9 @@ module Raindown
         nil
       end
 
-      # Frolic and numb are noted down straight away, moving on to the next method, while the rest ask why first.
+      # Frolic and numb are noted down straight away, while the rest ask why first.
       def feel(temper)
-        return note_down(temper, nil).tap { move(1) } unless NOTED.include?(temper)
+        return note_down(temper, nil) unless NOTED.include?(temper)
 
         @noting = temper
         @note = +''
@@ -129,7 +146,7 @@ module Raindown
       # Notes the feeling down, staying on the method, so it can be fixed with what was just said about it.
       def note_down(temper, note)
         feeling = Feeling.new(method: selected, temper:, note:)
-        @felt[@cursor] = feeling
+        @last_feelings[[selected.path, selected.label]] = feeling
         @noting = nil
         @log.add(feeling)
         Felt.new(feeling:, page: @log.page)
