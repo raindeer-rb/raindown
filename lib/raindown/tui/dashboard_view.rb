@@ -9,7 +9,7 @@ module Raindown
     # like "Sales < Raindown::Chart". Charts are drawn again every few seconds, so they follow changes to their data,
     # like a CSV file, without a save.
     # A key's next step, for the Navigator, is nil, or an Open or Edit of a chart's directive.
-    class Dashboard
+    class DashboardView
       # Seconds between drawing the charts again.
       REDRAW = 2
       MOVES = %i[up down left right].freeze
@@ -24,10 +24,19 @@ module Raindown
         @cursor = 0
         @offset = 0
         @rows = []
-        load
       end
 
-      # Finds the charts again, like when a file is saved or added.
+      def name = :dashboard
+      def target = self
+      def path = nil
+      def changed? = false
+
+      def status(_navigator)
+        found = "#{charts.length} #{charts.length == 1 ? 'chart' : 'charts'} in #{File.basename(project || root)}"
+        errors.empty? ? [:info, found] : [:error, "#{found}, but couldn't read #{errors.join(', ')}"]
+      end
+
+      # Finds the charts again, like when it's opened, or a file is saved or added.
       def load
         draw(find: true)
         @cursor = @cursor.clamp(0, [charts.length - 1, 0].max)
@@ -56,15 +65,13 @@ module Raindown
         @rows.empty? || @rows.any? { it.first == @cursor }
       end
 
-      def name = :dashboard
-
       # Every key but Tab to the files, or left from the first card in a row.
       def next_step?(key) = !%i[tab tick].include?(key) && !(key == :left && first_in_row?)
 
       def next_step(key)
         chart = selected
         case key
-        when *MOVES then move(key)
+        when *MOVES then move(key).then { nil }
         when :enter then chart && Open.new(path: chart.path, line: chart.line)
         when :edit then chart && Edit.new(path: chart.path, line: chart.line)
         when :reload then load.then { nil }

@@ -6,7 +6,8 @@ require_relative 'worker'
 module Raindown
   module TUI
     # An endpoint opened from the files, beside them: its request, and the response its file has, read by its project's
-    # Worker, which scrolls. A key's next step, for the Navigator, is nil, an Open or Edit of its directive, or an Execute of it.
+    # Worker when it's opened, which scrolls.
+    # A key's next step, for the Navigator, is nil, an Open or Edit of its directive, or an Execute of it.
     class EndpointView
       # The date a response was fetched, on the line after it.
       FETCHED = /raindown:fetched (\S+)/
@@ -14,14 +15,17 @@ module Raindown
 
       attr_reader :endpoint, :response, :language, :fetched, :error
 
-      def initialize(endpoint, worker:)
+      def initialize(endpoint, workers:)
         @endpoint = endpoint
-        @worker = worker
+        @workers = workers
         @offset = 0
-        load
       end
 
       def name = :endpoint
+      def target = endpoint
+      def path = endpoint.path
+      def status(_navigator) = [:info, endpoint.text]
+      def changed? = false
       def next_step?(key) = %i[up down enter edit execute].include?(key)
 
       # Clicks on the response only move the focus to it.
@@ -57,7 +61,7 @@ module Raindown
       private
 
       def output_lines
-        outline = @worker.call(:outline, endpoint.path)
+        outline = @workers.for(path).call(:outline, path)
         directive = outline.directives.find { it.endpoint? && it.line == endpoint.line }
         directive&.output ? outline.lines[(directive.output.begin - 1)...directive.output.end] : []
       end

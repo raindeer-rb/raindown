@@ -54,7 +54,7 @@ module Raindown
         @files.scope = project
         @endpoints.project = project
         dashboard.project = project
-        open_dashboard
+        open_pane(dashboard)
       end
     end
   end

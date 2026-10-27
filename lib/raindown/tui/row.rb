@@ -16,5 +16,8 @@ module Raindown
         target.is_a?(Integer) ? target : target.line
       end
     end
+
+    # Space between a pane's sections, like the Dashboard and the files.
+    Row::SEPARATOR = Row.new(text: '', depth: 0, kind: :separator, target: nil)
   end
 end

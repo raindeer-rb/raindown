@@ -9,22 +9,26 @@ module Raindown
   module TUI
     # The outline pane: a file's headings and directives, read by its project's Worker. Headings fold the section below them,
     # and a directive's body expands below it, like the lines a node wrote back or an endpoint's request and response.
-    # Both start folded away.
-    class Outline
+    # Both start folded away. It's read when it's opened, and named after its pane, whose keys the Navigator handles.
+    class OutlineView
       attr_reader :path, :error
 
-      def initialize(path, worker:)
+      def initialize(path, workers:)
         @path = path
-        @worker = worker
+        @workers = workers
         @folded = Set.new
         @expanded = Set.new
-        read
       end
 
+      def name = :outline
+      def target = path
+      def next_step?(_key) = false
+      def status(navigator) = [:info, "Opened #{navigator.relative(path)}"]
+
       # Reads the file again, keeping what's folded.
-      def read
+      def load
         @mtime = File.mtime(path)
-        outline = @worker.call(:outline, path)
+        outline = @workers.for(path).call(:outline, path)
         @lines = outline.lines
         @headings = outline.headings
         @directives = outline.directives

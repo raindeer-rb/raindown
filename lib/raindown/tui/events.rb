@@ -13,9 +13,19 @@ module Raindown
     # Shows the message while the task runs, like an endpoint's request.
     Wait = Data.define(:message, :task)
 
-    # What a row or a view asks of the Navigator: to open a file in the outline at a directive, edit it, or run an endpoint.
-    Open = Data.define(:path, :line)
-    Edit = Data.define(:path, :line)
-    Execute = Data.define(:path, :line, :name)
+    # Steps a row or a view asks of the Navigator, which each takes on it, returning what the Screen does next: to open
+    # a view right of the files, or a file in the outline at a directive, to edit a file at a line, or to run an endpoint.
+    OpenPane = Data.define(:view) do
+      def take(navigator) = navigator.open_pane(view)
+    end
+    Open = Data.define(:path, :line) do
+      def take(navigator) = navigator.open_at(path, line)
+    end
+    Edit = Data.define(:path, :line) do
+      def take(navigator) = navigator.edit_at(path, line)
+    end
+    Execute = Data.define(:path, :line, :name) do
+      def take(navigator) = navigator.run(path, line, name)
+    end
   end
 end

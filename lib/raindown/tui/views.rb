@@ -1,82 +1,49 @@
 # frozen_string_literal: true
 
-require_relative 'dashboard'
+require_relative 'dashboard_view'
 require_relative 'endpoint_view'
+require_relative 'outline_view'
 
 module Raindown
   module TUI
-    # Beside the files, a Navigator shows the open file's outline, or the dashboard of the project's charts,
-    # which is the first item in the files and "d" switches to, or an endpoint opened from the files.
-    # The dashboard finds its charts each time it's shown, and opens a chart's file in the outline at its directive,
-    # as an endpoint does its own.
-    # A view is named after its pane, has a next step for the keys it takes while that has the focus, and loads again after a change.
+    # Beside the files, a Navigator shows a view: the open file's Outline, the Dashboard of the project's charts,
+    # which is the first item in the files and "d" switches to, or an EndpointView of an endpoint listed below them.
+    # A view is named after its pane, has a next step for the keys it takes while that has the focus, and a target,
+    # what's opened it in the files. It loads when it's opened, and again after a change.
     module Views
-      # The open file's outline, whose keys the Navigator handles itself, as they move between rows like the files'.
-      OutlineView = Data.define do
-        def name = :outline
-        def next_step?(_key) = false
-        def load = nil
-      end
+      attr_reader :view, :dashboard
 
-      # An OutlineView, the Dashboard, or an EndpointView, named after the pane right of the files, which Tab moves to.
-      attr_reader :view
+      # The path of the file the view shows, if any.
+      def path = view.path
 
-      def dashboard
-        @dashboard ||= Dashboard.new(root:, workers: @workers)
-      end
-
-      private
-
-      def open_endpoint(endpoint)
-        @view = EndpointView.new(endpoint, worker: @workers.for(endpoint.path))
-        info(endpoint.text)
-      end
-
-      def toggle_dashboard
-        return open_file(path) if view == dashboard && path
-
-        open_dashboard
-      end
-
-      # The cursor stays on the Dashboard in the files, and Tab or right moves it to the charts.
-      def open_dashboard
-        @view = dashboard
-        @focus = :files
-        @panes[:files].cursor = 0
-        @view.load
-        count = @view.charts.length
-        found = "#{count} #{count == 1 ? 'chart' : 'charts'} in #{File.basename(project || root)}"
-        @view.errors.empty? ? info(found) : error("#{found}, but couldn't read #{@view.errors.join(', ')}")
-      end
-
-      # What a row or a view asks for: to open a view, a file at a directive, or the editor at a line, or run an endpoint.
-      def take_step(step)
-        case step
-        when :dashboard then open_dashboard
-        when Endpoint then open_endpoint(step)
-        when Execute then run(step.path, step.line, step.name)
-        when Open then open_at(step.path, step.line)
-        when Edit
-          show(step.path) unless step.path == path
-          Run.new(command: Actions.edit_command(step.path, line: step.line))
-        end
-      end
-
-      def open_file(path)
-        path = File.expand_path(path)
-        show(path)
-        @files.reveal(path)
-        @view = OutlineView.new
-        @focus = :outline
-        @panes[:files].cursor = rows(:files).index { it.target == path } || 0
-        info("Opened #{relative(path)}")
+      # Shows the view right of the files, with the focus, and the files' cursor on the row that opened it.
+      def open_pane(view)
+        @previous = @view unless view == @view
+        @view = view
+        @focus = view.name
+        @panes[:files].cursor = rows(:files).index { it.target == view.target } || 0
+        @panes[:outline].reset
+        view.load
+        @status = view.status(self)
+        nil
       end
 
       # Opens the file in the outline, on the directive at the line.
       def open_at(path, line)
-        open_file(path)
+        path = File.expand_path(path)
+        @files.reveal(path)
+        open_pane(OutlineView.new(path, workers: @workers))
         @panes[:outline].cursor = rows(:outline).index { it.kind == :directive && it.target.line == line } || 0
         nil
+      end
+
+      private
+
+      # Switches between the dashboard and the view before it.
+      def toggle_dashboard
+        return open_pane(@previous) if view == dashboard && @previous
+
+        open_pane(dashboard)
       end
     end
   end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'endpoint'
-require_relative 'file_tree'
+require_relative 'endpoint_view'
 require_relative 'row'
 require_relative 'worker'
 
@@ -33,7 +33,10 @@ module Raindown
       def rows
         return [] if all.empty?
 
-        [FileTree::SEPARATOR, *all.map { Row.new(text: it.address, tag: it, depth: 0, kind: :endpoint, target: it, open: it) }]
+        [Row::SEPARATOR, *all.map do
+          Row.new(text: it.address, tag: it, depth: 0, kind: :endpoint, target: it,
+                  open: OpenPane.new(view: EndpointView.new(it, workers: @workers)))
+        end]
       end
     end
   end

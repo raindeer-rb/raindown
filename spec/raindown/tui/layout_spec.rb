@@ -137,13 +137,13 @@ RSpec.describe Raindown::TUI::Layout do
       titles = lines[3].select { it.event&.pane == :dashboard && it.style != :border }
 
       expect(titles.map(&:event)).to eq([click(:dashboard, 0), click(:dashboard, 1)])
-      expect(titles.map(&:style)).to eq(%i[cursor heading])
+      expect(titles.map(&:style)).to eq(%i[selected heading])
       expect(lines[2].map(&:event).select { it&.pane == :dashboard }).to eq([click(:dashboard, 0), click(:dashboard, 1)])
 
       navigator.next_step(:tab)
       line = described_class.new(navigator, width: 90, height: 10).lines[3]
       title = line.find { it.event == click(:dashboard, 0) && it.style != :border }
-      expect(title.style).to eq(:selected)
+      expect(title.style).to eq(:cursor)
     end
 
     it "doesn't click the space below a card shorter than its row" do

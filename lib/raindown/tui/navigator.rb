@@ -5,7 +5,7 @@ require_relative 'commands'
 require_relative 'endpoints'
 require_relative 'focus'
 require_relative 'events'
-require_relative 'outline'
+require_relative 'outline_view'
 require_relative 'pane'
 require_relative 'project_menu'
 require_relative 'views'
@@ -31,15 +31,14 @@ module Raindown
 
       def initialize(root:, path: nil, workers: Workers.new(root:))
         @workers = workers
-        @files = FileTree.new(root:)
+        @files = FileTree.new(root:, workers:)
         @endpoints = Endpoints.new(workers:)
-        @focus = :files
-        @panes = { files: Pane.new { [*@files.rows, *@endpoints.rows] }, outline: Pane.new { @outline ? @outline.rows : [] } }
-        @status = [:info, 'Tab switches panes, Enter opens and folds, q quits']
+        @dashboard = DashboardView.new(root:, workers:)
+        @panes = { files: Pane.new { [dashboard_row, Row::SEPARATOR, *@files.rows, *@endpoints.rows] }, outline: Pane.new { view.rows } }
         first = Projects.files(root, nested: true).first
-        show(path || first) if path || first
-        # The dashboard is the first page, unless a file is asked for.
-        path ? open_file(path) : open_dashboard
+        # The dashboard is the first page, unless a file is asked for, and "d" goes from it to the first file.
+        @view = OutlineView.new(first, workers:) if first
+        path ? open_at(path, nil) : open_pane(dashboard)
       end
 
       # An event nothing has, like a mouse button's release, does nothing.
@@ -53,13 +52,11 @@ module Raindown
 
       # After the editor closes, the file is written back, like a save while it's watched, and read again.
       def ran
-        write_back
+        write_back(@edited)
         @endpoints.load
-        view.load
       end
 
       def root = @files.root
-      def path = @outline&.path
       def relative(path) = @files.relative(path)
 
       # The folder the files are shown from: the chosen project's, or the root's.
@@ -76,7 +73,7 @@ module Raindown
         return menu_event(name) if menu
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
-        return take_step(view.next_step(name)) if @focus == view.name && view.next_step?(name)
+        return view.next_step(name)&.take(self) if @focus == view.name && view.next_step?(name)
 
         browser_event(name)
       end
@@ -108,11 +105,8 @@ module Raindown
         send(ACTIONS[name]) if ACTIONS.key?(name)
       end
 
-      def show(path)
-        path = File.expand_path(path)
-        @outline = Outline.new(path, worker: @workers.for(path))
-        @panes[:outline].reset
-      end
+      # The Dashboard, first in the files, which every terminal draws two columns wide.
+      def dashboard_row = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: dashboard, open: OpenPane.new(view: dashboard))
 
       def selected(pane = @focus)
         @panes[pane].selected
@@ -121,7 +115,7 @@ module Raindown
       # Enter opens what's selected, or folds it, and Space only folds.
       def activate(name)
         row = selected
-        return take_step(row.open) if name == :enter && row&.open
+        return row.open.take(self) if name == :enter && row&.open
 
         row&.fold&.call
         nil

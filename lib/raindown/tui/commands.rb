@@ -7,6 +7,14 @@ module Raindown
     # What a Navigator does to the open file: run an endpoint, open the editor, write back and read it again.
     # Each sets the status, so the Screen shows how it went, and returns what the Screen should do next, if anything.
     module Commands
+      def run(file, line, name) = Wait.new(message: "Running #{name}...", task: -> { run_endpoint(file, line) })
+
+      # Opens the editor at the file's line, and writes the file back after it closes.
+      def edit_at(file, line)
+        @edited = file
+        Run.new(command: Actions.edit_command(file, line:))
+      end
+
       private
 
       # Runs the endpoint selected in the outline, or listed below the files. One opened beside them runs itself.
@@ -18,11 +26,8 @@ module Raindown
         run(path, target.line, "the endpoint on line #{target.line}")
       end
 
-      def run(file, line, name) = Wait.new(message: "Running #{name}...", task: -> { run_endpoint(file, line) })
-
       def run_endpoint(file, line)
         changed = @workers.for(file).call(:execute, file, line)
-        @outline.read if file == path
         view.load
         info(changed ? "Ran the endpoint on line #{line}" : 'The response is the same')
       rescue StandardError => e
@@ -34,19 +39,18 @@ module Raindown
         row = selected
         return error('Select a file to edit') if @focus == :files && row&.kind != :file
 
-        show(row.target) if @focus == :files
+        return edit_at(row.target, 1) if @focus == :files
         return error('Open a file to edit') unless path
 
-        line = @focus == :outline && row ? row.line : 1
-        Run.new(command: Actions.edit_command(path, line:))
+        edit_at(path, row ? row.line : 1)
       end
 
-      def write_back
-        return error('Open a file to write back') unless path
+      def write_back(file = path)
+        return error('Open a file to write back') unless file
 
-        changed = @workers.for(path).call(:write_back, path)
-        @outline.read
-        info(changed ? "Updated #{relative(path)}" : "#{relative(path)} is up to date")
+        changed = @workers.for(file).call(:write_back, file)
+        view.load
+        info(changed ? "Updated #{relative(file)}" : "#{relative(file)} is up to date")
       rescue StandardError => e
         error(e.message)
       end
@@ -57,13 +61,12 @@ module Raindown
         @files.load
         @endpoints.load
         view.load
-        @outline&.read if path && File.exist?(path)
         info('Reloaded')
       end
 
       # Reads the file again when it's changed, like when it's saved in an editor or a watcher writes back to it.
       def refresh
-        @outline.read if @outline&.changed?
+        view.load if view.changed?
         nil
       end
 
