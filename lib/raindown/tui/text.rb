@@ -50,6 +50,26 @@ module Raindown
         end
       end
 
+      # The line's segments, with others drawn over its columns from the column on, like a box over the screen.
+      def overlay_segments(line, segments, column:)
+        width = segments.sum { display_width(it.text) }
+        [*segments_between(line, 0, column), *segments, *segments_between(line, column + width, Float::INFINITY)]
+      end
+
+      # The parts of the line's segments between two columns, where a wide character cut in two leaves spaces.
+      def segments_between(line, from, to)
+        column = 0
+        line.filter_map do |segment|
+          text = segment.text.each_char.map do |char|
+            start = column
+            column += display_width(char)
+            overlap = [column, to].min - [start, from].max
+            overlap == display_width(char) ? char : ' ' * [overlap, 0].max
+          end.join
+          segment.with(text:) unless text.empty?
+        end
+      end
+
       # Tabs and control characters, like in a directive's output, would move the terminal's cursor.
       def printable(text)
         text.gsub("\t", INDENT).gsub(/[[:cntrl:]]/, '')

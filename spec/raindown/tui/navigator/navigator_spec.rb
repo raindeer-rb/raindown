@@ -291,7 +291,7 @@ RSpec.describe Raindown::TUI::Navigator do
       write('more.md', "<{ chart: '3 2 1' }>\n<{ :chart }>\n")
       navigator.next_step(:reload)
       navigator.next_step(:right)
-      navigator.dashboard.rows = [[0, 1]]
+      navigator.dashboard.rows(59)
 
       navigator.next_step(:right)
       navigator.next_step(:left)

@@ -13,10 +13,11 @@ module Raindown
       # Seconds between drawing the charts again.
       REDRAW = 2
       MOVES = %i[up down left right].freeze
+      # Columns between the cards, and the narrowest a card is, with its border.
+      GAP = 2
+      MIN_CARD_WIDTH = 28
 
       attr_reader :root, :errors, :cursor, :project
-      # The cards' indexes in each row, which the Layout sets as it draws them, so up and down move a row.
-      attr_writer :rows
 
       def initialize(root:, workers:)
         @root = root
@@ -58,6 +59,15 @@ module Raindown
         draw if Process.clock_gettime(Process::CLOCK_MONOTONIC) - @drawn_at >= REDRAW
         charts
       end
+
+      # The charts' indexes in rows, as many of a project's as fit across the width after a column of margin, with each
+      # project's charts starting a row. They're kept, so up and down move a row.
+      def rows(width)
+        @rows = charts.each_index.chunk_while { |a, b| charts[a].project == charts[b].project }.flat_map { group_rows(it, width) }
+      end
+
+      # The widths a card can be: no narrower than MIN_CARD_WIDTH, when there's room, and no wider than the width.
+      def card_widths(width) = [MIN_CARD_WIDTH, width - 1].min..(width - 1)
 
       def selected = charts[@cursor]
 
@@ -104,6 +114,18 @@ module Raindown
         end
         @cards.sort_by! { [it.project, it.path, it.line] }
         @drawn_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      end
+
+      def group_rows(indexes, width)
+        indexes.each_with_object([[]]) do |index, rows|
+          rows << [] if rows.last.any? && row_width(rows.last + [index], width) > width
+          rows.last << index
+        end
+      end
+
+      # A row of cards' width, after a column of margin, with a gap between each.
+      def row_width(row, width)
+        1 + row.sum { charts[it].box_width(within: card_widths(width)) } + (GAP * (row.length - 1))
       end
 
       # Left and right move along the cards, and up and down to the card in the same place in the row above or below.

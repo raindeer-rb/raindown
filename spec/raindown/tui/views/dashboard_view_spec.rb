@@ -61,7 +61,11 @@ RSpec.describe Raindown::TUI::DashboardView do
   end
 
   describe '#next_step' do
-    before { dashboard.rows = [[0, 1], [2]] }
+    before { dashboard.rows(59) }
+
+    it 'packs the cards into rows as many as fit across the width' do
+      expect([dashboard.rows(59), dashboard.rows(30)]).to eq([[[0, 1], [2]], [[0], [1], [2]]])
+    end
 
     it 'moves along the cards, and to the row above or below' do
       dashboard.next_step(:right)
@@ -87,7 +91,7 @@ RSpec.describe Raindown::TUI::DashboardView do
 
   describe '#scroll' do
     it 'scrolls down to the cursor, and back up' do
-      dashboard.rows = [[0], [1], [2]]
+      dashboard.rows(30)
       2.times { dashboard.next_step(:down) }
 
       expect(dashboard.scroll([5, 5, 5], 8)).to eq(2)
