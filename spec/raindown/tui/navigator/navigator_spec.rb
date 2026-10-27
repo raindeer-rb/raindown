@@ -463,4 +463,65 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(endpoints(navigator)).to eq(['GET guides.example.com'])
     end
   end
+
+  describe 'search' do
+    subject(:navigator) { described_class.new(root: @root) }
+
+    before do
+      write('notes.md', notes)
+      write('guides/setup.md', "# Install\n\n## Steps\n")
+    end
+
+    def type(navigator, text) = text.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+    def found(navigator) = navigator.matches.map { [it.text, it.where] }
+
+    it 'opens with /, listing the Dashboard, then each file with its headings and directives, until something is typed' do
+      navigator.next_step(:search)
+
+      expect(navigator.searching?).to be(true)
+      expect(found(navigator).first(4)).to eq([['Dashboard', ''], ['guides/setup.md', ''], ['# Install', 'guides/setup.md:1'],
+                                               ['## Steps', 'guides/setup.md:3']])
+    end
+
+    it 'matches letters in order, best first, even the ones other keys take, like j and q, and moves down them' do
+      navigator.next_step(:search)
+      type(navigator, 'stp')
+      expect(found(navigator).first(2)).to eq([['## Steps', 'guides/setup.md:3'], ['## Setup', 'notes.md:10']])
+      navigator.next_step(:down)
+      expect(navigator.match).to eq(1)
+
+      type(navigator, 'qj')
+      expect(found(navigator)).to eq([])
+
+      2.times { navigator.next_step(:backspace) }
+      expect(navigator.query).to eq('stp')
+    end
+
+    it 'teleports to the heading or directive selected, in the outline, and closes' do
+      navigator.next_step(:search)
+      type(navigator, 'setup notes')
+      navigator.next_step(:enter)
+
+      expect([navigator.searching?, view_name(navigator), navigator.relative(navigator.path)]).to eq([false, 'OutlineView', 'notes.md'])
+      expect(navigator.view.rows[navigator.view.cursor].text).to eq('## Setup')
+    end
+
+    it 'teleports to an endpoint, clicked in the matches' do
+      navigator.next_step(:search)
+      type(navigator, 'get api')
+      expect(found(navigator).first).to eq(['GET api.example.com', 'notes.md:14'])
+
+      navigator.next_step(click(:search, 0))
+      expect([view_name(navigator), navigator.view.endpoint.line]).to eq(['EndpointView', 14])
+    end
+
+    it 'closes with Esc, and ignores other clicks while open' do
+      navigator.next_step(:search)
+      expect(navigator.next_step(click(:nav, 2))).to be_nil
+      expect(navigator.content(:nav).cursor).to eq(0)
+
+      navigator.next_step(:escape)
+      expect(navigator.searching?).to be(false)
+    end
+  end
 end

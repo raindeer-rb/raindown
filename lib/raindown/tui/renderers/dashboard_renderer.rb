@@ -15,7 +15,7 @@ module Raindown
     #    ╰─────────────────────────────╯  ╰────────────────────────────────╯
     class DashboardRenderer < Renderer
       BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
-                 ['q', 'Quit', :quit]].freeze
+                 ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
       PROJECTS_BUTTON = ['p', 'Projects', :projects].freeze
 
       # Room for the project menu's button, when there's more than one project.

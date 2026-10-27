@@ -58,14 +58,14 @@ module Raindown
         path.delete_prefix(File.join(base, ''))
       end
 
-      private
-
       # A scope's own files, without those of the projects inside it, which are projects of their own.
       def files
         return @files unless scope
 
         @files.select { |path| owner(path) == scope }
       end
+
+      private
 
       def owner(path)
         [root, *@projects].select { path.start_with?(File.join(it, '')) }.max_by(&:length)

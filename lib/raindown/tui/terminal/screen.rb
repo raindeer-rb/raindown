@@ -113,7 +113,9 @@ module Raindown
         return mouse if key == Curses::KEY_MOUSE
 
         Curses.stdscr.clear if key == Curses::KEY_RESIZE
-        Input.key_event(key)
+        if @navigator.searching? then Input.typing_event(key)
+        else Input.key_event(key)
+        end
       end
 
       # The curses gem warns the first time it makes a MouseEvent, that it's "undefining the allocator" of the class.

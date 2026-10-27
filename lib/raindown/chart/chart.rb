@@ -19,7 +19,8 @@ module Raindown
 
     # Label and value are the columns to chart, by name or index, and minus a column to chart against the values.
     # Width is in characters, for bars and lines, and height in lines, for columns and lines.
-    def initialize(data = nil, format: nil, label: nil, value: nil, minus: nil, width: 40, height: 8) # rubocop:disable Metrics/ParameterLists -- each is a prop
+    # Tail keeps only the last points, like the latest months of a file that grows.
+    def initialize(data = nil, format: nil, label: nil, value: nil, minus: nil, width: 40, height: 8, tail: nil) # rubocop:disable Metrics/ParameterLists -- each is a prop
       @data = data
       @format = format
       @label = label
@@ -27,6 +28,7 @@ module Raindown
       @minus = minus
       @width = width
       @height = height
+      @tail = tail
     end
 
     # The data is read every time, so the chart follows changes to its file.
@@ -46,6 +48,7 @@ module Raindown
     end
 
     def draw(points)
+      points = points.last(@tail) if @tail
       format = @format || (points.any?(&:first) ? 'bars' : 'sparkline')
       drawing = FORMATS[format] || raise(Error, "format: is #{FORMATS.keys.join(', ')}, not #{format.inspect}")
 

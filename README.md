@@ -52,6 +52,8 @@ Watching a directory watches each project in it, a folder with a `.raindown` fol
 
 Below the files, after a blank line, is every endpoint in the project, by its request, like `GET httpbin.org/uuid`, with its method in colour: GET green, POST blue, DELETE red, PUT yellow and PATCH magenta. Enter or a click opens one beside the files, with its URL in a bar and a **Run** button, and its response below. `x`, or clicking **Run**, runs it, and Enter opens its directive in the outline. The charts are drawn from their data every few seconds, so editing a CSV file updates its chart without a save. Enter (or clicking a card's title) opens the chart's file in the outline, on its directive.
 
+**Teleport** with `/`: type part of a file, heading, directive or endpoint, and Raindown finds it in every file, matching the letters in order, so `stp` finds `## Setup`. Up and down choose between the matches, Enter or a click goes there, and Esc closes it.
+
 ### Directives
 
 Directives sit between `<{` and `}>`, and come in two kinds:
@@ -281,6 +283,8 @@ b12a47e   -4  ▕│▋                              +15
 ```
 
 Bars and lines are 40 characters wide, and columns and lines 8 lines high, which `width:` and `height:` change.
+
+`tail:` keeps only the last rows, like `tail: 12` for the latest twelve months of a CSV file that grows. In `raindown tui`, the Dashboard draws charts again every few seconds, so a chart with `tail:` follows a file that a script appends to, like a live monitor.
 
 `chart:` is a [node](#nodes), so a project can draw charts its own way with a `Chart` node, like `class Chart < Raindown::Chart`. Raindown only watches the file being rendered, so after changing a chart's data, save the file to redraw it.
 

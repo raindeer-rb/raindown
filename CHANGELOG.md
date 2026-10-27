@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Added
+
+- `raindown tui` teleports with `/`: a search of every file, heading, directive and endpoint, matched as you type
+- `chart:` keeps only the last rows with `tail:`, like `tail: 12`, so the Dashboard can follow a file that grows
+
+### Changed
+
+- `raindown tui`'s title has two spaces after the rain cloud
+
 ## 0.6.0
 
 ### Added

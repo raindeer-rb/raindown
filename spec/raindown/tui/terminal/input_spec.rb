@@ -17,6 +17,14 @@ RSpec.describe Raindown::TUI::Input do
     end
   end
 
+  describe '.typing_event' do
+    it 'types printable characters, even the ones that are keys, and keeps the keys that move, choose, close and delete' do
+      expect(%w[j q / A].map { described_class.typing_event(it) }).to eq(%w[j q / A].map { Raindown::TUI::Type.new(text: it) })
+      expect([Curses::KEY_DOWN, 13, 27, 127].map { described_class.typing_event(it) }).to eq(%i[down enter escape backspace])
+      expect(described_class.typing_event(Curses::KEY_LEFT)).to be_nil
+    end
+  end
+
   describe '.zones' do
     it 'finds what was clicked by its row and column, counting wide characters as two columns' do
       segment = Raindown::TUI::Text::Segment

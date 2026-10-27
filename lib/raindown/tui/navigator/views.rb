@@ -27,12 +27,12 @@ module Raindown
         nil
       end
 
-      # Opens the file in the outline, on the directive at the line.
+      # Opens the file in the outline, on the heading or directive at the line.
       def open_at(path, line)
         path = File.expand_path(path)
         @files.reveal(path)
         open_view(OutlineView.new(path, workers: @workers))
-        view.cursor = view.rows.index { it.kind == :directive && it.target.line == line } || 0
+        view.cursor = view.rows.index { %i[heading directive].include?(it.kind) && it.target.line == line } || 0
         nil
       end
 

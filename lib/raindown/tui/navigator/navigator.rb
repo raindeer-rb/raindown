@@ -8,6 +8,7 @@ require_relative '../events'
 require_relative '../views/outline_view'
 require_relative '../views/list_view'
 require_relative 'project_menu'
+require_relative 'search'
 require_relative 'views'
 require_relative '../workers/workers'
 
@@ -20,6 +21,7 @@ module Raindown
       include Commands
       include Views
       include ProjectMenu
+      include Search
       include Focus
 
       # Keys of the events that move the cursor or the focus, and those that act on what's selected.
@@ -46,6 +48,7 @@ module Raindown
         case event
         when nil then nil
         when Click then click(event)
+        when Type then (type_query(query + event.text) if searching?)
         else route(event)
         end
       end
@@ -69,7 +72,9 @@ module Raindown
 
       def route(name)
         return :quit if name == :quit
+        return search_event(name) if searching?
         return menu_event(name) if menu
+        return open_search if name == :search
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
         return view.next_step(name)&.take(self) if @focus == :main && view.next_step?(name)
@@ -79,9 +84,10 @@ module Raindown
 
       # A click moves the cursor where it's clicked, and does the click's action there, like a key, unless that would
       # leave the terminal UI, like for the editor, so a stray click only moves the cursor.
-      # While the project menu's open, only its projects are clicked.
+      # While the project menu or the search is open, only its items are clicked.
       def click(click)
         return if menu && click.pane != :menu
+        return if searching? && click.pane != :search
 
         point(click)
         effect = route(click.action)
@@ -90,6 +96,7 @@ module Raindown
 
       def point(click)
         return @menu = click.index if click.pane == :menu
+        return @match = click.index if click.pane == :search
 
         content(click.pane).cursor = click.index
         @focus = click.pane

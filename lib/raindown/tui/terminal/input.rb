@@ -3,6 +3,8 @@
 require 'curses'
 require 'unicode/display_width'
 
+require_relative '../events'
+
 module Raindown
   module TUI
     # Turns curses' keys and clicks into a Navigator's events.
@@ -12,7 +14,12 @@ module Raindown
         Curses::KEY_LEFT => :left, 'h' => :left, Curses::KEY_RIGHT => :right, 'l' => :right,
         "\t" => :tab, Curses::KEY_BTAB => :tab, "\r" => :enter, "\n" => :enter, Curses::KEY_ENTER => :enter,
         ' ' => :toggle, 'x' => :execute, 'e' => :edit, 'w' => :write_back, 'r' => :reload, 'd' => :dashboard,
-        'p' => :projects, "\e" => :escape, 'q' => :quit
+        'p' => :projects, '/' => :search, "\e" => :escape, 'q' => :quit
+      }.freeze
+      # While typing, like in the search, printable characters are typed, and only these keys do anything else.
+      TYPING_KEYS = {
+        Curses::KEY_UP => :up, Curses::KEY_DOWN => :down, "\r" => :enter, "\n" => :enter, Curses::KEY_ENTER => :enter,
+        "\e" => :escape, Curses::KEY_BACKSPACE => :backspace, "\x7F" => :backspace, "\b" => :backspace
       }.freeze
 
       module_function
@@ -22,6 +29,11 @@ module Raindown
       def key_event(key)
         key = key.chr if key.is_a?(Integer) && key < 256
         KEYS[key.is_a?(String) ? key.downcase : key]
+      end
+
+      def typing_event(key)
+        key = key.chr if key.is_a?(Integer) && key < 256
+        TYPING_KEYS.fetch(key) { Type.new(text: key) if key.is_a?(String) && key.match?(/\A[[:print:]]\z/) }
       end
 
       # The mouse buttons that click, which are the left button's. Scrolling does nothing, and since older ncurses,

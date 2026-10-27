@@ -84,7 +84,7 @@ RSpec.describe Raindown::TUI::Layout do
     expect(lines[7].first.event).to be_nil
     expect(lines[2].last.event).to eq(click(:main, 0))
     expect(lines[3].last.event).to eq(click(:main, 1, :execute))
-    expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload quit])
+    expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload search quit])
   end
 
   it 'cuts text that does not fit, and leaves out buttons that do not fit' do
@@ -126,7 +126,7 @@ RSpec.describe Raindown::TUI::Layout do
                                        " │ chart: '1 2 3'           │  │ chart: '3 2 1'           │",
                                        ' │ ▁▅█                      │  │ █▅▁                      │',
                                        ' ╰──────────────────────────╯  ╰──────────────────────────╯'])
-      expect(text(lines).last.rstrip).to eq(' Tab Pane  Enter Open  E dit  R eload  Q uit')
+      expect(text(lines).last.rstrip).to eq(' Tab Pane  Enter Open  E dit  R eload  / Search  Q uit')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
     end
 
@@ -202,7 +202,7 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'has a Projects button on the dashboard' do
       expect(described_class.new(navigator, width: 80, height: 8).lines.last.map(&:event).compact.uniq)
-        .to eq(%i[tab enter edit projects reload quit])
+        .to eq(%i[tab enter edit projects reload search quit])
     end
 
     it "opens from the header's path, and drops down below it over the panes, each project clicked to choose it" do
@@ -251,6 +251,25 @@ RSpec.describe Raindown::TUI::Layout do
       expect(lines[3].find { it.text == 'DELETE' }.style).to eq(:method_delete)
       expect(text(lines).first).to include('› DELETE api.example.com/users/1')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
+    end
+  end
+
+  describe 'the search' do
+    it 'drops down below the title over the panes, with what\'s typed and the matches, each clicked to open it' do
+      navigator.next_step(:search)
+      'setup'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+      lines = described_class.new(navigator, width: 60, height: 14).lines
+
+      # The box is the width less 4, between 2 columns either side.
+      expect(lines[1..4].map { columns(it, from: 2, count: 56) }).to eq(
+        ['┌─ Teleport ───────────────────────────────────────────┐',
+         '│ / setup▏                                             │',
+         '│ # Setup                            guides/setup.md:1 │',
+         '│ guides/setup.md                                      │']
+      )
+      expect(lines[3].map(&:event).compact.uniq.select { it.pane == :search }).to eq([click(:search, 0)])
+      expect(lines[3].find { it.text.include?('# Setup') }.style).to eq(:selected)
+      expect(text(lines).map { width(it) }).to all(eq(60))
     end
   end
 end

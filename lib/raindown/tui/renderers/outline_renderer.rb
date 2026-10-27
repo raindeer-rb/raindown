@@ -7,7 +7,7 @@ module Raindown
     # The open file's outline, right of the files: a row on each line, with its buttons.
     class OutlineRenderer < ListRenderer
       BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['x', 'Run', :execute], ['e', 'Edit', :edit],
-                 ['w', 'Write back', :write_back], ['r', 'Reload', :reload], ['q', 'Quit', :quit]].freeze
+                 ['w', 'Write back', :write_back], ['r', 'Reload', :reload], ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
 
       def buttons = BUTTONS
 

@@ -7,6 +7,9 @@ module Raindown
     # Keys are their events' names, like :down or :enter.
     Click = Data.define(:pane, :index, :action)
 
+    # A character typed while typing, like in the search, which other keys' events would take, like "j" for :down.
+    Type = Data.define(:text)
+
     # What the Screen does after an event, other than drawing again, or stopping for :quit.
     # Leaves the screen for a command, like the editor, then tells the Navigator it ran.
     Run = Data.define(:command)
