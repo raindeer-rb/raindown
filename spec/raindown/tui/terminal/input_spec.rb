@@ -14,6 +14,7 @@ RSpec.describe Raindown::TUI::Input do
       expect(described_class.key_event('z')).to be_nil
       expect(described_class.key_event('E')).to eq(:edit)
       expect(described_class.key_event('Q')).to eq(:quit)
+      expect(%w[f 1 5].map { described_class.key_event(it) }).to eq(%i[feelings bin1 bin5])
     end
   end
 
@@ -22,6 +23,7 @@ RSpec.describe Raindown::TUI::Input do
       expect(%w[j q / A].map { described_class.typing_event(it) }).to eq(%w[j q / A].map { Raindown::TUI::Type.new(text: it) })
       expect([Curses::KEY_DOWN, 13, 27, 127].map { described_class.typing_event(it) }).to eq(%i[down enter escape backspace])
       expect(described_class.typing_event(Curses::KEY_LEFT)).to be_nil
+      expect(described_class.key_event('j', typing: true)).to eq(Raindown::TUI::Type.new(text: 'j'))
     end
   end
 
@@ -51,6 +53,12 @@ RSpec.describe Raindown::TUI::Input do
       expect(described_class.mouse_event(mouse.new(Curses::BUTTON4_PRESSED, 2, 0), zones)).to be_nil
       # Older ncurses reports scrolling down with no button of its own.
       expect(described_class.mouse_event(mouse.new(0, 2, 0), zones)).to be_nil
+    end
+
+    it 'hovers over what a click there would send, as the mouse moves' do
+      moved = Curses::REPORT_MOUSE_POSITION
+      expect(described_class.mouse_event(mouse.new(moved, 2, 0), zones)).to eq(Raindown::TUI::Hover.new(target: :execute))
+      expect(described_class.mouse_event(mouse.new(moved, 2, 1), zones)).to eq(Raindown::TUI::Hover.new(target: nil))
     end
   end
 end

@@ -475,12 +475,12 @@ RSpec.describe Raindown::TUI::Navigator do
     def type(navigator, text) = text.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
     def found(navigator) = navigator.matches.map { [it.text, it.where] }
 
-    it 'opens with /, listing the Dashboard, then each file with its headings and directives, until something is typed' do
+    it 'opens with /, listing the Dashboard and Code feelings, then each file with its headings and directives, until something is typed' do
       navigator.next_step(:search)
 
       expect(navigator.searching?).to be(true)
-      expect(found(navigator).first(4)).to eq([['Dashboard', ''], ['guides/setup.md', ''], ['# Install', 'guides/setup.md:1'],
-                                               ['## Steps', 'guides/setup.md:3']])
+      expect(found(navigator).first(4)).to eq([['Dashboard', ''], ['Code feelings', ''], ['guides/setup.md', ''],
+                                               ['# Install', 'guides/setup.md:1']])
     end
 
     it 'matches letters in order, best first, even the ones other keys take, like j and q, and moves down them' do
@@ -522,6 +522,61 @@ RSpec.describe Raindown::TUI::Navigator do
 
       navigator.next_step(:escape)
       expect(navigator.searching?).to be(false)
+    end
+  end
+
+  describe 'code feelings' do
+    subject(:navigator) { described_class.new(root: @root) }
+
+    before { write('lib/shapes.rb', "class Square\n  def area = 1\n  def side = 2\nend\n") }
+
+    def claude_in_path(path)
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with('PATH', '').and_return(path)
+    end
+
+    it 'remembers what the mouse is over' do
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
+      expect(navigator.hovered).to eq(click(:main, 1, :focus))
+    end
+
+    it 'opens with f, and notes down a feeling with 1 to 5, drawing the chart in the feelings page' do
+      navigator.next_step(:feelings)
+      expect([view_name(navigator), navigator.focus]).to eq(['FeelingsView', :main])
+      expect(navigator.status).to eq([:info, "2 methods to feel in #{File.basename(@root)}"])
+
+      navigator.next_step(:bin5)
+      expect(navigator.status).to eq([:info, 'Felt numb about Square#area'])
+      expect(File.read(File.join(@root, 'docs', 'code-feelings.md'))).to include("numb    #{'█' * 30} 1")
+    end
+
+    it "takes every key as the note while it asks why, even ones like q, and doesn't write back the code after the editor" do
+      navigator.next_step(:feelings)
+      navigator.next_step(:bin4)
+      expect(navigator.typing?).to be(true)
+
+      navigator.next_step(Raindown::TUI::Type.new(text: 'q'))
+      navigator.next_step(:enter)
+      expect([navigator.typing?, navigator.feelings.log.rows.last['note']]).to eq([false, 'q'])
+
+      expect(navigator.next_step(:edit)).to be_a(Raindown::TUI::Run)
+      navigator.ran
+      expect(navigator.status).to eq([:info, 'Felt malice about Square#area'])
+    end
+
+    it 'asks Claude Code to fix the selected method with x, when it is installed' do
+      navigator.next_step(:feelings)
+      claude_in_path('')
+      navigator.next_step(:execute)
+      expect(navigator.status).to eq([:error, 'Install Claude Code, the claude command, to fix code with X'])
+
+      bin = File.join(@root, 'bin')
+      write('bin/claude', "#!/bin/sh\n")
+      File.chmod(0o755, File.join(bin, 'claude'))
+      claude_in_path(bin)
+      command = navigator.next_step(:execute).command
+      expect(command).to eq(['claude', "Refactor Square#area in #{@root}/lib/shapes.rb:2. It needs a second look. " \
+                                       "Keep its behaviour, follow the project's CLAUDE.md if it has one, and run the specs."])
     end
   end
 end

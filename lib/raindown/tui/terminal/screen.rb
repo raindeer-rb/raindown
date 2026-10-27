@@ -62,12 +62,11 @@ module Raindown
         Curses.curs_set(0)
         Curses.stdscr.keypad(true)
         Curses.stdscr.timeout = TICK
-        # The terminal sends the app its mouse events, so scrolling doesn't scroll the terminal either.
-        Curses.mousemask(Input::CLICKS)
-        Curses.mouseinterval(0)
+        Input.track_mouse
       end
 
       def stop
+        Input.untrack_mouse
         Curses.close_screen
       end
 
@@ -113,9 +112,7 @@ module Raindown
         return mouse if key == Curses::KEY_MOUSE
 
         Curses.stdscr.clear if key == Curses::KEY_RESIZE
-        if @navigator.searching? then Input.typing_event(key)
-        else Input.key_event(key)
-        end
+        Input.key_event(key, typing: @navigator.typing?)
       end
 
       # The curses gem warns the first time it makes a MouseEvent, that it's "undefining the allocator" of the class.
@@ -133,13 +130,16 @@ module Raindown
         window.refresh
       end
 
-      # Leaves the screen to the command, like the editor, and comes back to it after.
+      # Leaves the screen to the command, like the editor, and comes back to it after. The command isn't sent the
+      # mouse's moves meanwhile.
       def suspend
         Curses.def_prog_mode
+        Input.untrack_mouse
         Curses.close_screen
         yield
       ensure
         Curses.reset_prog_mode
+        Input.track_mouse
         Curses.stdscr.clear
         Curses.refresh
       end

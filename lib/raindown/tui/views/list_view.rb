@@ -13,6 +13,7 @@ module Raindown
       end
 
       def renderer = ListRenderer
+      def typing? = false
 
       def rows = @rows.call
       def selected = rows[cursor]

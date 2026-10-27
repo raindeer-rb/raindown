@@ -12,9 +12,9 @@ module Raindown
       def buttons = BUTTONS
 
       def page
-        if navigator.path then navigator.relative(navigator.path)
-        else 'No Markdown files'
-        end
+        return 'No Markdown files' unless navigator.path
+
+        navigator.relative(navigator.path)
       end
     end
   end

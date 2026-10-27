@@ -3,6 +3,7 @@
 require_relative '../../document'
 require_relative '../events'
 require_relative 'list_view'
+require_relative '../highlighter'
 require_relative '../row'
 require_relative '../workers/worker'
 
@@ -34,6 +35,7 @@ module Raindown
         @lines = outline.lines
         @headings = outline.headings
         @directives = outline.directives
+        @highlighted = {}
         @error = nil
       rescue Worker::Error, SystemCallError => e
         @error = e.message
@@ -104,9 +106,16 @@ module Raindown
                       buttons: buttons(directive, expanded:), **directive_action(directive))
         return [row] unless expanded
 
-        [row, *directive.body.map do |number|
-          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number, open: Edit.new(path:, line: number))
+        code = highlighted(directive)
+        [row, *directive.body.each_with_index.map do |number, index|
+          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number, open: Edit.new(path:, line: number),
+                  code: code[index])
         end]
+      end
+
+      # The directive's body highlighted as Markdown, which highlights its code blocks in their languages, once a read.
+      def highlighted(directive)
+        @highlighted[directive.line] ||= Highlighter.lines(directive.body.map { @lines[it - 1].to_s }, language: 'markdown')
       end
 
       # A directive with a body expands it, and one without opens in the editor, like a line of its body.

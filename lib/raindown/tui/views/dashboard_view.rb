@@ -31,6 +31,7 @@ module Raindown
       def target = self
       def path = nil
       def changed? = false
+      def typing? = false
 
       def status(_navigator)
         found = "#{charts.length} #{charts.length == 1 ? 'chart' : 'charts'} in #{File.basename(project || root)}"

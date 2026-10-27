@@ -6,7 +6,7 @@ require_relative '../workers/worker'
 
 module Raindown
   module TUI
-    # Teleport: "/" opens a search of the Dashboard, every file, heading and directive in the files, and every endpoint,
+    # Teleport: "/" opens a search of the Dashboard, Code feelings, every file, heading and directive in the files, and every endpoint,
     # matched as it's typed by letters in order, so "stp" finds "## Setup". Up and down move between the matches,
     # Enter or a click opens the one selected, and Esc closes it. Other keys and clicks do nothing while it's open.
     module Search
@@ -98,6 +98,7 @@ module Raindown
 
       def places
         [Place.new(text: 'Dashboard', where: '', open: OpenView.new(view: dashboard)),
+         Place.new(text: 'Code feelings', where: '', open: OpenView.new(view: feelings)),
          *@files.files.flat_map { file_places(it) },
          *@endpoints.all.map { Place.new(text: it.text, where: "#{relative(it.path)}:#{it.line}", open: open_endpoint(it)) }]
       end

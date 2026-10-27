@@ -29,9 +29,10 @@ module Raindown
         parts.zip(spread(parts.map(&:first), width)).map { |(text, style), part| segment(text, style, width: part, event:) }
       end
 
-      # The row's text, after its tag in the tag's style, unless the row's selected.
+      # The row's text, after its tag in the tag's style, or highlighted when it's code, unless the row's selected.
       def row_parts(row, style, selected)
         lead = " #{Text::INDENT * row.depth}"
+        return [[lead, style], *row.code] if row.code && !selected
         return [["#{lead}#{row.text}", style]] unless row.tag
 
         [["#{lead}#{row.tag.method} ", selected ? style : row.tag.style], [row.text, style]]

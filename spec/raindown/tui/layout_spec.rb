@@ -106,6 +106,15 @@ RSpec.describe Raindown::TUI::Layout do
     expect(text(described_class.new(navigator, width: 20, height: 2).lines).map(&:rstrip)).to eq([' Opened guides/setu…'])
   end
 
+  it "highlights a directive's body when it's expanded, with its code blocks in their languages" do
+    navigator.next_step(:down)
+    navigator.next_step(:toggle)
+    lines = described_class.new(navigator, width: 60, height: 14).lines
+    language = lines.flatten.find { it.text.strip == 'json' }
+
+    expect([language.style, lines.flatten.find { it.text.strip == '```' }.style]).to eq(%i[code_constant code])
+  end
+
   describe 'the dashboard' do
     before do
       File.write(File.join(@root, 'stats.md'), "# Stats\n\n<{ chart: '1 2 3' }>\n<{ :chart }>\n\n<{ chart: '3 2 1' }>\n<{ :chart }>\n")
@@ -252,6 +261,16 @@ RSpec.describe Raindown::TUI::Layout do
       expect(text(lines).first).to include('› DELETE api.example.com/users/1')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
     end
+    it 'highlights its response in the language of its code block' do
+      File.write(File.join(@root, 'api.md'), "<{ endpoint: }>\n```sh\ncurl https://api.example.com/users/1\n```\n" \
+                                             "```json\n{\"id\": 1}\n```\n<{ :endpoint }>\n")
+      navigator.next_step(:reload)
+      navigator.next_step(click(:nav, navigator.content(:nav).rows.index { it.kind == :endpoint }))
+      line = described_class.new(navigator, width: 90, height: 12).lines.find { |segments| segments.any? { it.text == '"id"' } }
+
+      expect(line.filter_map { [it.text, it.style] unless it.style == :code || it.text.strip.empty? }.last(2))
+        .to eq([['"id"', :code_constant], ['1', :code_number]])
+    end
   end
 
   describe 'the search' do
@@ -270,6 +289,78 @@ RSpec.describe Raindown::TUI::Layout do
       expect(lines[3].map(&:event).compact.uniq.select { it.pane == :search }).to eq([click(:search, 0)])
       expect(lines[3].find { it.text.include?('# Setup') }.style).to eq(:selected)
       expect(text(lines).map { width(it) }).to all(eq(60))
+    end
+  end
+
+  describe 'code feelings' do
+    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+
+    before do
+      FileUtils.mkdir_p(File.join(@root, 'lib'))
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n    side * side\n  end\nend\n")
+      navigator.next_step(:feelings)
+    end
+
+    it 'draws the methods as digits, the selected one highlighted with its code below, then the five bins' do
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+      main = main(lines)
+
+      expect(text(lines).first).to include('› Code feelings')
+      expect(lines[2].select { it.style == :selected }.map(&:text).join).to match(/\A \d \z/)
+      expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
+      expect(main.find { it.include?('def area') }).to start_with(' │ def area').and end_with('│')
+      expect(lines.flatten.find { it.text == 'def' }.style).to eq(:code_keyword)
+      expect(main.find { it.include?('WOE') }.split.grep(/[A-Z]{3,}/)).to eq(%w[WOE FROLIC DREAD MALICE NUMB])
+      expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).not_to include('drift')
+      expect(text(lines).map { width(it) }).to all(eq(90))
+    end
+
+    it 'wraps a long note in as many lines as it takes, lined up after the question' do
+      navigator.next_step(:bin4)
+      'two negations and a hidden dependency on rows'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+      lines = described_class.new(navigator, width: 60, height: 24).lines
+      note = main(lines).drop_while { !it.include?('Why MALICE?') }.take_while { !it.include?('╰') }
+
+      expect(note).to eq([' │ Why MALICE? > two negations and a │', ' │               hidden dependency   │',
+                          ' │               on rows▏            │'])
+      expect(text(lines).map { width(it) }).to all(eq(60))
+    end
+
+    it 'draws the cells the mouse is over in bold, and the selected ones highlighted' do
+      File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
+      navigator.next_step(:reload)
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
+      cells = described_class.new(navigator, width: 90, height: 24).lines[2].select { it.event&.pane == :main }
+
+      expect(cells.map { [it.event.index, it.style] }).to eq([[0, :selected], [1, :hover]])
+    end
+
+    it "shows a long method's first 8 lines, then how many more there are, clicked to show all that fit" do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n#{(1..10).map { "    #{it}\n" }.join}  end\nend\n")
+      navigator.next_step(:reload)
+      box = lambda do |lines|
+        main(lines).drop_while { !it.include?('╭─ lib') }.take_while { !it.include?('╰') }.drop(1).map { it.delete('│').strip }
+      end
+      lines = described_class.new(navigator, width: 90, height: 30).lines
+
+      expect(box.call(lines).length).to eq(9)
+      expect(box.call(lines).last(2)).to eq(['7', '… 4 more lines'])
+      more = lines.flatten.find { it.text.include?('more lines') }
+      expect(more.event).to eq(click(:main, 0, :expand))
+
+      navigator.next_step(more.event)
+      expect(box.call(described_class.new(navigator, width: 90, height: 30).lines).last(2)).to eq(['end', '▴ Fewer lines'])
+    end
+
+    it 'asks why below the code and a line, with the bin highlighted, while the note is typed' do
+      navigator.next_step(:bin3)
+      'tangled'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+
+      expect(text(lines).find { it.include?('Why DREAD?') }).to include('Why DREAD? > tangled▏')
+      expect(main(lines).index { it.include?('def area') }).to be < main(lines).index { it.include?('Why DREAD?') }
+      expect(main(lines)[main(lines).index { it.include?('Why DREAD?') } - 1]).to match(/\A ├─+┤\z/)
+      expect(lines.flatten.find { it.text.include?('DREAD') && it.text.start_with?('│') }.style).to eq(:selected)
     end
   end
 end
