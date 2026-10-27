@@ -42,7 +42,7 @@ Most terminal UI libraries draw into a **shared screen buffer** instead. Ratatui
 | Clicks                | Each segment carries its event, and `Input#zones` finds it  | Look up the cell                                                                                      | Not provided: apps keep each widget's rectangle and work out what was clicked  |
 | Specs                 | Unchanged                                                   | Most of `layout_spec` and `input_spec` rewritten                                                      | The same, plus a Rust toolchain on Intel Macs, as ADR 1 found                  |
 
-**Wide characters were the deciding cost of our own buffer.** The title's `🌧️` is drawn one column wide by some terminals and two by others (`title.rb`), and the nav's `📊` is two. A buffer has to decide which cell each half belongs to. Segments leave that to the terminal, and only `fit` and `segments_between` measure widths.
+**Wide characters were the deciding cost of our own buffer.** An emoji with the variation selector, like `🌧️`, is drawn one column wide by some terminals and two by others, and the nav's `📊` is two. The title used `🌧️`, and stopped a column short of the edge in case it was drawn wide, until it switched to the plain `🌧` that the nav uses. A buffer has to decide which cell each half belongs to. Segments leave that to the terminal, and only `fit` and `segments_between` measure widths.
 
 **Our own buffer would add far more code than it removes.** It would replace about 20 lines of cutting and splicing, and some padding, with a few hundred lines of buffer, rectangles and painting.
 

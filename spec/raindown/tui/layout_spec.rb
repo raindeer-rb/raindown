@@ -42,7 +42,7 @@ RSpec.describe Raindown::TUI::Layout do
     lines = described_class.new(navigator, width: 60, height: 14).lines
 
     expect(text(lines).map(&:rstrip)).to eq(
-      [' 🌧️ Raindown  ~/docs › guides/setup.md',
+      [' 🌧 Raindown  ~/docs › guides/setup.md',
        '                    ▏',
        ' 📊 Dashboard       ▏ # Setup',
        '                    ▏   endpoint:                 [+6] [Run]',
@@ -57,9 +57,7 @@ RSpec.describe Raindown::TUI::Layout do
        ' Opened guides/setup.md',
        ' Tab Pane  Enter Open  X Run  E dit  W rite back  R eload']
     )
-    expect(text(lines).drop(1).map { width(it) }).to all(eq(60))
-    # The rain cloud is measured as wide as the terminal draws it, where that's known, and the title stops short of it.
-    expect(width(text(lines).first)).to eq(59)
+    expect(text(lines).map { width(it) }).to all(eq(60))
   end
 
   it 'highlights the cursor in the focused pane, and dimmer in the others, with the divider beside the outline\'s' do
@@ -92,7 +90,7 @@ RSpec.describe Raindown::TUI::Layout do
   it 'cuts text that does not fit, and leaves out buttons that do not fit' do
     lines = described_class.new(navigator, width: 30, height: 7).lines
 
-    expect(text(lines).first).to start_with(' 🌧️ Raindown  ~/docs › ').and end_with('…')
+    expect(text(lines).first).to start_with(' 🌧 Raindown  ~/docs › ').and end_with('…')
     expect(text(lines).drop(1).map { width(it) }).to all(eq(30))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute])
   end
@@ -101,7 +99,7 @@ RSpec.describe Raindown::TUI::Layout do
     allow(Dir).to receive(:home).and_return('/elsewhere')
 
     expect(text(described_class.new(navigator, width: 200, height: 7).lines).first.rstrip)
-      .to eq(" 🌧️ Raindown  #{@root} › guides/setup.md")
+      .to eq(" 🌧 Raindown  #{@root} › guides/setup.md")
   end
 
   it 'shows only the status when the screen is too short for the panes' do
@@ -121,7 +119,7 @@ RSpec.describe Raindown::TUI::Layout do
     it 'shows each chart in a card with a rounded border beside the files, with as many in a row as fit' do
       lines = described_class.new(navigator, width: 90, height: 10).lines
 
-      expect(text(lines).first.rstrip).to eq(' 🌧️ Raindown  ~/docs › Dashboard')
+      expect(text(lines).first.rstrip).to eq(' 🌧 Raindown  ~/docs › Dashboard')
       expect(text(lines)[2]).to start_with(' 📊 Dashboard ')
       expect(main(lines)[2..6]).to eq([' ╭──────────────────────────╮  ╭──────────────────────────╮',
                                        ' │ stats.md › Stats         │  │ stats.md › Stats         │',
@@ -213,7 +211,7 @@ RSpec.describe Raindown::TUI::Layout do
 
       navigator.next_step(:projects)
       lines = described_class.new(navigator, width: 60, height: 8).lines
-      menu = lines[1..5].map { columns(it, from: width(' 🌧️ Raindown  '), count: 21) }
+      menu = lines[1..5].map { columns(it, from: width(' 🌧 Raindown  '), count: 21) }
 
       expect(menu).to eq(['┌───────────────────┐', '│ All projects    ✓ │', '│ ~/docs            │',
                           '│ ~/docs/guides     │', '└───────────────────┘'])

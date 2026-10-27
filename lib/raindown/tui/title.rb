@@ -4,9 +4,9 @@ module Raindown
   module TUI
     # A Layout's title line: Raindown's name, the folder the files are shown from, and the page.
     module Title
-      # Terminals draw the rain cloud one column wide or two, so the title line stops a column short of the edge,
-      # and doesn't wrap when it's drawn wider than it's measured.
-      NAME = '🌧️ Raindown'
+      # The rain cloud without the emoji variation selector, like the nav's projects, which terminals draw one column wide,
+      # as it's measured, so the title line reaches the edge.
+      NAME = '🌧 Raindown'
 
       private
 
@@ -15,7 +15,7 @@ module Raindown
         parts = [[name, nil], ["#{location}#{' ▾' if navigator.projects?}", (:projects if navigator.projects?)],
                  [" › #{view_renderer.page}", nil]]
 
-        parts.zip(spread(parts.map(&:first), width - 1)).map do |(text, event), part_width|
+        parts.zip(spread(parts.map(&:first), width)).map do |(text, event), part_width|
           segment(text, :title, width: part_width, event:)
         end
       end
