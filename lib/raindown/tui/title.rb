@@ -6,7 +6,7 @@ module Raindown
     module Title
       # The rain cloud without the emoji variation selector, like the nav's projects, which terminals draw one column wide,
       # as it's measured, so the title line reaches the edge.
-      NAME = '🌧 Raindown'
+      NAME = '🌧  Raindown'
 
       private
 

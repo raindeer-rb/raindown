@@ -5,7 +5,7 @@ require_relative 'text'
 module Raindown
   module TUI
     # The project menu, drawn over the screen's lines in a box below the header's path:
-    #    🌧 Raindown  ~/dev ▾ › Dashboard
+    #    🌧  Raindown  ~/dev ▾ › Dashboard
     #                 ┌──────────────────────┐
     #                 │ All projects       ✓ │
     #                 │ ~/dev/raindown       │
