@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'renderer'
+
 module Raindown
   module TUI
     # The dashboard, right of the files: a card for each of the projects' charts, as wide as its chart,

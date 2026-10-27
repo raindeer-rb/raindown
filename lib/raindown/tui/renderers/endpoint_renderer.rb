@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative 'renderer'
+require_relative 'outline_renderer'
+
 module Raindown
   module TUI
     # An endpoint opened from the files, right of them: its URL in a bar with rounded corners, and a button to run it,

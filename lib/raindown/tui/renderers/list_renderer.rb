@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'renderer'
+
 module Raindown
   module TUI
     # A ListView's rows in its pane, like the files in the nav or a file's outline, each with its buttons.

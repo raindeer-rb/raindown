@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'list_renderer'
+
 module Raindown
   module TUI
     # The open file's outline, right of the files: a row on each line, with its buttons.
