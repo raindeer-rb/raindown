@@ -2,7 +2,7 @@
 
 require_relative '../projects'
 require_relative 'events'
-require_relative 'outline_view'
+require_relative 'views/outline_view'
 require_relative 'row'
 
 module Raindown

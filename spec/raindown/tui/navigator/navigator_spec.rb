@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/navigator'
+require 'raindown/tui/navigator/navigator'
 require 'fileutils'
 require 'tmpdir'
 

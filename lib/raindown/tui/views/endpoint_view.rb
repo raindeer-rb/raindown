@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative 'events'
-require_relative 'worker'
+require_relative '../events'
+require_relative '../workers/worker'
 
 module Raindown
   module TUI

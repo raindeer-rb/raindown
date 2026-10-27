@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/dashboard_view'
-require 'raindown/tui/workers'
+require 'raindown/tui/views/dashboard_view'
+require 'raindown/tui/workers/workers'
 require 'fileutils'
 require 'tmpdir'
 

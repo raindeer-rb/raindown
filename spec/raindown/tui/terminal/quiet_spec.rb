@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/quiet'
+require 'raindown/tui/terminal/quiet'
 
 RSpec.describe Raindown::TUI::Quiet do
   describe '.holding_stderr' do

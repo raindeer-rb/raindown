@@ -118,8 +118,8 @@ module Raindown
   end
 end
 
-require_relative 'renderer'
-require_relative 'list_renderer'
-require_relative 'outline_renderer'
-require_relative 'dashboard_renderer'
-require_relative 'endpoint_renderer'
+require_relative 'renderers/renderer'
+require_relative 'renderers/list_renderer'
+require_relative 'renderers/outline_renderer'
+require_relative 'renderers/dashboard_renderer'
+require_relative 'renderers/endpoint_renderer'

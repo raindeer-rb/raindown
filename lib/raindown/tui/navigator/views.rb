@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative 'dashboard_view'
-require_relative 'endpoint_view'
-require_relative 'outline_view'
+require_relative '../views/dashboard_view'
+require_relative '../views/endpoint_view'
+require_relative '../views/outline_view'
 
 module Raindown
   module TUI

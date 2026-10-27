@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'projects'
-require_relative 'tui/navigator'
+require_relative 'tui/navigator/navigator'
 
 module Raindown
   # The terminal UI, started with "raindown tui": a project's Markdown files beside the open file's outline,
@@ -12,7 +12,7 @@ module Raindown
 
     # PATH is a file to open, or a directory. Its project is the one it's in, or else the directory itself.
     def start(path)
-      require_relative 'tui/screen'
+      require_relative 'tui/terminal/screen'
       # Without a terminal, curses' own error is "Error opening terminal: unknown".
       abort('raindown tui needs a terminal') unless $stdin.tty? && $stdout.tty?
 

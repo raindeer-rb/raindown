@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-require_relative 'file_tree'
+require_relative '../file_tree'
 require_relative 'commands'
-require_relative 'endpoints'
+require_relative '../endpoints'
 require_relative 'focus'
-require_relative 'events'
-require_relative 'outline_view'
-require_relative 'list_view'
+require_relative '../events'
+require_relative '../views/outline_view'
+require_relative '../views/list_view'
 require_relative 'project_menu'
 require_relative 'views'
-require_relative 'workers'
+require_relative '../workers/workers'
 
 module Raindown
   module TUI

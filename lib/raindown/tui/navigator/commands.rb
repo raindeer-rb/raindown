@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../actions'
+require_relative '../../actions'
 
 module Raindown
   module TUI

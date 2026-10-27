@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative '../document'
-require_relative 'events'
+require_relative '../../document'
+require_relative '../events'
 require_relative 'list_view'
-require_relative 'row'
-require_relative 'worker'
+require_relative '../row'
+require_relative '../workers/worker'
 
 module Raindown
   module TUI

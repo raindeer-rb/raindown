@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/input'
+require 'raindown/tui/terminal/input'
 require 'raindown/tui/layout'
 
 RSpec.describe Raindown::TUI::Input do

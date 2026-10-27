@@ -10,6 +10,7 @@ module Raindown
     # What the Screen does after an event, other than drawing again, or stopping for :quit.
     # Leaves the screen for a command, like the editor, then tells the Navigator it ran.
     Run = Data.define(:command)
+
     # Shows the message while the task runs, like an endpoint's request.
     Wait = Data.define(:message, :task)
 
@@ -18,12 +19,15 @@ module Raindown
     OpenView = Data.define(:view) do
       def take(navigator) = navigator.open_view(view)
     end
+
     Open = Data.define(:path, :line) do
       def take(navigator) = navigator.open_at(path, line)
     end
+
     Edit = Data.define(:path, :line) do
       def take(navigator) = navigator.edit_at(path, line)
     end
+
     Execute = Data.define(:path, :line, :name) do
       def take(navigator) = navigator.run(path, line, name)
     end

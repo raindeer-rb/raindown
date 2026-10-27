@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative 'endpoint'
-require_relative 'endpoint_view'
+require_relative 'views/endpoint_view'
 require_relative 'row'
-require_relative 'worker'
+require_relative 'workers/worker'
 
 module Raindown
   module TUI

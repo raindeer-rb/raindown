@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative 'events'
-require_relative 'rows'
-require_relative 'text'
+require_relative '../events'
+require_relative '../rows'
+require_relative '../text'
 
 module Raindown
   module TUI
