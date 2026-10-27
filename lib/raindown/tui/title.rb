@@ -13,7 +13,7 @@ module Raindown
       # The name, the folder, which opens the project menu when there's more than one project, and the page.
       def title
         parts = [[name, nil], ["#{location}#{' ▾' if navigator.projects?}", (:projects if navigator.projects?)],
-                 [" › #{main.page}", nil]]
+                 [" › #{view_renderer.page}", nil]]
 
         parts.zip(spread(parts.map(&:first), width - 1)).map do |(text, event), part_width|
           segment(text, :title, width: part_width, event:)
@@ -22,15 +22,8 @@ module Raindown
 
       def name = " #{NAME}  "
 
-      # The folder the files are shown from, from the home folder when it's in it, like ~/dev/raindown.
+      # The folder the files are shown from.
       def location = from_home(navigator.base)
-
-      def from_home(path)
-        home = Dir.home
-        path == home || path.start_with?(File.join(home, '')) ? path.sub(home, '~') : path
-      rescue ArgumentError
-        path
-      end
     end
   end
 end

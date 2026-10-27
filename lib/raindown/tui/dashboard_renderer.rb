@@ -11,8 +11,7 @@ module Raindown
     #    │ chart: 'data/downloads.csv' │  │ chart: 'data/commits.csv' min… │
     #    │ Jun  ██████▊           640  │  │ c2f98fc  -18  █│███▊      +96  │
     #    ╰─────────────────────────────╯  ╰────────────────────────────────╯
-    # Its lines are the pane's width and height, which the Layout puts beside the files.
-    class DashboardPane < Layout
+    class DashboardRenderer < Renderer
       # Columns between the cards, and the narrowest a card is, with its border.
       GAP = 2
       MIN_CARD_WIDTH = 28
@@ -103,8 +102,8 @@ module Raindown
       # A card opens chart source when it's clicked, like Enter, but not the space below a card shorter than its row.
       # The selected card's title is highlighted, like a selected row.
       def card_line(card, index, line)
-        title_style = dashboard.cursor == index ? row_style(:dashboard, nil, true) : :heading
-        event = Click.new(pane: :dashboard, index:, action: :enter) if line < card.box_height
+        title_style = dashboard.cursor == index ? row_style(pane, nil, true) : :heading
+        event = Click.new(pane:, index:, action: :enter) if line < card.box_height
         card.format_line(line, box_width: card.box_width(within: card_widths), title_style:).map do |text, style, part_width|
           segment(text, style, width: part_width, event:)
         end

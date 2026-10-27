@@ -7,7 +7,7 @@ require_relative 'row'
 
 module Raindown
   module TUI
-    # The files pane's files: a project's Markdown files as a tree, with folders before files,
+    # The nav pane's files: a project's Markdown files as a tree, with folders before files,
     # including the files of the projects inside it, whose folders are marked with Raindown's cloud.
     # Folders start folded, and open with Enter, or when a file in them opens.
     # A scope narrows it to one project's own files, from the project's folder, like when it's chosen in the header.
@@ -79,7 +79,7 @@ module Raindown
       end
 
       def file_row(name, path, depth)
-        Row.new(text: name, depth:, kind: :file, target: path, open: OpenPane.new(view: OutlineView.new(path, workers: @workers)))
+        Row.new(text: name, depth:, kind: :file, target: path, open: OpenView.new(view: OutlineView.new(path, workers: @workers)))
       end
 
       # A folder, and the tree inside it unless it's folded.

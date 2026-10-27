@@ -1,34 +1,35 @@
 # frozen_string_literal: true
 
 require_relative 'events'
-require_relative 'rows'
 require_relative 'text'
 require_relative 'title'
 
 module Raindown
   module TUI
     # The screen as lines of styled segments, worked out from a Navigator with no terminal, so the Screen only paints them.
-    # A title, the files pane beside the outline, a status line and a bar of buttons:
-    #    🌧️ Raindown  ~/docs › guides/setup.md
-    #    📊 Dashboard    ▏ # Setup
-    #    ▾ guides/       ▏   toc: [+3]
-    #      setup.md      ▏   ## Install
-    #    Opened guides/setup.md
-    #    Tab Pane  Enter Open  X Run  E dit  W rite back  R eload  Q uit
+    # A Layout and its Renderers are the display code, made again for each draw: they lay out and render what the
+    # Navigator and its views hold. The Layout draws the title, the status and the buttons around two panes, nav and main,
+    # and a Renderer draws what's in each pane: the nav's ListRenderer, and the open view's renderer, an OutlineRenderer,
+    # DashboardRenderer or EndpointRenderer, which gives the buttons and page too:
+    #    ┌─ Layout ──────────────────────────────────────────────────┐
+    #    │  Raindown  ~/docs › guides/setup.md                       │
+    #    │ ┌─ nav pane ──────┐ ┌─ main pane ───────────────────────┐ │
+    #    │ │ Dashboard       ▏ # Setup                             │ │
+    #    │ │ ▾ guides/       ▏   toc: [+3]                         │ │
+    #    │ │   setup.md      ▏   ## Install                        │ │
+    #    │ └─ ListRenderer ──┘ └─ view.renderer ───────────────────┘ │
+    #    │  Opened guides/setup.md                                   │
+    #    │  Tab Pane  Enter Open  X Run  E dit  W rite back  Q uit   │
+    #    └───────────────────────────────────────────────────────────┘
     # Each line is exactly the width, in display columns. A segment with an event is clicked to send it.
-    # Right of the files is the view's pane, an OutlinePane, DashboardPane or EndpointPane, with its buttons and page.
     class Layout
-      include Rows
       include Text
       include Title
 
-      Segment = Data.define(:text, :style, :event)
-
-      FILES_WIDTH = (16..32)
-      # The line between the files and the outline or dashboard, at its column's left edge, unlike │ in the middle,
+      NAV_WIDTH = (16..32)
+      # The line between the nav and main panes, at its column's left edge, unlike │ in the middle,
       # so a highlighted file's row runs up to it.
       DIVIDER = '▏'
-      INDENT = Text::INDENT
       # The title, status and button lines.
       CHROME_HEIGHT = 3
 
@@ -43,35 +44,32 @@ module Raindown
       def lines
         return [status].first(height) if height < CHROME_HEIGHT + 1
 
-        lines = [title, *body, status, button_bar]
+        lines = [title, *panes, status, button_bar]
         return lines unless navigator.menu
 
         require_relative 'menu_overlay'
-        MenuOverlay.new(navigator, width:, column: display_width(name), from_home: method(:from_home)).apply(lines)
+        MenuOverlay.new(navigator, width:, column: display_width(name)).apply(lines)
       end
 
-      # A third of the width, within FILES_WIDTH, and never more than half of a narrow screen.
-      def files_width
-        [(width / 3).clamp(FILES_WIDTH), width / 2].min
+      # A third of the width, within NAV_WIDTH, and never more than half of a narrow screen.
+      def nav_width
+        [(width / 3).clamp(NAV_WIDTH), width / 2].min
       end
 
       private
 
-      def body = panes
-
       def body_height = height - CHROME_HEIGHT
 
-      # Below a blank line for spacing, the files beside the outline or dashboard.
+      # Below a blank line for spacing, the nav pane beside the main pane, each drawn by the renderer of what's in it.
       def panes
-        pane_height = body_height - 1
-        files = navigator.visible(:files, pane_height)
-        main = self.main.lines
+        nav = renderer_in(:nav, nav_width).lines
+        main = view_renderer.lines
 
-        [spacer, *Array.new(pane_height) { |index| [*cell(:files, *files, index, files_width), divider(main[index]), *main[index]] }]
+        [spacer, *Array.new(body_height - 1) { |index| [*nav[index], divider(main[index]), *main[index]] }]
       end
 
       # A blank line above the panes, for spacing.
-      def spacer = [segment('', :blank, width: files_width), divider([]), segment('', :blank, width: width - files_width - 1)]
+      def spacer = [segment('', :blank, width: nav_width), divider([]), segment('', :blank, width: width - nav_width - 1)]
 
       # The divider is on the background of the outline's row beside it, when that's highlighted, so they meet.
       def divider(main_line)
@@ -79,9 +77,12 @@ module Raindown
         segment(DIVIDER, style, width: 1)
       end
 
-      def main
-        @main ||= { outline: OutlinePane, dashboard: DashboardPane, endpoint: EndpointPane }
-                  .fetch(navigator.view.name).new(navigator, width: width - files_width - 1, height: body_height - 1)
+      def view_renderer
+        @view_renderer ||= renderer_in(:main, width - nav_width - 1)
+      end
+
+      def renderer_in(pane, width)
+        navigator.content(pane).renderer.new(navigator:, pane:, width:, height: body_height - 1)
       end
 
       def status
@@ -101,7 +102,7 @@ module Raindown
         segments = []
         used = 0
 
-        main.buttons.each do |key, label, event|
+        view_renderer.buttons.each do |key, label, event|
           key, label = shown(key, label)
           pair = [Segment.new(text: " #{key} ", style: :key, event:), Segment.new(text: "#{label} ", style: :bar, event:)]
           pair_width = display_width(pair.map(&:text).join)
@@ -113,15 +114,12 @@ module Raindown
 
         [*segments, segment('', :bar, width: width - used)]
       end
-
-      # Text cut or padded to the width, with a cut shown by an ellipsis.
-      def segment(text, style, width: self.width, event: nil)
-        Segment.new(text: fit(printable(text), width), style:, event:)
-      end
     end
   end
 end
 
-require_relative 'outline_pane'
-require_relative 'dashboard_pane'
-require_relative 'endpoint_pane'
+require_relative 'renderer'
+require_relative 'list_renderer'
+require_relative 'outline_renderer'
+require_relative 'dashboard_renderer'
+require_relative 'endpoint_renderer'

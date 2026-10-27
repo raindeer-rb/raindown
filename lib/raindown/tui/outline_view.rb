@@ -2,25 +2,27 @@
 
 require_relative '../document'
 require_relative 'events'
+require_relative 'list_view'
 require_relative 'row'
 require_relative 'worker'
 
 module Raindown
   module TUI
-    # The outline pane: a file's headings and directives, read by its project's Worker. Headings fold the section below them,
+    # The outline: a file's headings and directives, read by its project's Worker. Headings fold the section below them,
     # and a directive's body expands below it, like the lines a node wrote back or an endpoint's request and response.
-    # Both start folded away. It's read when it's opened, and named after its pane, whose keys the Navigator handles.
-    class OutlineView
+    # Both start folded away. It's read when it's opened, and it's a ListView, with its own cursor.
+    class OutlineView < ListView
       attr_reader :path, :error
 
       def initialize(path, workers:)
+        super()
         @path = path
         @workers = workers
         @folded = Set.new
         @expanded = Set.new
       end
 
-      def name = :outline
+      def renderer = OutlineRenderer
       def target = path
       def next_step?(_key) = false
       def status(navigator) = [:info, "Opened #{navigator.relative(path)}"]

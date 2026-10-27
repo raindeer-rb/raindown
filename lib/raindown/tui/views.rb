@@ -8,7 +8,7 @@ module Raindown
   module TUI
     # Beside the files, a Navigator shows a view: the open file's Outline, the Dashboard of the project's charts,
     # which is the first item in the files and "d" switches to, or an EndpointView of an endpoint listed below them.
-    # A view is named after its pane, has a next step for the keys it takes while that has the focus, and a target,
+    # A view has the pane that draws it, a next step for the keys it takes while it has the focus, and a target,
     # what's opened it in the files. It loads when it's opened, and again after a change.
     module Views
       attr_reader :view, :dashboard
@@ -17,12 +17,11 @@ module Raindown
       def path = view.path
 
       # Shows the view right of the files, with the focus, and the files' cursor on the row that opened it.
-      def open_pane(view)
+      def open_view(view)
         @previous = @view unless view == @view
         @view = view
-        @focus = view.name
-        @panes[:files].cursor = rows(:files).index { it.target == view.target } || 0
-        @panes[:outline].reset
+        @focus = :main
+        @nav.cursor = @nav.rows.index { it.target == view.target } || 0
         view.load
         @status = view.status(self)
         nil
@@ -32,8 +31,8 @@ module Raindown
       def open_at(path, line)
         path = File.expand_path(path)
         @files.reveal(path)
-        open_pane(OutlineView.new(path, workers: @workers))
-        @panes[:outline].cursor = rows(:outline).index { it.kind == :directive && it.target.line == line } || 0
+        open_view(OutlineView.new(path, workers: @workers))
+        view.cursor = view.rows.index { it.kind == :directive && it.target.line == line } || 0
         nil
       end
 
@@ -41,9 +40,9 @@ module Raindown
 
       # Switches between the dashboard and the view before it.
       def toggle_dashboard
-        return open_pane(@previous) if view == dashboard && @previous
+        return open_view(@previous) if view == dashboard && @previous
 
-        open_pane(dashboard)
+        open_view(dashboard)
       end
     end
   end

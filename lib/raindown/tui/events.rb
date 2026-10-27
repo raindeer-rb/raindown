@@ -15,8 +15,8 @@ module Raindown
 
     # Steps a row or a view asks of the Navigator, which each takes on it, returning what the Screen does next: to open
     # a view right of the files, or a file in the outline at a directive, to edit a file at a line, or to run an endpoint.
-    OpenPane = Data.define(:view) do
-      def take(navigator) = navigator.open_pane(view)
+    OpenView = Data.define(:view) do
+      def take(navigator) = navigator.open_view(view)
     end
     Open = Data.define(:path, :line) do
       def take(navigator) = navigator.open_at(path, line)

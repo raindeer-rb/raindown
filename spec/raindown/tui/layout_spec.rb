@@ -80,12 +80,12 @@ RSpec.describe Raindown::TUI::Layout do
   it 'sends events from rows and buttons when clicked' do
     lines = described_class.new(navigator, width: 80, height: 14).lines
 
-    expect(lines[2].first.event).to eq(click(:files, 0))
-    expect(lines[4].first.event).to eq(click(:files, 2))
-    expect(lines[8].first.event).to eq(click(:files, 6))
+    expect(lines[2].first.event).to eq(click(:nav, 0))
+    expect(lines[4].first.event).to eq(click(:nav, 2))
+    expect(lines[8].first.event).to eq(click(:nav, 6))
     expect(lines[7].first.event).to be_nil
-    expect(lines[2].last.event).to eq(click(:outline, 0))
-    expect(lines[3].last.event).to eq(click(:outline, 1, :execute))
+    expect(lines[2].last.event).to eq(click(:main, 0))
+    expect(lines[3].last.event).to eq(click(:main, 1, :execute))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload quit])
   end
 
@@ -134,15 +134,15 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'opens a chart when its title is clicked, and highlights the selected one while the dashboard has the focus' do
       lines = described_class.new(navigator, width: 90, height: 10).lines
-      titles = lines[3].select { it.event&.pane == :dashboard && it.style != :border }
+      titles = lines[3].select { it.event&.pane == :main && it.style != :border }
 
-      expect(titles.map(&:event)).to eq([click(:dashboard, 0), click(:dashboard, 1)])
+      expect(titles.map(&:event)).to eq([click(:main, 0), click(:main, 1)])
       expect(titles.map(&:style)).to eq(%i[selected heading])
-      expect(lines[2].map(&:event).select { it&.pane == :dashboard }).to eq([click(:dashboard, 0), click(:dashboard, 1)])
+      expect(lines[2].map(&:event).select { it&.pane == :main }).to eq([click(:main, 0), click(:main, 1)])
 
       navigator.next_step(:tab)
       line = described_class.new(navigator, width: 90, height: 10).lines[3]
-      title = line.find { it.event == click(:dashboard, 0) && it.style != :border }
+      title = line.find { it.event == click(:main, 0) && it.style != :border }
       expect(title.style).to eq(:cursor)
     end
 
@@ -152,7 +152,7 @@ RSpec.describe Raindown::TUI::Layout do
       navigator.next_step(:reload)
       lines = described_class.new(navigator, width: 90, height: 13).lines
 
-      clicks = ->(line) { lines[line].map(&:event).select { it&.pane == :dashboard }.map(&:index).uniq }
+      clicks = ->(line) { lines[line].map(&:event).select { it&.pane == :main }.map(&:index).uniq }
       expect([clicks[6], clicks[7]]).to eq([[0, 1], [1]])
     end
 
@@ -242,14 +242,14 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'shows its URL in a bar with rounded corners and a button to run it, then its response' do
-      navigator.next_step(click(:files, navigator.rows(:files).index { it.kind == :endpoint }))
+      navigator.next_step(click(:nav, navigator.content(:nav).rows.index { it.kind == :endpoint }))
       lines = described_class.new(navigator, width: 90, height: 12).lines
 
       expect(main(lines)[2..7]).to eq([' ╭───────────────────────────────────────────────────────╮',
                                        ' │ DELETE https://api.example.com/users/1        [ Run ] │',
                                        ' ╰───────────────────────────────────────────────────────╯',
                                        '', ' Response · json · fetched 2026-10-26', ' {}'])
-      expect(lines[3].find { it.text == '[ Run ]' }.event).to eq(click(:endpoint, 0, :execute))
+      expect(lines[3].find { it.text == '[ Run ]' }.event).to eq(click(:main, 0, :execute))
       expect(lines[3].find { it.text == 'DELETE' }.style).to eq(:method_delete)
       expect(text(lines).first).to include('› DELETE api.example.com/users/1')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))

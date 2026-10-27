@@ -19,14 +19,14 @@ RSpec.describe Raindown::TUI::Input do
 
   describe '.zones' do
     it 'finds what was clicked by its row and column, counting wide characters as two columns' do
-      segment = Raindown::TUI::Layout::Segment
+      segment = Raindown::TUI::Text::Segment
       lines = [[segment.new(text: '界 ', style: :title, event: nil), segment.new(text: '[Run]', style: :button, event: :execute)],
-               [segment.new(text: 'row', style: :file, event: Raindown::TUI::Click.new(pane: :files, index: 0, action: :enter))]]
+               [segment.new(text: 'row', style: :file, event: Raindown::TUI::Click.new(pane: :nav, index: 0, action: :enter))]]
       zones = described_class.zones(lines)
 
       expect(described_class.click(zones, column: 3, row: 0)).to eq(:execute)
       expect(described_class.click(zones, column: 2, row: 0)).to be_nil
-      expect(described_class.click(zones, column: 1, row: 1)).to eq(Raindown::TUI::Click.new(pane: :files, index: 0, action: :enter))
+      expect(described_class.click(zones, column: 1, row: 1)).to eq(Raindown::TUI::Click.new(pane: :nav, index: 0, action: :enter))
       expect(described_class.click(zones, column: 9, row: 1)).to be_nil
     end
   end

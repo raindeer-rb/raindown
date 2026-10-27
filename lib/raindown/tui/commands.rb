@@ -34,12 +34,12 @@ module Raindown
         error(e.message)
       end
 
-      # In the files pane, the selected file opens at its top, and in the outline, the open file at the selected line.
+      # In the nav pane, the selected file opens at its top, and in the outline, the open file at the selected line.
       def edit
         row = selected
-        return error('Select a file to edit') if @focus == :files && row&.kind != :file
+        return error('Select a file to edit') if @focus == :nav && row&.kind != :file
 
-        return edit_at(row.target, 1) if @focus == :files
+        return edit_at(row.target, 1) if @focus == :nav
         return error('Open a file to edit') unless path
 
         edit_at(path, row ? row.line : 1)

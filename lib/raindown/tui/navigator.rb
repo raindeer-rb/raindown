@@ -6,7 +6,7 @@ require_relative 'endpoints'
 require_relative 'focus'
 require_relative 'events'
 require_relative 'outline_view'
-require_relative 'pane'
+require_relative 'list_view'
 require_relative 'project_menu'
 require_relative 'views'
 require_relative 'workers'
@@ -24,7 +24,7 @@ module Raindown
 
       # Keys of the events that move the cursor or the focus, and those that act on what's selected.
       MOVES = { up: -1, down: 1 }.freeze
-      PANES = { tab: nil, left: :files, right: :main }.freeze
+      PANES = { tab: nil, left: :nav, right: :main }.freeze
       ACTIONS = { execute: :execute, edit: :edit, write_back: :write_back, reload: :reload, tick: :refresh }.freeze
 
       attr_reader :focus, :status
@@ -34,11 +34,11 @@ module Raindown
         @files = FileTree.new(root:, workers:)
         @endpoints = Endpoints.new(workers:)
         @dashboard = DashboardView.new(root:, workers:)
-        @panes = { files: Pane.new { [dashboard_row, Row::SEPARATOR, *@files.rows, *@endpoints.rows] }, outline: Pane.new { view.rows } }
+        @nav = ListView.new { nav_rows }
         first = Projects.files(root, nested: true).first
         # The dashboard is the first page, unless a file is asked for, and "d" goes from it to the first file.
         @view = OutlineView.new(first, workers:) if first
-        path ? open_at(path, nil) : open_pane(dashboard)
+        path ? open_at(path, nil) : open_view(dashboard)
       end
 
       # An event nothing has, like a mouse button's release, does nothing.
@@ -62,9 +62,8 @@ module Raindown
       # The folder the files are shown from: the chosen project's, or the root's.
       def base = @files.base
 
-      def rows(pane) = @panes[pane].rows
-      def cursor(pane) = @panes[pane].cursor
-      def visible(pane, height) = @panes[pane].visible(height)
+      # What's in a pane: the nav's ListView on the left, or the view on the right, which keeps its own cursor.
+      def content(pane) = pane == :nav ? @nav : view
 
       private
 
@@ -73,7 +72,7 @@ module Raindown
         return menu_event(name) if menu
         return toggle_menu if name == :projects
         return toggle_dashboard if name == :dashboard
-        return view.next_step(name)&.take(self) if @focus == view.name && view.next_step?(name)
+        return view.next_step(name)&.take(self) if @focus == :main && view.next_step?(name)
 
         browser_event(name)
       end
@@ -90,26 +89,29 @@ module Raindown
       end
 
       def point(click)
-        case click.pane
-        when :menu then @menu = click.index
-        else (@panes[click.pane] || view).cursor = click.index
-        end
-        @focus = click.pane unless click.pane == :menu
+        return @menu = click.index if click.pane == :menu
+
+        content(click.pane).cursor = click.index
+        @focus = click.pane
       end
 
       def browser_event(name)
         return move(MOVES[name]) if MOVES.key?(name)
-        return switch(PANES[name] == :main ? view.name : PANES[name] || other_pane) if PANES.key?(name)
+        return switch(PANES[name] || other_pane) if PANES.key?(name)
         return activate(name) if %i[enter toggle].include?(name)
 
         send(ACTIONS[name]) if ACTIONS.key?(name)
       end
 
-      # The Dashboard, first in the files, which every terminal draws two columns wide.
-      def dashboard_row = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: dashboard, open: OpenPane.new(view: dashboard))
+      # The Dashboard, which every terminal draws two columns wide, then the files and the endpoints,
+      # with a blank line between each section that has rows.
+      def nav_rows
+        dashboard_row = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: dashboard, open: OpenView.new(view: dashboard))
+        [[dashboard_row], @files.rows, @endpoints.rows].reject(&:empty?).flat_map { [Row::SEPARATOR, *it] }.drop(1)
+      end
 
-      def selected(pane = @focus)
-        @panes[pane].selected
+      def selected
+        content(@focus).selected
       end
 
       # Enter opens what's selected, or folds it, and Space only folds.

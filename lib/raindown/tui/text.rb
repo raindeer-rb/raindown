@@ -4,11 +4,25 @@ require 'unicode/display_width'
 
 module Raindown
   module TUI
-    # Text measured in a terminal's columns, where a wide character like 界 takes two, and cut to fit them.
+    # Text measured in a terminal's columns, where a wide character like 界 takes two, cut to fit them in styled Segments.
     module Text
+      Segment = Data.define(:text, :style, :event)
       INDENT = '  '
 
       private
+
+      # A path from the home folder when it's in it, like ~/dev/raindown.
+      def from_home(path)
+        home = Dir.home
+        path == home || path.start_with?(File.join(home, '')) ? path.sub(home, '~') : path
+      rescue ArgumentError
+        path
+      end
+
+      # The text fit to the width, as a Segment in the style.
+      def segment(text, style, width: self.width, event: nil)
+        Segment.new(text: fit(printable(text), width), style:, event:)
+      end
 
       # Text cut or padded to the width, with a cut shown by an ellipsis.
       def fit(text, width)

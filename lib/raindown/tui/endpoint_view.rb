@@ -21,7 +21,7 @@ module Raindown
         @offset = 0
       end
 
-      def name = :endpoint
+      def renderer = EndpointRenderer
       def target = endpoint
       def path = endpoint.path
       def status(_navigator) = [:info, endpoint.text]

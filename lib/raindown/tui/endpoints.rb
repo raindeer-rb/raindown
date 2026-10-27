@@ -29,14 +29,11 @@ module Raindown
 
       def all = project ? @endpoints.select { it.project == project } : @endpoints
 
-      # Below the files, after a blank line, when there are any.
       def rows
-        return [] if all.empty?
-
-        [Row::SEPARATOR, *all.map do
+        all.map do
           Row.new(text: it.address, tag: it, depth: 0, kind: :endpoint, target: it,
-                  open: OpenPane.new(view: EndpointView.new(it, workers: @workers)))
-        end]
+                  open: OpenView.new(view: EndpointView.new(it, workers: @workers)))
+        end
       end
     end
   end

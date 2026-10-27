@@ -26,7 +26,7 @@ module Raindown
         @rows = []
       end
 
-      def name = :dashboard
+      def renderer = DashboardRenderer
       def target = self
       def path = nil
       def changed? = false

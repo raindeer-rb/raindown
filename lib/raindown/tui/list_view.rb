@@ -2,8 +2,8 @@
 
 module Raindown
   module TUI
-    # A pane's cursor and how far it's scrolled, over rows that can change between draws, like when a folder folds.
-    class Pane
+    # Rows with a cursor, and how far they're scrolled, which can change between draws, like when a folder folds.
+    class ListView
       attr_writer :cursor
 
       def initialize(&rows)
@@ -11,6 +11,8 @@ module Raindown
         @cursor = 0
         @offset = 0
       end
+
+      def renderer = ListRenderer
 
       def rows = @rows.call
       def selected = rows[cursor]
@@ -26,11 +28,6 @@ module Raindown
         index = cursor + by
         index += by while index.between?(0, rows.length - 1) && !rows[index].selectable?
         @cursor = index if index.between?(0, rows.length - 1)
-      end
-
-      def reset
-        @cursor = 0
-        @offset = 0
       end
 
       # The rows that fit in the height, scrolled so the cursor's row is one of them, and the first one's index.

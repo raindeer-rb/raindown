@@ -14,11 +14,10 @@ module Raindown
     class MenuOverlay
       include Text
 
-      def initialize(navigator, width:, column:, from_home:)
+      def initialize(navigator, width:, column:)
         @navigator = navigator
         @width = width
         @column = column
-        @from_home = from_home
       end
 
       # The lines with the box drawn over them, from the line below the header.
@@ -32,7 +31,7 @@ module Raindown
       private
 
       def items
-        @navigator.menu_items.map { |project| project ? @from_home.call(project) : 'All projects' }
+        @navigator.menu_items.map { |project| project ? from_home(project) : 'All projects' }
       end
 
       def inner_width
@@ -53,7 +52,7 @@ module Raindown
       end
 
       def segment(text, style, event = nil)
-        Layout::Segment.new(text:, style:, event:)
+        Text::Segment.new(text:, style:, event:)
       end
 
       # The line's segments, with the box's put over the columns from the box's column.
