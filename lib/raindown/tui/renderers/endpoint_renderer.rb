@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative 'renderer'
+require_relative 'outline_renderer'
+
 module Raindown
   module TUI
     # An endpoint opened from the files, right of them: its URL in a bar with rounded corners, and a button to run it,
@@ -12,11 +15,10 @@ module Raindown
     #    {
     #      "uuid": "48024974-f1b1-431a-a0cf-5cac0099a1a5"
     #    }
-    # Its lines are the pane's width and height, which the Layout puts beside the files.
-    class EndpointPane < Layout
+    class EndpointRenderer < Renderer
       RUN = '[ Run ]'
       RUN_WIDTH = RUN.length
-      BUTTONS = OutlinePane::BUTTONS.reject { it.last == :write_back }.freeze
+      BUTTONS = OutlineRenderer::BUTTONS.reject { it.last == :write_back }.freeze
 
       def buttons = BUTTONS
       def page = navigator.view.endpoint.text
@@ -31,7 +33,7 @@ module Raindown
       private
 
       # A click on the response moves the focus to it, to scroll it.
-      def focus = Click.new(pane: :endpoint, index: 0, action: :focus)
+      def focus = Click.new(pane:, index: 0, action: :focus)
 
       def response(view, lines)
         texts = view.visible([lines, 0].max)
@@ -55,7 +57,7 @@ module Raindown
          run_button, segment(' │', :border, width: 2)]
       end
 
-      def run_button = segment(RUN, :run, width: RUN_WIDTH, event: Click.new(pane: :endpoint, index: 0, action: :execute))
+      def run_button = segment(RUN, :run, width: RUN_WIDTH, event: Click.new(pane:, index: 0, action: :execute))
 
       def edge(left, right, inner)
         padded([margin, segment("#{left}#{'─' * (inner + 2)}#{right}", :border, width: inner + 4)])

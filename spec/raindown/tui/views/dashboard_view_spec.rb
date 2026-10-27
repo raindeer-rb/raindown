@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/dashboard'
-require 'raindown/tui/workers'
+require 'raindown/tui/views/dashboard_view'
+require 'raindown/tui/workers/workers'
 require 'fileutils'
 require 'tmpdir'
 
@@ -10,7 +10,7 @@ class SpecSales < Raindown::Chart
   def initialize(**) = super('3 1 2', **)
 end
 
-RSpec.describe Raindown::TUI::Dashboard do
+RSpec.describe Raindown::TUI::DashboardView do
   around do |example|
     Dir.mktmpdir do |dir|
       @root = File.realpath(dir)
@@ -26,7 +26,7 @@ RSpec.describe Raindown::TUI::Dashboard do
     end
   end
 
-  let(:dashboard) { described_class.new(root: @root, workers: Raindown::TUI::Workers.new(root: @root)) }
+  let(:dashboard) { described_class.new(root: @root, workers: Raindown::TUI::Workers.new(root: @root)).tap(&:load) }
 
   before do
     write('data/sales.csv', "month,sales\nJan,4\nFeb,8\n")
@@ -61,7 +61,11 @@ RSpec.describe Raindown::TUI::Dashboard do
   end
 
   describe '#next_step' do
-    before { dashboard.rows = [[0, 1], [2]] }
+    before { dashboard.rows(59) }
+
+    it 'packs the cards into rows as many as fit across the width' do
+      expect([dashboard.rows(59), dashboard.rows(30)]).to eq([[[0, 1], [2]], [[0], [1], [2]]])
+    end
 
     it 'moves along the cards, and to the row above or below' do
       dashboard.next_step(:right)
@@ -87,7 +91,7 @@ RSpec.describe Raindown::TUI::Dashboard do
 
   describe '#scroll' do
     it 'scrolls down to the cursor, and back up' do
-      dashboard.rows = [[0], [1], [2]]
+      dashboard.rows(30)
       2.times { dashboard.next_step(:down) }
 
       expect(dashboard.scroll([5, 5, 5], 8)).to eq(2)

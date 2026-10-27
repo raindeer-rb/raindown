@@ -4,11 +4,25 @@ require 'unicode/display_width'
 
 module Raindown
   module TUI
-    # Text measured in a terminal's columns, where a wide character like 界 takes two, and cut to fit them.
+    # Text measured in a terminal's columns, where a wide character like 界 takes two, cut to fit them in styled Segments.
     module Text
+      Segment = Data.define(:text, :style, :event)
       INDENT = '  '
 
       private
+
+      # A path from the home folder when it's in it, like ~/dev/raindown.
+      def from_home(path)
+        home = Dir.home
+        path == home || path.start_with?(File.join(home, '')) ? path.sub(home, '~') : path
+      rescue ArgumentError
+        path
+      end
+
+      # The text fit to the width, as a Segment in the style.
+      def segment(text, style, width: self.width, event: nil)
+        Segment.new(text: fit(printable(text), width), style:, event:)
+      end
 
       # Text cut or padded to the width, with a cut shown by an ellipsis.
       def fit(text, width)
@@ -33,6 +47,26 @@ module Raindown
           part = index == texts.length - 1 ? width : [display_width(text), width].min
           width -= part
           part
+        end
+      end
+
+      # The line's segments, with others drawn over its columns from the column on, like a box over the screen.
+      def overlay_segments(line, segments, column:)
+        width = segments.sum { display_width(it.text) }
+        [*segments_between(line, 0, column), *segments, *segments_between(line, column + width, Float::INFINITY)]
+      end
+
+      # The parts of the line's segments between two columns, where a wide character cut in two leaves spaces.
+      def segments_between(line, from, to)
+        column = 0
+        line.filter_map do |segment|
+          text = segment.text.each_char.map do |char|
+            start = column
+            column += display_width(char)
+            overlap = [column, to].min - [start, from].max
+            overlap == display_width(char) ? char : ' ' * [overlap, 0].max
+          end.join
+          segment.with(text:) unless text.empty?
         end
       end
 

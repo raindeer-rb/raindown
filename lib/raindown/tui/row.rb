@@ -4,8 +4,9 @@ module Raindown
   module TUI
     # A line of a pane. Target is what it's about: a folder or file path, a Heading or Directive, or a line number.
     # Buttons are [label, event] pairs, like ['[Run]', :execute], and a tag is an Endpoint, whose method is before its text.
-    Row = Data.define(:text, :depth, :kind, :target, :buttons, :tag) do
-      def initialize(buttons: [], tag: nil, **) = super
+    # Open is the Navigator's next step on Enter, like an Open of a file, and fold, a block that folds or expands the row.
+    Row = Data.define(:text, :depth, :kind, :target, :buttons, :tag, :open, :fold) do
+      def initialize(buttons: [], tag: nil, open: nil, fold: nil, **) = super
 
       # A separator is space between a pane's sections, which the cursor skips and clicks don't reach.
       def selectable? = kind != :separator
@@ -15,5 +16,8 @@ module Raindown
         target.is_a?(Integer) ? target : target.line
       end
     end
+
+    # Space between a pane's sections, like the Dashboard and the files.
+    Row::SEPARATOR = Row.new(text: '', depth: 0, kind: :separator, target: nil)
   end
 end

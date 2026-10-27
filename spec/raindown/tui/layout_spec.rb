@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown/tui/layout'
-require 'raindown/tui/navigator'
+require 'raindown/tui/navigator/navigator'
 require 'fileutils'
 require 'tmpdir'
 
@@ -42,7 +42,7 @@ RSpec.describe Raindown::TUI::Layout do
     lines = described_class.new(navigator, width: 60, height: 14).lines
 
     expect(text(lines).map(&:rstrip)).to eq(
-      [' 🌧️ Raindown  ~/docs › guides/setup.md',
+      [' 🌧 Raindown  ~/docs › guides/setup.md',
        '                    ▏',
        ' 📊 Dashboard       ▏ # Setup',
        '                    ▏   endpoint:                 [+6] [Run]',
@@ -57,9 +57,7 @@ RSpec.describe Raindown::TUI::Layout do
        ' Opened guides/setup.md',
        ' Tab Pane  Enter Open  X Run  E dit  W rite back  R eload']
     )
-    expect(text(lines).drop(1).map { width(it) }).to all(eq(60))
-    # The rain cloud is measured as wide as the terminal draws it, where that's known, and the title stops short of it.
-    expect(width(text(lines).first)).to eq(59)
+    expect(text(lines).map { width(it) }).to all(eq(60))
   end
 
   it 'highlights the cursor in the focused pane, and dimmer in the others, with the divider beside the outline\'s' do
@@ -80,19 +78,19 @@ RSpec.describe Raindown::TUI::Layout do
   it 'sends events from rows and buttons when clicked' do
     lines = described_class.new(navigator, width: 80, height: 14).lines
 
-    expect(lines[2].first.event).to eq(click(:files, 0))
-    expect(lines[4].first.event).to eq(click(:files, 2))
-    expect(lines[8].first.event).to eq(click(:files, 6))
+    expect(lines[2].first.event).to eq(click(:nav, 0))
+    expect(lines[4].first.event).to eq(click(:nav, 2))
+    expect(lines[8].first.event).to eq(click(:nav, 6))
     expect(lines[7].first.event).to be_nil
-    expect(lines[2].last.event).to eq(click(:outline, 0))
-    expect(lines[3].last.event).to eq(click(:outline, 1, :execute))
+    expect(lines[2].last.event).to eq(click(:main, 0))
+    expect(lines[3].last.event).to eq(click(:main, 1, :execute))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload quit])
   end
 
   it 'cuts text that does not fit, and leaves out buttons that do not fit' do
     lines = described_class.new(navigator, width: 30, height: 7).lines
 
-    expect(text(lines).first).to start_with(' 🌧️ Raindown  ~/docs › ').and end_with('…')
+    expect(text(lines).first).to start_with(' 🌧 Raindown  ~/docs › ').and end_with('…')
     expect(text(lines).drop(1).map { width(it) }).to all(eq(30))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute])
   end
@@ -101,7 +99,7 @@ RSpec.describe Raindown::TUI::Layout do
     allow(Dir).to receive(:home).and_return('/elsewhere')
 
     expect(text(described_class.new(navigator, width: 200, height: 7).lines).first.rstrip)
-      .to eq(" 🌧️ Raindown  #{@root} › guides/setup.md")
+      .to eq(" 🌧 Raindown  #{@root} › guides/setup.md")
   end
 
   it 'shows only the status when the screen is too short for the panes' do
@@ -121,7 +119,7 @@ RSpec.describe Raindown::TUI::Layout do
     it 'shows each chart in a card with a rounded border beside the files, with as many in a row as fit' do
       lines = described_class.new(navigator, width: 90, height: 10).lines
 
-      expect(text(lines).first.rstrip).to eq(' 🌧️ Raindown  ~/docs › Dashboard')
+      expect(text(lines).first.rstrip).to eq(' 🌧 Raindown  ~/docs › Dashboard')
       expect(text(lines)[2]).to start_with(' 📊 Dashboard ')
       expect(main(lines)[2..6]).to eq([' ╭──────────────────────────╮  ╭──────────────────────────╮',
                                        ' │ stats.md › Stats         │  │ stats.md › Stats         │',
@@ -134,16 +132,16 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'opens a chart when its title is clicked, and highlights the selected one while the dashboard has the focus' do
       lines = described_class.new(navigator, width: 90, height: 10).lines
-      titles = lines[3].select { it.event&.pane == :dashboard && it.style != :border }
+      titles = lines[3].select { it.event&.pane == :main && it.style != :border }
 
-      expect(titles.map(&:event)).to eq([click(:dashboard, 0), click(:dashboard, 1)])
-      expect(titles.map(&:style)).to eq(%i[cursor heading])
-      expect(lines[2].map(&:event).select { it&.pane == :dashboard }).to eq([click(:dashboard, 0), click(:dashboard, 1)])
+      expect(titles.map(&:event)).to eq([click(:main, 0), click(:main, 1)])
+      expect(titles.map(&:style)).to eq(%i[selected heading])
+      expect(lines[2].map(&:event).select { it&.pane == :main }).to eq([click(:main, 0), click(:main, 1)])
 
       navigator.next_step(:tab)
       line = described_class.new(navigator, width: 90, height: 10).lines[3]
-      title = line.find { it.event == click(:dashboard, 0) && it.style != :border }
-      expect(title.style).to eq(:selected)
+      title = line.find { it.event == click(:main, 0) && it.style != :border }
+      expect(title.style).to eq(:cursor)
     end
 
     it "doesn't click the space below a card shorter than its row" do
@@ -152,7 +150,7 @@ RSpec.describe Raindown::TUI::Layout do
       navigator.next_step(:reload)
       lines = described_class.new(navigator, width: 90, height: 13).lines
 
-      clicks = ->(line) { lines[line].map(&:event).select { it&.pane == :dashboard }.map(&:index).uniq }
+      clicks = ->(line) { lines[line].map(&:event).select { it&.pane == :main }.map(&:index).uniq }
       expect([clicks[6], clicks[7]]).to eq([[0, 1], [1]])
     end
 
@@ -213,7 +211,7 @@ RSpec.describe Raindown::TUI::Layout do
 
       navigator.next_step(:projects)
       lines = described_class.new(navigator, width: 60, height: 8).lines
-      menu = lines[1..5].map { columns(it, from: width(' 🌧️ Raindown  '), count: 21) }
+      menu = lines[1..5].map { columns(it, from: width(' 🌧 Raindown  '), count: 21) }
 
       expect(menu).to eq(['┌───────────────────┐', '│ All projects    ✓ │', '│ ~/docs            │',
                           '│ ~/docs/guides     │', '└───────────────────┘'])
@@ -242,14 +240,14 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'shows its URL in a bar with rounded corners and a button to run it, then its response' do
-      navigator.next_step(click(:files, navigator.rows(:files).index { it.kind == :endpoint }))
+      navigator.next_step(click(:nav, navigator.content(:nav).rows.index { it.kind == :endpoint }))
       lines = described_class.new(navigator, width: 90, height: 12).lines
 
       expect(main(lines)[2..7]).to eq([' ╭───────────────────────────────────────────────────────╮',
                                        ' │ DELETE https://api.example.com/users/1        [ Run ] │',
                                        ' ╰───────────────────────────────────────────────────────╯',
                                        '', ' Response · json · fetched 2026-10-26', ' {}'])
-      expect(lines[3].find { it.text == '[ Run ]' }.event).to eq(click(:endpoint, 0, :execute))
+      expect(lines[3].find { it.text == '[ Run ]' }.event).to eq(click(:main, 0, :execute))
       expect(lines[3].find { it.text == 'DELETE' }.style).to eq(:method_delete)
       expect(text(lines).first).to include('› DELETE api.example.com/users/1')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))

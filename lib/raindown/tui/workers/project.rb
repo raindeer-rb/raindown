@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
-require_relative '../actions'
-require_relative '../bare_directives'
-require_relative '../chart/chart'
-require_relative '../document'
-require_relative '../front_matter'
-require_relative '../node_blocks'
-require_relative '../nodes'
-require_relative '../pages'
-require_relative '../projects'
-require_relative 'card'
-require_relative 'endpoint'
-require_relative '../code_blocks'
-require_relative '../endpoint/curl'
+require_relative '../../actions'
+require_relative '../../bare_directives'
+require_relative '../../chart/chart'
+require_relative '../../document'
+require_relative '../../front_matter'
+require_relative '../../node_blocks'
+require_relative '../../nodes'
+require_relative '../../pages'
+require_relative '../../projects'
+require_relative '../card'
+require_relative '../endpoint'
+require_relative '../../code_blocks'
+require_relative '../../endpoint/curl'
 
 module Raindown
   module TUI
@@ -76,8 +76,8 @@ module Raindown
 
       def endpoint(path, lines, directive)
         snippet = CodeBlocks.endpoint(lines, directive.line).first&.dig(:body)
-        method, url = Curl.request(snippet.to_s)
-        Endpoint.new(project: root, path:, line: directive.line, method:, url:) if url
+        request = Curl.request(snippet.to_s)
+        Endpoint.new(project: root, path:, line: directive.line, **request.to_h) if request
       end
 
       def charts_in(path)

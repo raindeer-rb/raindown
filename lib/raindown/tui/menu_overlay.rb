@@ -5,7 +5,7 @@ require_relative 'text'
 module Raindown
   module TUI
     # The project menu, drawn over the screen's lines in a box below the header's path:
-    #    🌧️ Raindown  ~/dev ▾ › Dashboard
+    #    🌧 Raindown  ~/dev ▾ › Dashboard
     #                 ┌──────────────────────┐
     #                 │ All projects       ✓ │
     #                 │ ~/dev/raindown       │
@@ -14,17 +14,16 @@ module Raindown
     class MenuOverlay
       include Text
 
-      def initialize(navigator, width:, column:, from_home:)
+      def initialize(navigator, width:, column:)
         @navigator = navigator
         @width = width
         @column = column
-        @from_home = from_home
       end
 
       # The lines with the box drawn over them, from the line below the header.
       def apply(lines)
         box.each_with_index.map { |segments, offset| [offset + 1, segments] }.each do |row, segments|
-          lines[row] = splice(lines[row], segments) if lines[row]
+          lines[row] = overlay_segments(lines[row], segments, column: @column) if lines[row]
         end
         lines
       end
@@ -32,7 +31,7 @@ module Raindown
       private
 
       def items
-        @navigator.menu_items.map { |project| project ? @from_home.call(project) : 'All projects' }
+        @navigator.menu_items.map { |project| project ? from_home(project) : 'All projects' }
       end
 
       def inner_width
@@ -53,27 +52,7 @@ module Raindown
       end
 
       def segment(text, style, event = nil)
-        Layout::Segment.new(text:, style:, event:)
-      end
-
-      # The line's segments, with the box's put over the columns from the box's column.
-      def splice(line, segments)
-        box_width = segments.sum { display_width(it.text) }
-        [*cut(line, 0, @column), *segments, *cut(line, @column + box_width, Float::INFINITY)]
-      end
-
-      # The parts of the segments between two columns, where a wide character cut in two leaves spaces.
-      def cut(line, from, to)
-        column = 0
-        line.filter_map do |segment|
-          text = segment.text.each_char.map do |char|
-            start = column
-            column += display_width(char)
-            overlap = [column, to].min - [start, from].max
-            overlap == display_width(char) ? char : ' ' * [overlap, 0].max
-          end.join
-          segment.with(text:) unless text.empty?
-        end
+        Text::Segment.new(text:, style:, event:)
       end
     end
   end

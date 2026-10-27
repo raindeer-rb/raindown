@@ -1,29 +1,36 @@
 # frozen_string_literal: true
 
-require_relative '../document'
-require_relative 'row'
-require_relative 'worker'
+require_relative '../../document'
+require_relative '../events'
+require_relative 'list_view'
+require_relative '../row'
+require_relative '../workers/worker'
 
 module Raindown
   module TUI
-    # The outline pane: a file's headings and directives, read by its project's Worker. Headings fold the section below them,
+    # The outline: a file's headings and directives, read by its project's Worker. Headings fold the section below them,
     # and a directive's body expands below it, like the lines a node wrote back or an endpoint's request and response.
-    # Both start folded away.
-    class Outline
+    # Both start folded away. It's read when it's opened, and it's a ListView, with its own cursor.
+    class OutlineView < ListView
       attr_reader :path, :error
 
-      def initialize(path, worker:)
+      def initialize(path, workers:)
+        super()
         @path = path
-        @worker = worker
+        @workers = workers
         @folded = Set.new
         @expanded = Set.new
-        read
       end
 
+      def renderer = OutlineRenderer
+      def target = path
+      def next_step?(_key) = false
+      def status(navigator) = [:info, "Opened #{navigator.relative(path)}"]
+
       # Reads the file again, keeping what's folded.
-      def read
+      def load
         @mtime = File.mtime(path)
-        outline = @worker.call(:outline, path)
+        outline = @workers.for(path).call(:outline, path)
         @lines = outline.lines
         @headings = outline.headings
         @directives = outline.directives
@@ -88,18 +95,25 @@ module Raindown
       def heading_row(heading)
         folded = @folded.include?(heading.line) ? ' …' : ''
         Row.new(text: "#{'#' * heading.level} #{heading.text}#{folded}", depth: heading.level - min_level, kind: :heading,
-                target: heading)
+                target: heading, fold: -> { fold(heading) })
       end
 
       def directive_rows(directive, depth:)
         expanded = @expanded.include?(directive.line)
         row = Row.new(text: directive_text(directive), depth:, kind: :directive, target: directive,
-                      buttons: buttons(directive, expanded:))
+                      buttons: buttons(directive, expanded:), **directive_action(directive))
         return [row] unless expanded
 
         [row, *directive.body.map do |number|
-          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number)
+          Row.new(text: @lines[number - 1].to_s, depth: depth + 1, kind: :body, target: number, open: Edit.new(path:, line: number))
         end]
+      end
+
+      # A directive with a body expands it, and one without opens in the editor, like a line of its body.
+      def directive_action(directive)
+        if directive.body then { fold: -> { expand(directive) } }
+        else { open: Edit.new(path:, line: directive.line) }
+        end
       end
 
       def buttons(directive, expanded:)

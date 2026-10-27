@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'renderer'
+
 module Raindown
   module TUI
     # The dashboard, right of the files: a card for each of the projects' charts, as wide as its chart,
@@ -11,11 +13,7 @@ module Raindown
     #    │ chart: 'data/downloads.csv' │  │ chart: 'data/commits.csv' min… │
     #    │ Jun  ██████▊           640  │  │ c2f98fc  -18  █│███▊      +96  │
     #    ╰─────────────────────────────╯  ╰────────────────────────────────╯
-    # Its lines are the pane's width and height, which the Layout puts beside the files.
-    class DashboardPane < Layout
-      # Columns between the cards, and the narrowest a card is, with its border.
-      GAP = 2
-      MIN_CARD_WIDTH = 28
+    class DashboardRenderer < Renderer
       BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
                  ['q', 'Quit', :quit]].freeze
       PROJECTS_BUTTON = ['p', 'Projects', :projects].freeze
@@ -33,8 +31,8 @@ module Raindown
         cards = dashboard.cards
         return blank(height, " No charts in #{File.basename(navigator.root)} yet, like <{ chart: '3 5 2 8' }>") if cards.empty?
 
-        rows = packed(cards)
-        dashboard.rows = rows
+        rows = dashboard.rows(width)
+        @headings = headings(rows, cards)
         grid(rows, cards)
       end
 
@@ -42,38 +40,13 @@ module Raindown
 
       def dashboard = navigator.dashboard
 
-      # The cards' indexes in rows, with as many of a project's cards in a row as fit across, after a column of margin.
-      # Each project's cards start a row, under the project's heading when there's more than one.
-      def packed(cards)
-        groups = cards.each_index.chunk_while { |a, b| cards[a].project == cards[b].project }.to_a
-        @headings = {}
+      # Each project's path above its first row of cards, by the row's index, when there's more than one project.
+      def headings(rows, cards)
+        firsts = rows.each_index.chunk_while { |a, b| cards[rows[a].first].project == cards[rows[b].first].project }.map(&:first)
+        return {} if firsts.one?
 
-        groups.each_with_object([]) do |indexes, rows|
-          @headings[rows.length] = cards[indexes.first].project if groups.length > 1
-          rows.concat(group_rows(cards, indexes))
-        end
+        firsts.to_h { [it, cards[rows[it].first].project] }
       end
-
-      def group_rows(cards, indexes)
-        rows = [[]]
-        used = 1
-
-        indexes.each do |index|
-          card_width = cards[index].box_width(within: card_widths) + (rows.last.empty? ? 0 : GAP)
-          if used + card_width > width && rows.last.any?
-            rows << []
-            used = 1
-            card_width -= GAP
-          end
-          rows.last << index
-          used += card_width
-        end
-
-        rows
-      end
-
-      # The widths a card can be: no narrower than MIN_CARD_WIDTH, when there's room, and no wider than the pane.
-      def card_widths = [MIN_CARD_WIDTH, width - 1].min..(width - 1)
 
       # The rows of cards from the first that's scrolled to, each card's lines side by side, with a line between rows.
       def grid(rows, cards)
@@ -93,7 +66,7 @@ module Raindown
         segments = [segment('', :blank, width: 1)]
 
         row.each_with_index do |index, column|
-          segments << segment('', :blank, width: GAP) unless column.zero?
+          segments << segment('', :blank, width: DashboardView::GAP) unless column.zero?
           segments.concat(card_line(cards[index], index, line))
         end
 
@@ -103,9 +76,10 @@ module Raindown
       # A card opens chart source when it's clicked, like Enter, but not the space below a card shorter than its row.
       # The selected card's title is highlighted, like a selected row.
       def card_line(card, index, line)
-        title_style = dashboard.cursor == index ? row_style(:dashboard, nil, true) : :heading
-        event = Click.new(pane: :dashboard, index:, action: :enter) if line < card.box_height
-        card.format_line(line, box_width: card.box_width(within: card_widths), title_style:).map do |text, style, part_width|
+        title_style = dashboard.cursor == index ? row_style(pane, nil, true) : :heading
+        event = Click.new(pane:, index:, action: :enter) if line < card.box_height
+        box_width = card.box_width(within: dashboard.card_widths(width))
+        card.format_line(line, box_width:, title_style:).map do |text, style, part_width|
           segment(text, style, width: part_width, event:)
         end
       end

@@ -3,7 +3,7 @@
 require 'curses'
 
 require_relative 'input'
-require_relative 'layout'
+require_relative '../layout'
 require_relative 'quiet'
 require_relative 'ncurses_shim'
 require_relative 'styles'

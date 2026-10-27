@@ -1,26 +1,24 @@
 # frozen_string_literal: true
 
 require_relative '../projects'
+require_relative 'events'
+require_relative 'views/outline_view'
 require_relative 'row'
 
 module Raindown
   module TUI
-    # The files pane: the Dashboard, then a project's Markdown files as a tree, with folders before files,
+    # The nav pane's files: a project's Markdown files as a tree, with folders before files,
     # including the files of the projects inside it, whose folders are marked with Raindown's cloud.
     # Folders start folded, and open with Enter, or when a file in them opens.
     # A scope narrows it to one project's own files, from the project's folder, like when it's chosen in the header.
     class FileTree
-      # A chart, which every terminal draws two columns wide.
-      DASHBOARD = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: :dashboard)
-      # A blank line between the Dashboard and the files.
-      SEPARATOR = Row.new(text: '', depth: 0, kind: :separator, target: nil)
-
       attr_reader :root
       # The project the files are narrowed to, or nil for all of them.
       attr_accessor :scope
 
-      def initialize(root:)
+      def initialize(root:, workers:)
         @root = root
+        @workers = workers
         @expanded = Set.new
         load
       end
@@ -40,7 +38,7 @@ module Raindown
       def rows
         tree = {}
         files.each { |path| relative(path).split('/').reduce(tree) { |node, part| node[part] ||= {} } }
-        [DASHBOARD, SEPARATOR, *tree_rows(tree, '', 0)]
+        tree_rows(tree, '', 0)
       end
 
       def toggle(folder)
@@ -77,7 +75,11 @@ module Raindown
         folders, files = tree.partition { |_name, children| children.any? }
 
         folders.sort.flat_map { |name, children| folder_rows(name, children, prefix, depth) } +
-          files.sort.map { |name, _| Row.new(text: name, depth:, kind: :file, target: File.join(base, prefix, name)) }
+          files.sort.map { |name, _| file_row(name, File.join(base, prefix, name), depth) }
+      end
+
+      def file_row(name, path, depth)
+        Row.new(text: name, depth:, kind: :file, target: path, open: OpenView.new(view: OutlineView.new(path, workers: @workers)))
       end
 
       # A folder, and the tree inside it unless it's folded.
@@ -86,7 +88,7 @@ module Raindown
         folded = !@expanded.include?(folder)
         project = @projects.include?(folder)
         row = Row.new(text: "#{folded ? '▸' : '▾'} #{"#{PROJECT} " if project}#{name}/", depth:,
-                      kind: project ? :project : :folder, target: folder)
+                      kind: project ? :project : :folder, target: folder, fold: -> { toggle(folder) })
 
         [row, *(tree_rows(children, File.join(prefix, name), depth + 1) unless folded)]
       end

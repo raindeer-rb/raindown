@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/ncurses_shim'
+require 'raindown/tui/terminal/ncurses_shim'
 
 RSpec.describe Raindown::TUI::NcursesShim do
   around do |example|

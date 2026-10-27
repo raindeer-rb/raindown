@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/workers'
+require 'raindown/tui/workers/workers'
 require 'fileutils'
 require 'tmpdir'
 

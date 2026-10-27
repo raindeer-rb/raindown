@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../projects'
+require_relative '../../projects'
 require_relative 'worker'
 
 module Raindown

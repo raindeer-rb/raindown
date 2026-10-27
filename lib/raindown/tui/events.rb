@@ -10,11 +10,26 @@ module Raindown
     # What the Screen does after an event, other than drawing again, or stopping for :quit.
     # Leaves the screen for a command, like the editor, then tells the Navigator it ran.
     Run = Data.define(:command)
+
     # Shows the message while the task runs, like an endpoint's request.
     Wait = Data.define(:message, :task)
 
-    # What the Dashboard asks of the Navigator for a chart: to open its file in the outline at its directive, or edit it.
-    Open = Data.define(:path, :line)
-    Edit = Data.define(:path, :line)
+    # Steps a row or a view asks of the Navigator, which each takes on it, returning what the Screen does next: to open
+    # a view right of the files, or a file in the outline at a directive, to edit a file at a line, or to run an endpoint.
+    OpenView = Data.define(:view) do
+      def take(navigator) = navigator.open_view(view)
+    end
+
+    Open = Data.define(:path, :line) do
+      def take(navigator) = navigator.open_at(path, line)
+    end
+
+    Edit = Data.define(:path, :line) do
+      def take(navigator) = navigator.edit_at(path, line)
+    end
+
+    Execute = Data.define(:path, :line, :name) do
+      def take(navigator) = navigator.run(path, line, name)
+    end
   end
 end

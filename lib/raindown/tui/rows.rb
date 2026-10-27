@@ -2,18 +2,18 @@
 
 module Raindown
   module TUI
-    # A Layout's panes' rows, like the files and the outline, each a line of a pane's width: a row's text, after its tag,
+    # A ListRenderer's rows, like the files and the outline, each a line of the pane's width: a row's text, after its tag,
     # like an endpoint's method, then its buttons.
     module Rows
       private
 
-      # A pane's row as its text, then its buttons, or blank below its last row.
+      # A row as its text, then its buttons, or blank below its last row.
       def cell(pane, rows, offset, index, cell_width)
         row = rows[index]
         return [segment('', :blank, width: cell_width)] unless row&.selectable?
 
         index += offset
-        selected = navigator.cursor(pane) == index
+        selected = navigator.content(pane).cursor == index
         buttons = row_buttons(row, pane:, index:, selected:, cell_width:)
         text_width = cell_width - display_width(buttons.map(&:text).join)
         parts = row_parts(row, row_style(pane, row, selected), selected)
@@ -46,7 +46,7 @@ module Raindown
         display_width(buttons.map(&:text).join) > cell_width / 2 ? [] : buttons
       end
 
-      # The cursor's row is highlighted in the pane with the focus, and dimmer in the others, like the file a chart opened.
+      # The cursor's row is highlighted in the pane with the focus, and dimmer in the other, like the file a chart opened.
       def row_style(pane, row, selected)
         return row.kind unless selected
 
