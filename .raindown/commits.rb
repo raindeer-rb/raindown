@@ -2,7 +2,7 @@
 
 require 'open3'
 
-# The latest commits, charting the lines each one deleted against the lines it added:
+# The latest commits, under a Total of their lines, charting the lines each one deleted against the lines it added:
 #   <{ Commits: limit=5 }>
 # It's a chart: whose data comes from git log rather than a file, so it takes the same props, like width:.
 class Commits < Raindown::Chart
@@ -13,10 +13,23 @@ class Commits < Raindown::Chart
 
   def points(metadata: Raindown::NoMetadata)
     root = metadata.respond_to?(:root) ? metadata.root : Dir.pwd
-    Points.new(minus: @minus, root:).from(commits(root))
+    commits = commits(root)
+    commits.unshift(total(commits)) unless commits.empty?
+    Points.new(minus: @minus, root:).from(commits)
+  end
+
+  # A line across the chart between the Total and the commits.
+  def draw(points)
+    lines = super
+    lines.insert(1, '─' * lines.map { it.rstrip.length }.max)
   end
 
   private
+
+  # All the lines the commits below it added and deleted.
+  def total(commits)
+    { 'commit' => 'Total', 'added' => commits.sum { it['added'] }, 'deleted' => commits.sum { it['deleted'] } }
+  end
 
   # Each commit's short hash with the lines it added and deleted, newest first. Merges change nothing of their own.
   def commits(root)
