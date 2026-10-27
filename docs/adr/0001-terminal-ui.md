@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-26
+- Note: the TUI's files, classes and terms have changed since this was written. [ADR 2](0002-screen-buffer.md) lists the current ones: panes, views, renderers and `Layout`.
 
 ## Context
 
