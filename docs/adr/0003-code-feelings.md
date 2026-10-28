@@ -40,13 +40,15 @@ The digits aren't uniform, which keeps the show's feel:
 - **Noise:** about three cells in ten are one or two away from their method's drift. Each cell's checksum decides which, so a cell never changes from one draw to the next (`FeelingsRenderer::NOISE`).
 - **Flicker:** a cell of a method that drifts 7 or more dips one lower for one tick, about every 6 seconds, each cell at its own moment, so the heaviest methods look restless.
 
+**Cells are 6 columns wide and 2 lines tall**, with the digit small on the first line, and the grid starts with a blank line. When the mouse is over a method, its digits are magnified, 3 columns wide and 3 lines tall, in the same block digits as the README's stats (`Raindown::Stat::DIGITS`), drawn over the line above them and the spaces beside them, but never below, so the digits around them stay readable. The spacing quarters how many cells fit, compared with 3 by 1 before, so batches are smaller. A magnifier over the 3 by 1 grid would have kept them, but covered its neighbours' digits.
+
 ### Styles
 
-Digits are the terminal's own white. The selected method's cells are on the selected row's blue, and the cells under the mouse are bold blue (the `hover` style). A felt method's cells go blank, but stay in place and stay selectable. Selecting one shows its digits and code again. Nothing in the grid moves as methods are felt, so the batch visibly empties.
+The screen's text, digits, lines and titles are lavender (the `feelings` style, 256-colour 183, or magenta in 8 colours), apart from the batch's progress, in grey. The selected method's digits, and the ones under the mouse, are magnified, in the same lavender, with no highlight behind them. A felt method's cells go blank, but stay in place and stay selectable. Selecting one shows its digits, magnified, and its code again. Nothing in the grid moves as methods are felt, so the batch visibly empties.
 
 ### Feeling a method
 
-`1` to `5` sort the selected method into **woe, frolic, dread, malice or numb**. Numb is for code that gives no feeling. **The cursor stays on the method**, so the next thing you do can be about it. Woe, dread and malice first ask why, below the code. The question uses the typing mode teleport added, so keys like `q` and `j` are typed as letters. The note wraps onto as many lines as it needs, and Enter saves it, or Esc saves the feeling without one. Frolic and numb are noted straight away.
+`1` to `6` sort the selected method into **frolic, hope, numb, woe, dread or malice**, best to worst, as `CodeHealth` scores them, so the keys rate the code, rather than in *Severance*'s order. Numb is for code that gives no feeling. **The cursor stays on the method**, so the next thing you do can be about it. Woe, dread and malice first ask why, below the code. The question uses the typing mode teleport added, so keys like `q` and `j` are typed as letters. The note wraps onto as many lines as it needs, and Enter saves it, or Esc saves the feeling without one. Frolic and numb are noted straight away.
 
 ### Finding methods, in any language
 
@@ -72,14 +74,20 @@ Each feeling is a row in **`.raindown/feelings.csv`**: the date, where the metho
 - **A method counts as felt** when a row matches its file, name and checksum (`FeelingsLog#felt?`). Line numbers are ignored, so a method that moves within its file stays felt.
 - **When its code changes,** a method comes back into the grid to be felt again. That's what happens after `x` has Claude Code fix it.
 - **Feeling an unchanged method again replaces its row,** as the newest, so only its latest feeling counts.
-- **Feelings about code that's changed, or gone, move to `.raindown/memories.csv`** (`FeelingsLog#move_stale_to_memories`), with the same columns. It runs whenever Code feelings reads the code, when it opens and after an edit or a fix, and when a changed method is felt again. So `feelings.csv` only says how the code feels now, and the bins and the README's chart count only that, while the memories keep the history. It isn't trimmed to the week's batch: a method felt in an earlier week, whose code hasn't changed, stays felt.
+- **Feelings about code that's changed, or gone, move to `.raindown/memories.csv`** (`FeelingsLog#move_stale_to_memories`), with the same columns. It runs whenever Code feelings reads the code, when it opens and after an edit or a fix, and when a changed method is felt again. So `feelings.csv` only says how the code feels now, and the bins and the README's code debt count only that, while the memories keep the history. It isn't trimmed to the week's batch: a method felt in an earlier week, whose code hasn't changed, stays felt.
 - **Rows from before checksums were kept** have none. They count as felt while their method's there, until it's felt again, which replaces them.
 
 Nothing else is stored. Which methods are felt, and so which files a batch picks, comes from the CSV, and a team that commits it shares its progress.
 
-### Charting the feelings
+### Counting the feelings
 
-The TUI writes nothing but `.raindown/feelings.csv`. A chart counts it instead: this repo's README has a `Feelings` node in `.raindown`, a `Raindown::Chart` like its `Commits` node, which tallies the tempers in the CSV and draws them as bars. An earlier version also wrote a `docs/code-feelings.md` page, with a chart over a `.raindown/tempers.csv` of counts and a table of every feeling, which only repeated what the CSV holds.
+The TUI writes nothing but `.raindown/feelings.csv`. The README counts it instead, with two `Raindown::Stat` nodes in `.raindown`, which the Dashboard shows as cards too. Both use one scale, so they can't disagree:
+
+| frolic | hope | numb | woe | dread | malice |
+|---|---|---|---|---|---|
+| 1 | 0.75 | 0.5 | ⅓ | ⅙ | 0 |
+
+Hope is for code that's promising but not a joy, which otherwise had nowhere between frolic and numb, so the good side has two grades as the bad side has three. Numb is neither good nor bad, and the bad feelings sit evenly below it, woe the mildest, as everywhere else woe's a bad feeling: it asks why, and a fix from it is a fix. **`CodeHealth`** is the feelings' average, to two places, which doesn't grow with the project, labelled with how many feelings it's the average of. **`CodeDebt`** adds up how far each is from numb, (score − 0.5) × 2, from 1 for frolic to −1 for malice, to one place, in debt below zero, labelled with how many fixes there have been: memories whose method's next feeling scored higher. Memories don't count otherwise, as they're about code that's since changed or gone. A chart of the tempers' counts, and a running total of the debt by day, were tried first. An earlier version also wrote a `docs/code-feelings.md` page, with a chart over a `.raindown/tempers.csv` of counts and a table of every feeling, which only repeated what the CSV holds.
 
 ### The code box and fixing
 
@@ -99,7 +107,7 @@ Code feelings is the first view to use mouse **hover**. While the TUI is open, i
 |---|---|
 | `f` | open Code feelings |
 | arrows | move between methods |
-| `1` to `5` | feel woe, frolic, dread, malice or numb |
+| `1` to `6` | feel frolic, hope, numb, woe, dread or malice, best to worst |
 | Enter, Space, or a click on "[more lines]" | show all of the method's code that fits, or fewer |
 | `e` | edit the method |
 | `x` | fix it with Claude Code |

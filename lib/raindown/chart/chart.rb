@@ -47,6 +47,14 @@ module Raindown
       Points.new(label: @label, value: @value, minus: @minus, root:).from(@data)
     end
 
+    # The chart's lines, as a card on the terminal UI's Dashboard shows them, or that there's no data.
+    def card_lines(metadata: NoMetadata)
+      points = points(metadata:)
+      return ['No data'] if points.empty?
+
+      draw(points).map(&:rstrip)
+    end
+
     def draw(points)
       points = points.last(@tail) if @tail
       format = @format || (points.any?(&:first) ? 'bars' : 'sparkline')

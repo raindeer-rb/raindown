@@ -9,7 +9,7 @@ module Raindown
     # An endpoint opened from the files, right of them: its URL in a bar with rounded corners, and a button to run it,
     # then its response:
     #    ╭──────────────────────────────────────────╮
-    #    │ GET https://httpbin.org/uuid     [ Run ] │
+    #    │ GET https://httpbin.org/uuid       [Run] │
     #    ╰──────────────────────────────────────────╯
     #
     #    Response · json · fetched 2026-10-26
@@ -17,7 +17,7 @@ module Raindown
     #      "uuid": "48024974-f1b1-431a-a0cf-5cac0099a1a5"
     #    }
     class EndpointRenderer < Renderer
-      RUN = '[ Run ]'
+      RUN = '[Run]'
       RUN_WIDTH = RUN.length
       BUTTONS = OutlineRenderer::BUTTONS.reject { it.last == :write_back }.freeze
 
@@ -61,7 +61,7 @@ module Raindown
          run_button, segment(' │', :border, width: 2)]
       end
 
-      def run_button = segment(RUN, :run, width: RUN_WIDTH, event: Click.new(pane:, index: 0, action: :execute))
+      def run_button = segment(RUN, :button, width: RUN_WIDTH, event: Click.new(pane:, index: 0, action: :execute))
 
       def edge(left, right, inner)
         padded([margin, segment("#{left}#{'─' * (inner + 2)}#{right}", :border, width: inner + 4)])

@@ -30,7 +30,7 @@ RSpec.describe Raindown::TUI::FeelingsLog do
     expect(log.rows.map { it.values_at(:where, :method, :temper, :note, :checksum) })
       .to eq([['lib/text.rb:12', 'Text#fit', 'malice', 'two negations | and a hidden @rows', method.checksum],
               ['lib/text.rb:30', 'Text#spread', 'numb', nil, other.checksum]])
-    expect(log.counts).to eq('woe' => 0, 'frolic' => 0, 'dread' => 0, 'malice' => 1, 'numb' => 1)
+    expect(log.counts).to eq('frolic' => 0, 'hope' => 0, 'numb' => 1, 'woe' => 0, 'dread' => 0, 'malice' => 1)
   end
 
   def memories = CSV.read(File.join(@root, '.raindown', 'memories.csv'), headers: true).map { it.to_h.values_at('method', 'temper') }

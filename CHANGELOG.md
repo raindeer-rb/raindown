@@ -11,12 +11,14 @@ Minor features that don't break backwards compatibility are released as patches.
 
 - `raindown tui` teleports with `/`: a search of every file, heading, directive and endpoint, matched as you type
 - `chart:` keeps only the last rows with `tail:`, like `tail: 12`, so the Dashboard can follow a file that grows
-- `raindown tui` has Code feelings, under the Dashboard in the files or with `f`: a screenful of random files a week, sort how each function or method makes you feel into woe, frolic, dread, malice or numb,
+- A project's stats, nodes that are a `Raindown::Stat`, write one big number in block digits above a label, and show on the Dashboard as cards like charts
+- `raindown tui` has Code feelings, under the Dashboard in the files or with `f`: a screenful of random files a week, sort how each function or method makes you feel into frolic, hope, numb, woe, dread or malice,
   noted down in `.raindown/feelings.csv`, moving to `.raindown/memories.csv` once its code changes, and open it in your editor or ask Claude Code to fix it
 - `raindown tui` highlights code with Rouge: directives' bodies in the outline, endpoints' responses and Code feelings' code
 
 ### Changed
 
+- `raindown tui`'s text is periwinkle where the terminal has 256 colours, apart from the title, in cornflower blue with no background, and including the line between the panes
 - `raindown tui`'s title has two spaces after the rain cloud
 
 ## 0.6.0

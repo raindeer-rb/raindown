@@ -97,7 +97,7 @@ module Raindown
       end
 
       def paint(window, segment)
-        window.attron(@styles.fetch(segment.style, Curses::A_NORMAL)) { window.addstr(segment.text) }
+        window.attron(@styles[segment.style]) { window.addstr(segment.text) }
       end
 
       def last_line(segments)

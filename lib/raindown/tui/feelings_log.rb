@@ -23,10 +23,10 @@ module Raindown
     end
 
     # The feelings everyone's sorted about the code as it is now, kept in .raindown/feelings.csv with the commit they were
-    # felt at, which a chart can count, like the README's. A feeling about code that's since changed, or gone, moves to
+    # felt at, which a node can count, like the README's code debt. A feeling about code that's since changed, or gone, moves to
     # .raindown/memories.csv, so the feelings stay few, and the history's kept.
     class FeelingsLog
-      TEMPERS = %w[woe frolic dread malice numb].freeze
+      TEMPERS = %w[frolic hope numb woe dread malice].freeze
       HEADER = %i[when where method temper note commit checksum].freeze
       def initialize(root:)
         @root = root

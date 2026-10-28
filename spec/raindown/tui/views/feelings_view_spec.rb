@@ -42,7 +42,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
   it 'notes down a frolic or numb feeling straight away, staying on the method' do
     first = view.selected
-    step = view.next_step(:bin2)
+    step = view.next_step(:bin1)
 
     expect(step).to eq(Raindown::TUI::Felt.new(feeling: step.feeling))
     expect([step.feeling.temper, step.feeling.method, view.cursor]).to eq(['frolic', first, 0])
@@ -51,7 +51,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
   it "moves a feeling to the memories when the method's code changes, and it's read again" do
     view.cursor = view.code_methods.index { it.name == 'side' }
-    view.next_step(:bin2)
+    view.next_step(:bin1)
     File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area = 1\n  def side = 4\n  def draw = 3\nend\n")
     view.load
 
@@ -60,7 +60,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
   end
 
   it 'asks why for woe, dread and malice, taking every key typed until Enter, or Esc to leave it out, and stays' do
-    expect(view.next_step(:bin4)).to be_nil
+    expect(view.next_step(:bin6)).to be_nil
     expect([view.typing?, view.noting, view.next_step?(:tab)]).to eq([true, 'malice', true])
 
     type('two jq')
@@ -68,7 +68,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
     step = view.next_step(:enter)
     expect([step.feeling.temper, step.feeling.note, view.typing?, view.cursor]).to eq(['malice', 'two j', false, 0])
 
-    view.next_step(:bin1)
+    view.next_step(:bin4)
     expect(view.next_step(:escape).feeling.note).to be_nil
   end
 
@@ -76,7 +76,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect(view.next_step(:edit)).to eq(Raindown::TUI::Edit.new(path: File.join(@root, 'lib', 'shapes.rb'), line: view.selected.line))
     expect(view.next_step(:execute).feeling.temper).to be_nil
 
-    view.next_step(:bin3)
+    view.next_step(:bin5)
     view.next_step(:enter)
     view.next_step(:left)
     expect(view.next_step(:execute).feeling.temper).to eq('dread')
@@ -105,7 +105,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
     view.code_methods.each_index do
       view.cursor = it
-      view.next_step(:bin5)
+      view.next_step(:bin3)
     end
     restarted = described_class.new(root: @root).tap(&:load).tap { it.cells(2, 2) }
     expect([restarted.batch.files, restarted.batch.progress, restarted.next_step?(:next)]).to eq([batch, '100% refined', false])
@@ -114,7 +114,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
   it 'rains when the last of the batch is felt, then shows a waffle until a key is pressed, or with Ctrl+T to try it' do
     view.code_methods.each_index do
       view.cursor = it
-      view.next_step(:bin5)
+      view.next_step(:bin3)
     end
     expect([view.celebration.frame, view.animating?]).to eq([0, true])
 
@@ -123,7 +123,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
     view.next_step(:right)
     expect([view.celebration, view.batch.progress]).to eq([nil, '100% refined'])
-    view.next_step(:bin2)
+    view.next_step(:bin1)
     expect(view.celebration).to be_nil
 
     expect([view.next_step(:celebrate), view.animating?]).to eq([nil, true])

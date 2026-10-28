@@ -3,6 +3,7 @@
 require_relative 'chart/chart'
 require_relative 'files'
 require_relative 'node'
+require_relative 'stat'
 require_relative 'toc'
 
 module Raindown

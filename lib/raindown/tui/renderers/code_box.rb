@@ -25,7 +25,7 @@ module Raindown
       def code_box
         notes = []
         notes = note_lines if view.typing?
-        [box_top(view.selected), *code_lines(height - FeelingsRenderer::BIN_LINES - BOX_LINES - MIN_GRID_ROWS - notes.length), *notes,
+        [box_top(view.selected), *code_lines(height - Bins::BIN_LINES - BOX_LINES - MIN_GRID_ROWS - notes.length), *notes,
          box_edge('╰', '╯')]
       end
 
@@ -48,7 +48,7 @@ module Raindown
       # after the first carrying on after an ellipsis.
       def wrapped(parts)
         room = width - 6
-        lead = [carried_lead(parts, room), :body]
+        lead = [carried_lead(parts, room), :feelings]
         rest = room - display_width(lead[0])
         return [parts] if rest < 1
 
@@ -88,11 +88,11 @@ module Raindown
         text = "[#{hidden} more lines]"
         text = '[1 more line]' if hidden == 1
         text = "[Fewer lines]#{" · #{hidden} more don't fit" if hidden.positive?}" if view.expanded
-        boxed([[text, :body]], event: Click.new(pane:, index: view.cursor, action: :expand))
+        boxed([[text, :button]], event: Click.new(pane:, index: view.cursor, action: :expand))
       end
 
       # Why it felt that way, as it's typed, below a line, in as many lines as it takes.
-      def note_lines = [box_edge('├', '┤'), *hanging("Why #{view.noting.upcase}? > ", "#{view.note}▏").map { boxed([[it, :menu]]) }]
+      def note_lines = [box_edge('├', '┤'), *hanging("Why #{view.noting.upcase}? > ", "#{view.note}▏").map { boxed([[it, :feelings]]) }]
 
       # The text after the lead, wrapped to fit the box, with the lines after the first lined up under the text.
       def hanging(lead, text)
@@ -114,7 +114,7 @@ module Raindown
 
       # A line of the box, a column in from each side of the pane, of [text, style] parts, like highlighted code's.
       def boxed(parts, event: nil)
-        padded([segment(' │ ', :border, width: 3), *code_segments(parts, width - 6, event:), segment(' │', :border, width: 2)])
+        padded([segment(' │ ', :feelings, width: 3), *code_segments(parts, width - 6, event:), segment(' │', :feelings, width: 2)])
       end
 
       # The box's top or bottom, with the left text cut short, rather than the corner, when there isn't room.
@@ -122,7 +122,7 @@ module Raindown
         room = width - 2 - display_width(right)
         left = "#{fit(left, room - 1)} " if display_width(left) > room
         fill = [room - display_width(left), 0].max
-        padded([segment(" #{left}#{'─' * fill}#{right}", :border, width: width - 1)])
+        padded([segment(" #{left}#{'─' * fill}#{right}", :feelings, width: width - 1)])
       end
     end
   end

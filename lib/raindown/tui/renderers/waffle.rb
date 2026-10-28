@@ -22,8 +22,8 @@ module Raindown
         [['╠═══╬═══╬═══╬═══╬═══╣', EDGE]],
         [['║   ║   ║   ║   ║   ║', EDGE]],
         [['╚═══╩═══╩═══╩═══╩═══╝', EDGE]],
-        [['100% refined', :heading]],
-        [['The work is mysterious and important.', :body]]
+        [['100% refined', :feelings]],
+        [['The work is mysterious and important.', :feelings]]
       ].freeze
 
       private

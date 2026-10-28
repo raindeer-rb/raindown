@@ -10,12 +10,13 @@ module Raindown
   module TUI
     # Code feelings, like Severance's macrodata refinement: the project's functions and methods, in any language,
     # as clusters of digits in a grid, where long methods, and ones whose files keep changing, drift. The cursor moves
-    # between them, the selected one's code shows below the grid, its first lines or with Enter all that fits, and 1 to 5
-    # sort how it feels into a bin: woe, frolic, dread, malice or numb, which notes it down in the FeelingsLog, staying on
-    # it. Woe, dread and malice ask why first, typed until Enter, or Esc to leave it out. E opens the method in the
+    # between them, the selected one's code shows below the grid, its first lines or with Enter all that fits, and 1 to 6
+    # sort how it feels into a bin: frolic, hope, numb, woe, dread or malice, which notes it down in the FeelingsLog,
+    # staying on it. Woe, dread and malice ask why first, typed until Enter, or Esc to leave it out. E opens the method in the
     # editor, and X asks Claude Code to fix it, and either way it's read again after, to be felt again.
     class FeelingsView
-      BINS = { bin1: 'woe', bin2: 'frolic', bin3: 'dread', bin4: 'malice', bin5: 'numb' }.freeze
+      # Best to worst, as CodeHealth scores them, so the keys rate the code.
+      BINS = { bin1: 'frolic', bin2: 'hope', bin3: 'numb', bin4: 'woe', bin5: 'dread', bin6: 'malice' }.freeze
       # The tempers that ask why.
       NOTED = %w[woe dread malice].freeze
       # Its own keys, besides the bins: Enter and Space show all of the selected method's code, or its first lines again.
