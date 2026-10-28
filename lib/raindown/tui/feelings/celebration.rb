@@ -3,9 +3,9 @@
 module Raindown
   module TUI
     # When a batch of code feelings is refined, like Severance's waffle party: rain, a frame each tick, for about five
-    # seconds of the Screen's 60 ms frames, then a waffle, until a key's pressed.
+    # seconds of the Screen's 50 ms frames, then a waffle, until a key's pressed.
     class Celebration
-      RAIN_FRAMES = 83
+      RAIN_FRAMES = 100
 
       attr_reader :frame
 

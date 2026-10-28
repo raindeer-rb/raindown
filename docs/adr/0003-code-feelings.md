@@ -38,7 +38,8 @@ Each function or method in the batch (see The week's batch below) is a cluster o
 The digits aren't uniform, which keeps the show's feel:
 
 - **Noise:** about three cells in ten are one or two away from their method's drift. Each cell's checksum decides which, so a cell never changes from one draw to the next (`FeelingsRenderer::NOISE`).
-- **Flicker:** a cell of a method that drifts 7 or more dips one lower for one tick, about every 6 seconds, each cell at its own moment, so the heaviest methods look restless.
+- **Tremble:** a method that drifts 7 or more is restless, and its cells' digits tremble now and then, about once a minute each, a column either way for four steps of 0.15 seconds, as if they're trying to escape (`Motion`). Code feelings is drawn at 14 frames a second, and the rain at 20, whether it's used with the keys or the mouse, so the frame rate doesn't jump between them.
+- **Flee:** when the mouse is over a method, the digits beside it in its row move to the far side of their cells, away from it, where they tremble twice as quickly, about every 0.6 seconds, and every cell around it, above, below and diagonally too, is bold.
 
 **Cells are 6 columns wide and 2 lines tall**, with the digit small on the first line, and the grid starts with a blank line. When the mouse is over a method, its digits are magnified, 3 columns wide and 3 lines tall, in the same block digits as the README's stats (`Raindown::Stat::DIGITS`), drawn over the line above them and the spaces beside them, but never below, so the digits around them stay readable. The spacing quarters how many cells fit, compared with 3 by 1 before, so batches are smaller. A magnifier over the 3 by 1 grid would have kept them, but covered its neighbours' digits.
 

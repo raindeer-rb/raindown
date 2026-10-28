@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../events'
+require_relative 'cell_moves'
 require_relative 'celebration'
 require_relative 'code_methods'
 require_relative 'feelings_log'
@@ -15,24 +16,25 @@ module Raindown
     # staying on it. Woe, dread and malice ask why first, typed until Enter, or Esc to leave it out. E opens the method in the
     # editor, and X asks Claude Code to fix it, and either way it's read again after, to be felt again.
     class FeelingsView
+      include CellMoves
+
       # Best to worst, as CodeHealth scores them, so the keys rate the code.
       BINS = { bin1: 'frolic', bin2: 'hope', bin3: 'numb', bin4: 'woe', bin5: 'dread', bin6: 'malice' }.freeze
       # The tempers that ask why.
       NOTED = %w[woe dread malice].freeze
       # Its own keys, besides the bins: Enter and Space show all of the selected method's code, or its first lines again.
       # Ctrl+T celebrates, to try the rain and the waffle, and isn't shown with the buttons.
-      KEYS = %i[up down left right edit execute tick enter toggle expand celebrate].freeze
+      KEYS = %i[up down left right edit execute enter toggle expand celebrate].freeze
 
       # The temper being noted, and the note typed so far, while it's asking why, whether the selected method's code
       # shows all that fits, until another's selected, and the rain then the waffle, once the batch is refined.
-      attr_reader :noting, :note, :cursor, :tick, :log, :expanded, :celebration
+      attr_reader :noting, :note, :cursor, :log, :expanded, :celebration
 
       def initialize(root:)
         @root = root
         @log = FeelingsLog.new(root:)
         @last_feelings = {}
         @cursor = 0
-        @tick = 0
         @week = WeeklyBatch.new(log: @log)
       end
 
@@ -42,7 +44,15 @@ module Raindown
       def path = nil
       def changed? = false
       def typing? = !noting.nil?
-      def animating? = celebration&.raining? == true
+
+      # As fast as an animation while it rains, and otherwise in motion, so its digits tremble at the same pace whether it's
+      # used with the keys or the mouse.
+      def pace(_hovered)
+        return :animation if celebration&.raining?
+
+        :motion
+      end
+
       def status(_navigator) = [:info, "This week's code to feel, #{batch.week}"]
 
       # Reads the code again, keeping the batch, like after a method's edited or fixed, and the selected method, by its
@@ -68,15 +78,6 @@ module Raindown
         @cursor = index
       end
 
-      # Each cell's method, by its index, in reading order, in a grid as many cells across as the columns.
-      # They're kept, so up and down move a row.
-      # The first time the grid's drawn, with its rows, right after the view opens, the batch is picked to fill them.
-      def cells(columns, rows = nil)
-        @week.fill(columns * rows) if rows
-        @columns = columns
-        @cells = code_methods.each_with_index.flat_map { |method, index| [index] * method.size }
-      end
-
       # Every key while it's asking why or celebrating, and otherwise its own, but Tab to the files, or left from the
       # first method.
       def next_step?(key)
@@ -88,7 +89,6 @@ module Raindown
       def next_step(key)
         return note_step(key) if typing?
         return @celebration = nil if celebration&.over?(key)
-        return (@tick += 1).then { nil } if key == :tick
         return (@celebration = Celebration.new).then { nil } if key == :celebrate
         return unless selected
         return feel(BINS[key]) if BINS.key?(key)
@@ -113,18 +113,6 @@ module Raindown
 
       # Asks to fix the method, with how it last felt, by its file and name, which stay the same when its lines change.
       def fix = Fix.new(feeling: @last_feelings[[selected.path, selected.label]] || Feeling.new(method: selected, temper: nil, note: nil))
-
-      def move(by)
-        self.cursor = @cursor + by
-        nil
-      end
-
-      # To the method in the cell above or below the selected one's first cell.
-      def move_row(by)
-        cell = @cells[@cells.index(@cursor).to_i + (by * @columns)]
-        self.cursor = cell if cell
-        nil
-      end
 
       # Frolic and numb are noted down straight away, while the rest ask why first.
       def feel(temper)

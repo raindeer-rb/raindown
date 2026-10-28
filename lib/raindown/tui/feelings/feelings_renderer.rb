@@ -2,10 +2,11 @@
 
 require 'zlib'
 
-require_relative '../../stat'
 require_relative '../renderers/renderer'
 require_relative 'bins'
 require_relative 'code_box'
+require_relative 'magnifier'
+require_relative 'motion'
 require_relative 'scene'
 require_relative 'waffle'
 
@@ -26,6 +27,8 @@ module Raindown
     class FeelingsRenderer < Renderer
       include Bins
       include CodeBox
+      include Magnifier
+      include Motion
       include Waffle
 
       # The columns and lines a cell takes, its digit small on the first line, with room around it for the digit magnified
@@ -35,9 +38,8 @@ module Raindown
       CELL_LINES = 2
       # The code box's lines of code that a batch is sized for.
       FILLED_CODE_LINES = 1
-      # The drift from which a method's cells flicker, and the ticks, half a second each, between a cell's flickers.
+      # The drift from which a method's cells are restless, and tremble now and then.
       RESTLESS = 7
-      FLICKER_TICKS = 12
       # How far a cell's digit is from its method's drift, by its roll out of NOISE_ROLL, so about three in ten are off.
       NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2 }.freeze
       NOISE_ROLL = 20
@@ -71,7 +73,7 @@ module Raindown
       # then a waffle.
       def instead
         return blank(" No functions or methods in #{File.basename(navigator.root)} to feel") if view.code_methods.empty?
-        return Scene.new(width:, height:).lines(view.celebration.frame) if view.animating?
+        return Scene.new(width:, height:).lines(view.celebration.frame) if view.celebration.raining?
 
         waffle
       end
@@ -79,6 +81,7 @@ module Raindown
       # The rows of the grid around the selected method's, each its cells' lines, below a blank line that leaves the first
       # row room to be magnified, above the lines below it, and blank lines for any left over.
       def grid(cells, below)
+        @cells = cells
         lines = [height - below, 0].max
         rows = [(lines - 1) / CELL_LINES, 0].max
         first = first_row(cells, columns, rows)
@@ -90,44 +93,6 @@ module Raindown
       # The cells' lines of the rows from the first.
       def grid_rows(cells, first, rows)
         Array.new(rows * CELL_LINES) { grid_line(cells, (first + (it / CELL_LINES)) * columns, columns, it % CELL_LINES) }
-      end
-
-      # The lines with the digits of the selected method, and the one the mouse is over, magnified, over the line above them
-      # and beside them, each across its whole cell and the line above it.
-      def magnified(lines, cells, first, rows)
-        magnified_cells(cells, first, rows).each do |index, click|
-          magnify_cell(lines, ((index / columns) - first) * CELL_LINES, cells[index], index, click)
-        end
-        lines
-      end
-
-      # The cell's digit magnified over the lines from the top one, across the whole cell.
-      def magnify_cell(lines, top, owner, index, click)
-        style = magnified_style(owner)
-        Stat::DIGITS[digit(owner, index).to_s].each_with_index do |text, line|
-          magnify(lines, top + line, segment(" #{text}  ", style, width: CELL, event: click), 1 + (index % columns * CELL))
-        end
-      end
-
-      # The selected method's cells, across the whole of each, on the selection's blue, so they join into one block.
-      def magnified_style(owner)
-        return :selected if owner == view.cursor
-
-        :feelings
-      end
-
-      # The cells of the rows from the first that are the selected method's, or the one the mouse is over's, with its click,
-      # unless they're blank.
-      def magnified_cells(cells, first, rows)
-        (first * columns...(first + rows) * columns).filter_map do |index|
-          owner = cells[index]
-          click = Click.new(pane:, index: owner, action: :focus)
-          [index, click] if owner && (owner == view.cursor || navigator.hovered == click) && !hidden?(owner)
-        end
-      end
-
-      def magnify(lines, line, segment, column)
-        lines[line] = overlay_segments(lines[line], [segment], column:)
       end
 
       def columns = [(width - 1) / CELL, 1].max
@@ -149,31 +114,27 @@ module Raindown
           next unless owner
 
           click = Click.new(pane:, index: owner, action: :focus)
-          segment(cell_text(owner, index, line), :feelings, width: CELL, event: click)
+          segment(cell_text(owner, index, line), cell_style(index), width: CELL, event: click)
         end
         padded([segment('', :blank, width: 1), *segments])
       end
 
-      # The cell's line: its digit small on the first, or blank once its method's felt, but still there to select, which
-      # shows it again with its code.
+      # The cell's line: its digit small on the first, where it moves, or blank once its method's felt, but still there to
+      # select, which shows it again with its code.
       def cell_text(owner, index, line)
         return ' ' * CELL if hidden?(owner) || line.nonzero?
 
-        "  #{digit(owner, index)}   "
+        column = digit_column(owner, index)
+        "#{' ' * column}#{digit(owner, index)}#{' ' * (CELL - 1 - column)}"
       end
 
       # Whether the method's felt, and not selected, so its cells are blank.
       def hidden?(owner) = owner != view.cursor && view.batch.felt?(view.code_methods[owner])
 
       # Near the method's drift, from 0 to 9: a cell's checksum rolls a small chance of it being one or two away.
-      # A heavy method's cells also flicker one lower now and then, each at its own time, so they look restless.
       def digit(owner, index)
         drift = view.code_methods[owner].drift
-        seed = Zlib.crc32("#{owner}:#{index}")
-        digit = (drift + NOISE.fetch(seed % NOISE_ROLL, 0)).clamp(0, 9)
-        return digit if drift < RESTLESS || ((view.tick + seed) % FLICKER_TICKS).nonzero?
-
-        digit - 1
+        (drift + NOISE.fetch(Zlib.crc32("#{owner}:#{index}") % NOISE_ROLL, 0)).clamp(0, 9)
       end
 
       def blank(message)

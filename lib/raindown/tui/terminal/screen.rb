@@ -13,9 +13,10 @@ module Raindown
     # Paints a Navigator's Layout with curses, and sends the Navigator the events of keys and clicks, read with Input.
     # Only this class draws on the terminal, so another library could draw the same Layout.
     class Screen
-      # How often, in milliseconds, the open file is checked for changes while no key is pressed, or, while the view
-      # animates, like Code feelings' rain, it's drawn.
-      TICKS = { false => 500, true => 60 }.freeze
+      # How often, in milliseconds, the screen's drawn, and the open file checked for changes, while no key is pressed, by
+      # the view's pace: every half second while it's still, at 14 frames a second while there's motion, like Code
+      # feelings' trembling digits, and at 20 during an animation, like Code feelings' rain.
+      TICKS = { still: 500, motion: 71, animation: 50 }.freeze
 
       def initialize(navigator)
         @navigator = navigator
@@ -107,7 +108,7 @@ module Raindown
 
       # The next event, or :tick when no key is pressed in time, or nil for keys without one, like a resize.
       def read
-        Curses.stdscr.timeout = TICKS.fetch(@navigator.animating?)
+        Curses.stdscr.timeout = TICKS.fetch(@navigator.pace)
         key = Curses.stdscr.getch
         return :tick if key.nil?
         return mouse if key == Curses::KEY_MOUSE

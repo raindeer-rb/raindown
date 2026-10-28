@@ -76,8 +76,8 @@ module Raindown
       # While the search, or the view, like a feeling's note, takes what's typed, rather than keys' events.
       def typing? = searching? || view.typing?
 
-      # While the view wants drawing faster than the ticks, like Code feelings' rain.
-      def animating? = view.animating?
+      # How often the screen's drawn, which is up to the view, like faster for Code feelings' rain.
+      def pace = view.pace(hovered)
 
       # What's in a pane: the nav's ListView on the left, or the view on the right, which keeps its own cursor.
       def content(pane) = pane == :nav ? @nav : view

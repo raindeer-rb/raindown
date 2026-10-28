@@ -86,11 +86,12 @@ module Raindown
         Hash.new(text).merge(plain.transform_values { it | text })
       end
 
-      # Headings, and Code feelings' text and lines, whose lavender the Dashboard cards' charts and code
-      # blocks are too, apart from highlighted code's keywords, strings and the like.
+      # Headings, and Code feelings' text and lines, bold around the method the mouse is over, whose lavender the Dashboard
+      # cards' charts and code blocks are too, apart from highlighted code's keywords, strings and the like.
       def emphasis
         lavender = pair(:feelings)
-        { heading: pair(:heading) | Curses::A_BOLD, feelings: lavender, chart: lavender, code: lavender }
+        { heading: pair(:heading) | Curses::A_BOLD, feelings: lavender, nearby: lavender | Curses::A_BOLD, chart: lavender,
+          code: lavender }
       end
 
       # Highlighted code's tokens, like keywords and comments, with comments dim in 8 colours, where there's no grey.

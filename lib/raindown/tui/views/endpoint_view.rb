@@ -27,7 +27,7 @@ module Raindown
       def status(_navigator) = [:info, endpoint.text]
       def changed? = false
       def typing? = false
-      def animating? = false
+      def pace(_hovered) = :still
       def next_step?(key) = %i[up down enter edit execute].include?(key)
 
       # Clicks on the response only move the focus to it.

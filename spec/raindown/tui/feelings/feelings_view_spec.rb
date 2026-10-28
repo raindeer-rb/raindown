@@ -125,17 +125,17 @@ RSpec.describe Raindown::TUI::FeelingsView do
       view.cursor = it
       view.next_step(:bin3)
     end
-    expect([view.celebration.frame, view.animating?]).to eq([0, true])
+    expect([view.celebration.frame, view.pace(nil)]).to eq([0, :animation])
 
     Raindown::TUI::Celebration::RAIN_FRAMES.times { view.next_step(:tick) }
-    expect([view.celebration.raining?, view.animating?, view.next_step?(:tab)]).to eq([false, false, true])
+    expect([view.celebration.raining?, view.pace(nil), view.next_step?(:tab)]).to eq([false, :motion, true])
 
     view.next_step(:right)
     expect([view.celebration, view.batch.progress]).to eq([nil, '100% refined'])
     view.next_step(:bin1)
     expect(view.celebration).to be_nil
 
-    expect([view.next_step(:celebrate), view.animating?]).to eq([nil, true])
+    expect([view.next_step(:celebrate), view.pace(nil)]).to eq([nil, :animation])
   end
 
   it 'picks the same files all week' do
@@ -148,8 +148,15 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect((1..8).map { pick.call(Date.new(2026, 11, 1) + (7 * it)) }.uniq.length).to be > 1
   end
 
-  it 'drifts with each tick, and leaves Tab, and left from the first method, to the files' do
-    expect { view.next_step(:tick) }.to change(view, :tick).by(1)
+  it 'leaves Tab, and left from the first method, to the files' do
     expect([view.next_step?(:tab), view.next_step?(:left), view.next_step?(:right)]).to eq([false, false, true])
+  end
+
+  it 'is drawn often, wherever the mouse is, and most often while it rains' do
+    over = Raindown::TUI::Click.new(pane: :main, index: 0, action: :focus)
+    expect([nil, over].map { view.pace(it) }).to eq(%i[motion motion])
+
+    view.next_step(:celebrate)
+    expect(view.pace(over)).to eq(:animation)
   end
 end

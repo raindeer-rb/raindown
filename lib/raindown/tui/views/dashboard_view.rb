@@ -32,7 +32,7 @@ module Raindown
       def path = nil
       def changed? = false
       def typing? = false
-      def animating? = false
+      def pace(_hovered) = :still
 
       def status(_navigator)
         found = "#{charts.length} #{charts.length == 1 ? 'chart' : 'charts'} in #{File.basename(project || root)}"

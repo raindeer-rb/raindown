@@ -356,14 +356,14 @@ RSpec.describe Raindown::TUI::Layout do
     it 'rains over the pane when the batch is refined, then shows a waffle' do
       navigator.next_step(:bin3)
       rain = main(described_class.new(navigator, width: 90, height: 24).lines)
-      expect([navigator.animating?, rain.join]).to match([true, match(/[│╎]/)])
+      expect([navigator.pace, rain.join]).to match([:animation, match(/[│╎]/)])
       expect(rain.join).not_to include('Raindown')
 
       Raindown::TUI::Celebration::RAIN_FRAMES.times { navigator.next_step(:tick) }
       lines = described_class.new(navigator, width: 90, height: 24).lines
       expect(main(lines).map(&:strip)).to include('╔═══╦═══╦═══╦═══╦═══╗', '║   ║   ║███║   ║   ║', '100% refined',
                                                   'The work is mysterious and important.')
-      expect(navigator.animating?).to be(false)
+      expect(navigator.pace).to eq(:motion)
       expect(lines.flatten.find { it.text == '███' }.style).to eq(:button)
       expect(text(lines).map { width(it) }).to all(eq(90))
     end
@@ -406,7 +406,39 @@ RSpec.describe Raindown::TUI::Layout do
 
       both.next_step(Raindown::TUI::Hover.new(target: nil))
       lines = described_class.new(both, width: 90, height: 24).lines
-      expect([magnified(lines, 1), grid_line(lines).find { it.event == click(:main, 1, :focus) }.text]).to match([[nil] * 3, /\A  \d   \z/])
+      small = grid_line(lines).find { it.event == click(:main, 1, :focus) }.text
+      expect([magnified(lines, 1), small]).to match([[nil] * 3, /\A {1,3}\d {2,4}\z/])
+    end
+
+    it 'has the digits beside the method the mouse is over flee from it, trembling often, and the cells around it bold' do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), (1..5).map { "def m#{it} = #{it}\n" }.join)
+      navigator.next_step(:reload)
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 2, :focus)))
+      lines = Array.new(Raindown::TUI::Motion::FLEEING_TREMBLE_EVERY) do |step|
+        allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return((step + 0.5) * Raindown::TUI::Motion::FLEEING_TREMBLE_SECONDS)
+        grid_line(described_class.new(navigator, width: 90, height: 24).lines)
+      end
+      cells = ->(index) { lines.map { |line| line.find { it.event == click(:main, index, :focus) } } }
+
+      expect([1, 3].map { |index| cells[index].map { it.text.index(/\d/) }.uniq.sort }).to eq([[0, 1], [3, 4, 5]])
+      expect([1, 3, 4].map { |index| cells[index].map(&:style).uniq }).to eq([[:nearby], [:nearby], [:feelings]])
+    end
+
+    it 'trembles the digits of restless methods, the heaviest, a column either way for a moment now and then' do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "def short = 1\ndef long\n#{"  1\n" * 30}end\n")
+      navigator.next_step(:reload)
+      navigator.view.cursor = navigator.view.code_methods.index { it.name == 'short' }
+      long = navigator.view.code_methods.index { it.name == 'long' }
+      # A shorter cycle than a minute's, so it's drawn in fewer frames.
+      stub_const('Raindown::TUI::Motion::TREMBLE_EVERY', 40)
+      columns = Array.new(Raindown::TUI::Motion::TREMBLE_EVERY) do |step|
+        allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return((step + 0.5) * Raindown::TUI::Motion::TREMBLE_SECONDS)
+        cells = grid_line(described_class.new(navigator, width: 90, height: 24).lines).select { it.event == click(:main, long, :focus) }
+        cells.map { it.text.index(/\d/) }
+      end
+
+      expect([navigator.view.code_methods[long].drift, columns.flatten.uniq.sort]).to eq([9, [1, 2, 3]])
+      expect(columns.transpose.map { |cell| cell.count { it != 2 } }).to all(eq(Raindown::TUI::Motion::TREMBLE.length))
     end
 
     it "shows a long method's first 8 lines, then how many more there are, clicked to show all that fit" do
