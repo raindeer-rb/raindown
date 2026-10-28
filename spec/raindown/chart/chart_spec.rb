@@ -177,6 +177,11 @@ RSpec.describe Raindown::Chart do
     end
   end
 
+  it 'keeps the last points with tail:' do
+    expect(chart('1 2 3 4 8', tail: 2)).to eq(chart('4 8'))
+    expect(chart([%w[month sales], %w[Jan 1], %w[Feb 2], %w[Mar 3]], tail: 2, width: 10)).to start_with('Feb')
+  end
+
   it 'is told how to draw with format:' do
     expect(chart('1 2', format: 'pie')).to eq(%(Can't chart "1 2": format: is bars, columns, line, sparkline, not "pie"))
   end

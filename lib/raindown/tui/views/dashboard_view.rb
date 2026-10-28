@@ -5,9 +5,9 @@ require_relative '../events'
 module Raindown
   module TUI
     # Every chart in the projects' Markdown files, drawn from its data by its project's Worker, as cards in a grid
-    # with a cursor. A chart is a chart: directive, or a project's own node that's a Raindown::Chart,
-    # like "Sales < Raindown::Chart". Charts are drawn again every few seconds, so they follow changes to their data,
-    # like a CSV file, without a save.
+    # with a cursor. A chart is a chart: directive, or a project's own node that's a Raindown::Chart, like
+    # "Sales < Raindown::Chart", or a Raindown::Stat, one big number, like "CodeDebt < Raindown::Stat". Charts are drawn
+    # again every few seconds, so they follow changes to their data, like a CSV file, without a save.
     # A key's next step, for the Navigator, is nil, or an Open or Edit of a chart's directive.
     class DashboardView
       # Seconds between drawing the charts again.
@@ -31,6 +31,8 @@ module Raindown
       def target = self
       def path = nil
       def changed? = false
+      def typing? = false
+      def animating? = false
 
       def status(_navigator)
         found = "#{charts.length} #{charts.length == 1 ? 'chart' : 'charts'} in #{File.basename(project || root)}"
@@ -45,7 +47,7 @@ module Raindown
 
       # The charts, as each project's Worker drew them, of the project they're narrowed to, if any.
       def charts
-        project ? @cards.select { it.project == project } : @cards
+        project ? @cards.filter { it.project == project } : @cards
       end
 
       # Narrows the charts to a project's, or with nil, shows every project's.

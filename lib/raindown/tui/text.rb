@@ -50,6 +50,33 @@ module Raindown
         end
       end
 
+      # A line of highlighted code's [text, style] parts as segments, cut or padded to the width.
+      def code_segments(parts, width, event: nil)
+        segments = segments_between(parts.map { |text, style| Segment.new(text: printable(text), style:, event:) }, 0, width)
+        [*segments, segment('', :code, width: width - segments.sum { display_width(it.text) }, event:)]
+      end
+
+      # The text in lines that fit the width, broken at spaces where it can, and inside a word too long for a line.
+      def wrap(text, width)
+        return [text] unless width.positive?
+
+        text.scan(/\S+|\s+/).each_with_object([+'']) do |part, lines|
+          next lines.last << part if display_width(lines.last + part) <= width
+          next lines << +'' if part.strip.empty?
+
+          lines << +'' unless lines.last.empty?
+          break_word(part, width, lines)
+        end
+      end
+
+      # Adds a word too long for a line to the lines, a character at a time, starting a new line when one's full.
+      def break_word(word, width, lines)
+        word.each_char do |char|
+          lines << +'' if display_width(lines.last + char) > width
+          lines.last << char
+        end
+      end
+
       # The line's segments, with others drawn over its columns from the column on, like a box over the screen.
       def overlay_segments(line, segments, column:)
         width = segments.sum { display_width(it.text) }

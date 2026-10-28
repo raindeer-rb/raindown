@@ -40,13 +40,13 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator = described_class.new(root: @root)
 
       expect([view_name(navigator), navigator.focus, navigator.content(:nav).cursor]).to eq(['DashboardView', :main, 0])
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '▸ guides/', 'README.md'])
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', '▸ guides/', 'README.md'])
 
       navigator.next_step(:left)
-      navigator.next_step(:down)
+      2.times { navigator.next_step(:down) }
       navigator.next_step(:enter)
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '▾ guides/', '▸ deep/', 'setup.md', 'README.md'])
-      expect(navigator.content(:nav).rows.select(&:selectable?).map(&:depth)).to eq([0, 0, 1, 1, 0])
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', '▾ guides/', '▸ deep/', 'setup.md', 'README.md'])
+      expect(navigator.content(:nav).rows.select(&:selectable?).map(&:depth)).to eq([0, 0, 0, 1, 1, 0])
     end
 
     it "marks the projects inside the folder with Raindown's cloud, which fold like folders" do
@@ -55,20 +55,20 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator = described_class.new(root: @root)
 
       expect(navigator.content(:nav).rows.select(&:selectable?).map { [it.kind, it.text] })
-        .to eq([[:dashboard, '📊 Dashboard'], [:project, '▸ 🌧 guides/']])
+        .to eq([[:page, '📊 Dashboard'], [:page, '🎭 Feelings'], [:project, '▸ 🌧 guides/']])
 
       navigator.next_step(:left)
-      navigator.next_step(:down)
+      2.times { navigator.next_step(:down) }
       navigator.next_step(:enter)
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '▾ 🌧 guides/', 'setup.md'])
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', '▾ 🌧 guides/', 'setup.md'])
     end
 
     it 'opens a file asked for, in its open folder' do
       navigator = described_class.new(root: @root, path: write('guides/deep/more.md'))
 
       expect([view_name(navigator), navigator.relative(navigator.path)]).to eq(['OutlineView', 'guides/deep/more.md'])
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '▾ guides/', '▾ deep/', 'more.md'])
-      expect(navigator.content(:nav).cursor).to eq(4)
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', '▾ guides/', '▾ deep/', 'more.md'])
+      expect(navigator.content(:nav).cursor).to eq(5)
     end
 
     it 'opens a file chosen with Enter, which moves to the outline' do
@@ -77,7 +77,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator = described_class.new(root: @root)
 
       navigator.next_step(:left)
-      2.times { navigator.next_step(:down) }
+      3.times { navigator.next_step(:down) }
       navigator.next_step(:enter)
 
       expect(navigator.relative(navigator.path)).to eq('b.md')
@@ -189,10 +189,10 @@ RSpec.describe Raindown::TUI::Navigator do
       write('notes.md', "# Notes\n")
       navigator = described_class.new(root: @root, path: File.join(@root, 'notes.md'))
 
-      navigator.next_step(click(:nav, 2))
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '▾ guides/', 'setup.md', 'notes.md'])
-
       navigator.next_step(click(:nav, 3))
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', '▾ guides/', 'setup.md', 'notes.md'])
+
+      navigator.next_step(click(:nav, 4))
       expect([view_name(navigator), navigator.relative(navigator.path), navigator.focus]).to eq(['OutlineView', 'guides/setup.md', :main])
 
       navigator.next_step(click(:nav, 0))
@@ -236,15 +236,15 @@ RSpec.describe Raindown::TUI::Navigator do
       10.times { write("#{it}.md") }
       navigator = described_class.new(root: @root)
       navigator.next_step(:left)
-      6.times { navigator.next_step(:down) }
+      7.times { navigator.next_step(:down) }
 
       rows, offset = navigator.content(:nav).visible(3)
-      expect([rows.map(&:text), offset]).to eq([%w[3.md 4.md 5.md], 5])
+      expect([rows.map(&:text), offset]).to eq([%w[3.md 4.md 5.md], 6])
 
       5.times { navigator.next_step(:up) }
-      expect(navigator.content(:nav).visible(3).last).to eq(2)
+      expect(navigator.content(:nav).visible(3).last).to eq(3)
       navigator.next_step(:up)
-      expect(navigator.content(:nav).cursor).to eq(0)
+      expect(navigator.content(:nav).cursor).to eq(1)
     end
   end
 
@@ -276,7 +276,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.next_step(:right)
       expect(navigator.focus).to eq(:main)
 
-      navigator.next_step(click(:nav, 3))
+      navigator.next_step(click(:nav, 4))
       navigator.next_step(:enter)
       expect([view_name(navigator), navigator.relative(navigator.path)]).to eq(['OutlineView', 'stats.md'])
     end
@@ -338,7 +338,7 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.next_step(:enter)
 
       expect([navigator.menu, navigator.project, view_name(navigator)]).to eq([nil, File.join(@root, 'guides'), 'DashboardView'])
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', 'setup.md'])
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', 'setup.md'])
       expect(navigator.dashboard.charts.map { File.basename(it.path) }).to eq(['setup.md'])
       expect(navigator.status).to eq([:info, '1 chart in guides'])
     end
@@ -346,12 +346,12 @@ RSpec.describe Raindown::TUI::Navigator do
     it "shows a project's own files, without the projects inside it, and every project's again with All projects" do
       navigator.next_step(:projects)
       navigator.next_step(click(:menu, 1))
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', 'notes.md'])
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', 'notes.md'])
 
       navigator.next_step(:projects)
       expect(navigator.menu).to eq(1)
       navigator.next_step(click(:menu, 0))
-      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '▸ 🌧 guides/', 'notes.md'])
+      expect(texts(navigator, :nav)).to eq(['📊 Dashboard', '🎭 Feelings', '▸ 🌧 guides/', 'notes.md'])
       expect(navigator.dashboard.charts.length).to eq(2)
     end
 
@@ -407,7 +407,7 @@ RSpec.describe Raindown::TUI::Navigator do
 
     it 'scrolls with the files, and the cursor moves from the last file to the first endpoint and back' do
       navigator.next_step(:left)
-      3.times { navigator.next_step(:down) }
+      4.times { navigator.next_step(:down) }
       expect(navigator.content(:nav).rows[navigator.content(:nav).cursor].text).to eq('api.example.com')
 
       navigator.next_step(:up)
@@ -415,7 +415,7 @@ RSpec.describe Raindown::TUI::Navigator do
     end
 
     it 'opens an endpoint beside the files, with its response, and its directive in the outline with Enter' do
-      navigator.next_step(click(:nav, 6))
+      navigator.next_step(click(:nav, 7))
       expect([view_name(navigator), navigator.view.endpoint.line, navigator.focus]).to eq(['EndpointView', 9, :main])
       expect(navigator.view.response).to eq([])
 
@@ -434,7 +434,7 @@ RSpec.describe Raindown::TUI::Navigator do
 
     it 'runs an opened endpoint with its button, and shows the response' do
       allow(Raindown::Curl).to receive(:run).and_return(["{\n  \"id\": 1\n}", 'json'])
-      navigator.next_step(click(:nav, 5))
+      navigator.next_step(click(:nav, 6))
 
       navigator.next_step(click(:main, 0, :execute)).task.call
       view = navigator.view
@@ -444,7 +444,7 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'runs the selected endpoint' do
       allow(Raindown::Curl).to receive(:run).and_return(['{ "id": 1 }', 'json'])
       navigator.next_step(:left)
-      3.times { navigator.next_step(:down) }
+      4.times { navigator.next_step(:down) }
 
       effect = navigator.next_step(:execute)
       expect(effect.message).to eq('Running GET api.example.com...')
@@ -461,6 +461,139 @@ RSpec.describe Raindown::TUI::Navigator do
       navigator.next_step(:projects)
       navigator.next_step(click(:menu, 2))
       expect(endpoints(navigator)).to eq(['GET guides.example.com'])
+    end
+  end
+
+  describe 'search' do
+    subject(:navigator) { described_class.new(root: @root) }
+
+    before do
+      write('notes.md', notes)
+      write('guides/setup.md', "# Install\n\n## Steps\n")
+    end
+
+    def type(navigator, text) = text.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+    def found(navigator) = navigator.matches.map { [it.text, it.where] }
+
+    it 'opens with /, listing the Dashboard and Code feelings, then each file with its headings and directives, until something is typed' do
+      navigator.next_step(:search)
+
+      expect(navigator.searching?).to be(true)
+      expect(found(navigator).first(4)).to eq([['Dashboard', ''], ['Code feelings', ''], ['guides/setup.md', ''],
+                                               ['# Install', 'guides/setup.md:1']])
+    end
+
+    it 'matches letters in order, best first, even the ones other keys take, like j and q, and moves down them' do
+      navigator.next_step(:search)
+      type(navigator, 'stp')
+      expect(found(navigator).first(2)).to eq([['## Steps', 'guides/setup.md:3'], ['## Setup', 'notes.md:10']])
+      navigator.next_step(:down)
+      expect(navigator.match).to eq(1)
+
+      type(navigator, 'qj')
+      expect(found(navigator)).to eq([])
+
+      2.times { navigator.next_step(:backspace) }
+      expect(navigator.query).to eq('stp')
+    end
+
+    it 'teleports to the heading or directive selected, in the outline, and closes' do
+      navigator.next_step(:search)
+      type(navigator, 'setup notes')
+      navigator.next_step(:enter)
+
+      expect([navigator.searching?, view_name(navigator), navigator.relative(navigator.path)]).to eq([false, 'OutlineView', 'notes.md'])
+      expect(navigator.view.rows[navigator.view.cursor].text).to eq('## Setup')
+    end
+
+    it 'teleports to an endpoint, clicked in the matches' do
+      navigator.next_step(:search)
+      type(navigator, 'get api')
+      expect(found(navigator).first).to eq(['GET api.example.com', 'notes.md:14'])
+
+      navigator.next_step(click(:search, 0))
+      expect([view_name(navigator), navigator.view.endpoint.line]).to eq(['EndpointView', 14])
+    end
+
+    it 'closes with Esc, and ignores other clicks while open' do
+      navigator.next_step(:search)
+      expect(navigator.next_step(click(:nav, 2))).to be_nil
+      expect(navigator.content(:nav).cursor).to eq(0)
+
+      navigator.next_step(:escape)
+      expect(navigator.searching?).to be(false)
+    end
+  end
+
+  describe 'code feelings' do
+    subject(:navigator) { described_class.new(root: @root) }
+
+    before { write('lib/shapes.rb', "class Square\n  def area = 1\n  def side = 2\nend\n") }
+
+    # Opens it and lays out its cells, as the screen does, which picks the batch.
+    def open_feelings
+      navigator.next_step(:feelings)
+      navigator.view.cells(10, 10)
+    end
+
+    def claude_in_path(path)
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with('PATH', '').and_return(path)
+    end
+
+    it 'remembers what the mouse is over' do
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
+      expect(navigator.hovered).to eq(click(:main, 1, :focus))
+    end
+
+    it 'opens from Feelings under the Dashboard in the files, which the cursor is on when it opens with f' do
+      navigator.next_step(click(:nav, 1))
+      expect(view_name(navigator)).to eq('FeelingsView')
+
+      navigator.next_step(:dashboard)
+      navigator.next_step(:feelings)
+      expect(navigator.content(:nav).rows[navigator.content(:nav).cursor].text).to eq('🎭 Feelings')
+    end
+
+    it 'opens with f, and notes down a feeling with 1 to 6' do
+      open_feelings
+      expect([view_name(navigator), navigator.focus]).to eq(['FeelingsView', :main])
+      expect(navigator.status).to eq([:info, "This week's code to feel, #{Raindown::TUI::Batch.this_week}"])
+
+      label = navigator.view.selected.label
+      navigator.next_step(:bin3)
+      expect(navigator.status).to eq([:info, "Felt numb about #{label}"])
+    end
+
+    it "takes every key as the note while it asks why, even ones like q, and doesn't write back the code after the editor" do
+      open_feelings
+      label = navigator.view.selected.label
+      navigator.next_step(:bin6)
+      expect(navigator.typing?).to be(true)
+
+      navigator.next_step(Raindown::TUI::Type.new(text: 'q'))
+      navigator.next_step(:enter)
+      expect([navigator.typing?, navigator.feelings.log.rows.last[:note]]).to eq([false, 'q'])
+
+      expect(navigator.next_step(:edit)).to be_a(Raindown::TUI::Run)
+      navigator.ran
+      expect(navigator.status).to eq([:info, "Felt malice about #{label}"])
+    end
+
+    it 'asks Claude Code to fix the selected method with x, when it is installed' do
+      open_feelings
+      claude_in_path('')
+      navigator.next_step(:execute)
+      expect(navigator.status).to eq([:error, 'Install Claude Code, the claude command, to fix code with X'])
+
+      bin = File.join(@root, 'bin')
+      write('bin/claude', "#!/bin/sh\n")
+      File.chmod(0o755, File.join(bin, 'claude'))
+      claude_in_path(bin)
+      method = navigator.view.selected
+      expect(navigator.next_step(:execute).command)
+        .to eq(['claude', "Refactor #{method.label} in #{@root}/lib/shapes.rb:#{method.line}. It needs a second look. " \
+                          "Keep its behaviour, follow the project's CLAUDE.md if it has one, and run the specs."])
     end
   end
 end

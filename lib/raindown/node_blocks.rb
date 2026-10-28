@@ -77,13 +77,16 @@ module Raindown
     end
 
     def rendered_lines(lines, block, markdown:, metadata:, bare:)
-      node = block[:node]
-      output = if Nodes.html?(node) then ["#{Nodes.placeholder(node)}\n"]
-               else "#{Nodes.call(node, :replace, document: markdown, metadata:, bare:).to_s.chomp}\n".lines
-               end
-      output = [] if output == ["\n"]
+      output = node_markdown(block[:node], markdown:, metadata:, bare:).chomp
+      close = marker(lines[block[:close]]) if block[:close]
 
-      [marker(lines[block[:open]]), *output, *(marker(lines[block[:close]]) if block[:close])]
+      [marker(lines[block[:open]]), *("#{output}\n".lines unless output.empty?), *close]
+    end
+
+    def node_markdown(node, markdown:, metadata:, bare:)
+      return Nodes.placeholder(node) if Nodes.html?(node)
+
+      Nodes.call(node, :replace, document: markdown, metadata:, bare:).to_s
     end
 
     def marker(line)

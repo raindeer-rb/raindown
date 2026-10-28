@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Bumps the minor version, like 0.6.0 to 0.7.0, then runs bundle update, so Gemfile.lock has it too.
+
+Dir.chdir(File.expand_path('..', __dir__))
+path = 'lib/version.rb'
+source = File.read(path)
+version = source[/VERSION = '(\d+\.\d+\.\d+)'/, 1] or abort("There's no VERSION like '1.2.3' in #{path}")
+
+major, minor, = version.split('.').map(&:to_i)
+bumped = "#{major}.#{minor + 1}.0"
+File.write(path, source.sub("VERSION = '#{version}'", "VERSION = '#{bumped}'"))
+puts "Bumped #{version} to #{bumped}"
+
+system('bundle', 'update', exception: true)

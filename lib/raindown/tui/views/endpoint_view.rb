@@ -26,6 +26,8 @@ module Raindown
       def path = endpoint.path
       def status(_navigator) = [:info, endpoint.text]
       def changed? = false
+      def typing? = false
+      def animating? = false
       def next_step?(key) = %i[up down enter edit execute].include?(key)
 
       # Clicks on the response only move the focus to it.

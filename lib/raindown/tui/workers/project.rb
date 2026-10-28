@@ -9,6 +9,7 @@ require_relative '../../node_blocks'
 require_relative '../../nodes'
 require_relative '../../pages'
 require_relative '../../projects'
+require_relative '../../stat'
 require_relative '../card'
 require_relative '../endpoint'
 require_relative '../../code_blocks'
@@ -39,7 +40,8 @@ module Raindown
         Outline.new(lines: File.readlines(path, chomp: true), headings: document.headings, directives: document.directives)
       end
 
-      # Every chart in the project's files, drawn from its data, and the files that couldn't be read.
+      # Every chart and stat in the project's files, or any node that draws a card, drawn from its data, and the files
+      # that couldn't be read.
       # The charts are found again when asked, and otherwise drawn again, so they follow changes to their data.
       def charts(find: false)
         if find || @charts.nil?
@@ -87,7 +89,7 @@ module Raindown
         headings = Document.parse(content, bare:).headings
 
         NodeBlocks.find(lines, front_matter: FrontMatter.parse(content).first, bare:)
-                  .select { |block| block[:node].is_a?(Raindown::Chart) }
+                  .select { it[:node].respond_to?(:card_lines) }
                   .map { |block| chart(block, path:, lines:, headings:) }
       rescue StandardError => e
         @file_errors << "#{path.delete_prefix(File.join(root, ''))}: #{e.message}"
@@ -109,11 +111,9 @@ module Raindown
         { path:, line:, heading: headings.select { it.line < line }.last&.text, directive:, node: block[:node] }
       end
 
-      # Draws the chart as its Markdown would be written back, with the files its project lists.
+      # Draws the chart or stat as its Markdown would be written back, with the files its project lists.
       def lines(chart, metadata)
-        node = chart[:node]
-        points = node.points(metadata:)
-        points.empty? ? ['No data'] : node.draw(points).map(&:rstrip)
+        chart[:node].card_lines(metadata:)
       rescue StandardError => e
         ["Can't chart: #{e.message}"]
       end

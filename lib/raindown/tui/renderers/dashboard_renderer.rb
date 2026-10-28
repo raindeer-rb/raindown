@@ -15,14 +15,14 @@ module Raindown
     #    ╰─────────────────────────────╯  ╰────────────────────────────────╯
     class DashboardRenderer < Renderer
       BUTTONS = [['Tab', 'Pane', :tab], ['Enter', 'Open', :enter], ['e', 'Edit', :edit], ['r', 'Reload', :reload],
-                 ['q', 'Quit', :quit]].freeze
+                 ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
       PROJECTS_BUTTON = ['p', 'Projects', :projects].freeze
 
       # Room for the project menu's button, when there's more than one project.
       def buttons
-        if navigator.projects? then BUTTONS.dup.insert(3, PROJECTS_BUTTON)
-        else BUTTONS
-        end
+        return BUTTONS unless navigator.projects?
+
+        BUTTONS.dup.insert(3, PROJECTS_BUTTON)
       end
 
       def page = 'Dashboard'

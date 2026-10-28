@@ -3,6 +3,8 @@
 require_relative 'events'
 require_relative 'text'
 require_relative 'title'
+require_relative 'menu_overlay'
+require_relative 'search_overlay'
 
 module Raindown
   module TUI
@@ -44,11 +46,7 @@ module Raindown
       def lines
         return [status].first(height) if height < CHROME_HEIGHT + 1
 
-        lines = [title, *panes, status, button_bar]
-        return lines unless navigator.menu
-
-        require_relative 'menu_overlay'
-        MenuOverlay.new(navigator, width:, column: display_width(name)).apply(lines)
+        overlaid([title, *panes, status, button_bar])
       end
 
       # A third of the width, within NAV_WIDTH, and never more than half of a narrow screen.
@@ -57,6 +55,14 @@ module Raindown
       end
 
       private
+
+      # The project menu or the search, drawn over the lines while it's open.
+      def overlaid(lines)
+        return MenuOverlay.new(navigator, width:, column: display_width(name)).apply(lines) if navigator.menu
+        return SearchOverlay.new(navigator, width:).apply(lines) if navigator.searching?
+
+        lines
+      end
 
       def body_height = height - CHROME_HEIGHT
 
@@ -68,8 +74,8 @@ module Raindown
         [spacer, *Array.new(body_height - 1) { |index| [*nav[index], divider(main[index]), *main[index]] }]
       end
 
-      # A blank line above the panes, for spacing.
-      def spacer = [segment('', :blank, width: nav_width), divider([]), segment('', :blank, width: width - nav_width - 1)]
+      # A line above the panes, for spacing, blank but for what the main pane's renderer puts in its side of it.
+      def spacer = [segment('', :blank, width: nav_width), divider([]), *view_renderer.spacer]
 
       # The divider is on the background of the outline's row beside it, when that's highlighted, so they meet.
       def divider(main_line)
@@ -122,3 +128,4 @@ require_relative 'renderers/list_renderer'
 require_relative 'renderers/outline_renderer'
 require_relative 'renderers/dashboard_renderer'
 require_relative 'renderers/endpoint_renderer'
+require_relative 'feelings/feelings_renderer'

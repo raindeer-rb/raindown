@@ -10,6 +10,12 @@ class SpecSales < Raindown::Chart
   def initialize(**) = super('3 1 2', **)
 end
 
+# A project's own stat, one big number, which the dashboard shows as a card too.
+class SpecIssues < Raindown::Stat
+  def value(**) = 7
+  def label = 'open issues'
+end
+
 RSpec.describe Raindown::TUI::DashboardView do
   around do |example|
     Dir.mktmpdir do |dir|
@@ -43,6 +49,13 @@ RSpec.describe Raindown::TUI::DashboardView do
 
   it 'draws each chart from its data, as it would be written back' do
     expect(dashboard.cards.map(&:chart)).to eq([['▁▅█'], ['█▁▅'], ['Jan  █████      4', 'Feb  ██████████ 8']])
+  end
+
+  it "shows a project's stats as cards too, their number in block digits above their label" do
+    write('guides/issues.md', "# Issues\n\n<{ SpecIssues: }>\n<{ :SpecIssues }>\n")
+    card = dashboard.cards.find { it.directive == 'SpecIssues:' }
+
+    expect([card.heading, card.chart]).to eq(['Issues', ['▀▀█', '  █', '  ▀', 'open issues']])
   end
 
   it "draws the charts again when they're loaded, following changes to their data" do

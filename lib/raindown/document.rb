@@ -49,7 +49,7 @@ module Raindown
 
     # The headings in the order they appear, with their source text, like "Notes for {name}" before it's rendered.
     def headings
-      @headings ||= nodes(:heading).map do |node|
+      @headings ||= root.walk.select { |node| node.type == :heading }.map do |node|
         Heading.new(level: node.header_level, text: text(node), line: node.source_position[:start_line])
       end
     end
@@ -69,10 +69,6 @@ module Raindown
 
     def root
       @root ||= Commonmarker.parse(@markdown, options: MARKDOWN_OPTIONS)
-    end
-
-    def nodes(type)
-      [].tap { |nodes| root.walk { |node| nodes << node if node.type == type } }
     end
 
     def text(heading)

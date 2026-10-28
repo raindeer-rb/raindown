@@ -22,6 +22,8 @@ module Raindown
       # so two projects' nodes of the same name stay apart.
       workers = Workers.new(root:)
 
+      # Rouge loads here, rather than with Raindown, which doesn't highlight code outside the TUI.
+      require 'rouge'
       Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)), workers:)).run
     ensure
       workers&.stop

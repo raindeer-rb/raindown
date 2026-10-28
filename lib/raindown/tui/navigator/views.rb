@@ -2,6 +2,7 @@
 
 require_relative '../views/dashboard_view'
 require_relative '../views/endpoint_view'
+require_relative '../feelings/feelings_view'
 require_relative '../views/outline_view'
 
 module Raindown
@@ -11,7 +12,7 @@ module Raindown
     # A view has the pane that draws it, a next step for the keys it takes while it has the focus, and a target,
     # what's opened it in the files. It loads when it's opened, and again after a change.
     module Views
-      attr_reader :view, :dashboard
+      attr_reader :view, :dashboard, :feelings
 
       # The path of the file the view shows, if any.
       def path = view.path
@@ -27,16 +28,18 @@ module Raindown
         nil
       end
 
-      # Opens the file in the outline, on the directive at the line.
+      # Opens the file in the outline, on the heading or directive at the line.
       def open_at(path, line)
         path = File.expand_path(path)
         @files.reveal(path)
         open_view(OutlineView.new(path, workers: @workers))
-        view.cursor = view.rows.index { it.kind == :directive && it.target.line == line } || 0
+        view.cursor = view.rows.index { %i[heading directive].include?(it.kind) && it.target.line == line } || 0
         nil
       end
 
       private
+
+      def open_feelings = open_view(feelings)
 
       # Switches between the dashboard and the view before it.
       def toggle_dashboard

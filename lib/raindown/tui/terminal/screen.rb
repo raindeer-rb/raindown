@@ -13,8 +13,9 @@ module Raindown
     # Paints a Navigator's Layout with curses, and sends the Navigator the events of keys and clicks, read with Input.
     # Only this class draws on the terminal, so another library could draw the same Layout.
     class Screen
-      # How often, in milliseconds, the open file is checked for changes while no key is pressed.
-      TICK = 500
+      # How often, in milliseconds, the open file is checked for changes while no key is pressed, or, while the view
+      # animates, like Code feelings' rain, it's drawn.
+      TICKS = { false => 500, true => 60 }.freeze
 
       def initialize(navigator)
         @navigator = navigator
@@ -61,13 +62,11 @@ module Raindown
         Curses.nonl
         Curses.curs_set(0)
         Curses.stdscr.keypad(true)
-        Curses.stdscr.timeout = TICK
-        # The terminal sends the app its mouse events, so scrolling doesn't scroll the terminal either.
-        Curses.mousemask(Input::CLICKS)
-        Curses.mouseinterval(0)
+        Input.track_mouse
       end
 
       def stop
+        Input.untrack_mouse
         Curses.close_screen
       end
 
@@ -98,7 +97,7 @@ module Raindown
       end
 
       def paint(window, segment)
-        window.attron(@styles.fetch(segment.style, Curses::A_NORMAL)) { window.addstr(segment.text) }
+        window.attron(@styles[segment.style]) { window.addstr(segment.text) }
       end
 
       def last_line(segments)
@@ -108,12 +107,13 @@ module Raindown
 
       # The next event, or :tick when no key is pressed in time, or nil for keys without one, like a resize.
       def read
+        Curses.stdscr.timeout = TICKS.fetch(@navigator.animating?)
         key = Curses.stdscr.getch
         return :tick if key.nil?
         return mouse if key == Curses::KEY_MOUSE
 
         Curses.stdscr.clear if key == Curses::KEY_RESIZE
-        Input.key_event(key)
+        Input.key_event(key, typing: @navigator.typing?)
       end
 
       # The curses gem warns the first time it makes a MouseEvent, that it's "undefining the allocator" of the class.
@@ -131,13 +131,16 @@ module Raindown
         window.refresh
       end
 
-      # Leaves the screen to the command, like the editor, and comes back to it after.
+      # Leaves the screen to the command, like the editor, and comes back to it after. The command isn't sent the
+      # mouse's moves meanwhile.
       def suspend
         Curses.def_prog_mode
+        Input.untrack_mouse
         Curses.close_screen
         yield
       ensure
         Curses.reset_prog_mode
+        Input.track_mouse
         Curses.stdscr.clear
         Curses.refresh
       end

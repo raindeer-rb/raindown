@@ -45,13 +45,13 @@ RSpec.describe Raindown::TUI::Layout do
       [' 🌧  Raindown  ~/docs › guides/setup.md',
        '                    ▏',
        ' 📊 Dashboard       ▏ # Setup',
-       '                    ▏   endpoint:                 [+6] [Run]',
+       ' 🎭 Feelings        ▏   endpoint:                 [+6] [Run]',
+       '                    ▏',
        ' ▾ guides/          ▏',
        '   setup.md         ▏',
        ' README.md          ▏',
        '                    ▏',
        ' GET example.com    ▏',
-       '                    ▏',
        '                    ▏',
        '                    ▏',
        ' Opened guides/setup.md',
@@ -65,13 +65,13 @@ RSpec.describe Raindown::TUI::Layout do
     divider = ->(line) { line.find { it.text == described_class::DIVIDER }.style }
 
     expect(lines[2].last.style).to eq(:selected)
-    expect(lines[5].first.style).to eq(:cursor)
-    expect([lines[3].first.style, lines[3].first.event]).to eq([:blank, nil])
+    expect(lines[6].first.style).to eq(:cursor)
+    expect([lines[4].first.style, lines[4].first.event]).to eq([:blank, nil])
     expect([divider[lines[1]], divider[lines[2]], divider[lines[3]]]).to eq(%i[divider selected_divider divider])
     navigator.next_step(:left)
     lines = described_class.new(navigator, width: 60, height: 14).lines
-    expect([lines[2].last.style, lines[5].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
-    expect(lines[2].first.style).to eq(:dashboard)
+    expect([lines[2].last.style, lines[6].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
+    expect([lines[2].first.style, lines[3].first.style]).to eq(%i[page page])
     expect(lines[3].last(2).map(&:style)).to eq(%i[button button])
   end
 
@@ -79,12 +79,13 @@ RSpec.describe Raindown::TUI::Layout do
     lines = described_class.new(navigator, width: 80, height: 14).lines
 
     expect(lines[2].first.event).to eq(click(:nav, 0))
-    expect(lines[4].first.event).to eq(click(:nav, 2))
-    expect(lines[8].first.event).to eq(click(:nav, 6))
-    expect(lines[7].first.event).to be_nil
+    expect(lines[3].first.event).to eq(click(:nav, 1))
+    expect(lines[5].first.event).to eq(click(:nav, 3))
+    expect(lines[9].first.event).to eq(click(:nav, 7))
+    expect([lines[4].first.event, lines[8].first.event]).to eq([nil, nil])
     expect(lines[2].last.event).to eq(click(:main, 0))
     expect(lines[3].last.event).to eq(click(:main, 1, :execute))
-    expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload quit])
+    expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload search quit])
   end
 
   it 'cuts text that does not fit, and leaves out buttons that do not fit' do
@@ -104,6 +105,15 @@ RSpec.describe Raindown::TUI::Layout do
 
   it 'shows only the status when the screen is too short for the panes' do
     expect(text(described_class.new(navigator, width: 20, height: 2).lines).map(&:rstrip)).to eq([' Opened guides/setu…'])
+  end
+
+  it "highlights a directive's body when it's expanded, with its code blocks in their languages" do
+    navigator.next_step(:down)
+    navigator.next_step(:toggle)
+    lines = described_class.new(navigator, width: 60, height: 14).lines
+    language = lines.flatten.find { it.text.strip == 'json' }
+
+    expect([language.style, lines.flatten.find { it.text.strip == '```' }.style]).to eq(%i[code_constant code])
   end
 
   describe 'the dashboard' do
@@ -126,7 +136,7 @@ RSpec.describe Raindown::TUI::Layout do
                                        " │ chart: '1 2 3'           │  │ chart: '3 2 1'           │",
                                        ' │ ▁▅█                      │  │ █▅▁                      │',
                                        ' ╰──────────────────────────╯  ╰──────────────────────────╯'])
-      expect(text(lines).last.rstrip).to eq(' Tab Pane  Enter Open  E dit  R eload  Q uit')
+      expect(text(lines).last.rstrip).to eq(' Tab Pane  Enter Open  E dit  R eload  / Search  Q uit')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
     end
 
@@ -202,7 +212,7 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'has a Projects button on the dashboard' do
       expect(described_class.new(navigator, width: 80, height: 8).lines.last.map(&:event).compact.uniq)
-        .to eq(%i[tab enter edit projects reload quit])
+        .to eq(%i[tab enter edit projects reload search quit])
     end
 
     it "opens from the header's path, and drops down below it over the panes, each project clicked to choose it" do
@@ -244,13 +254,204 @@ RSpec.describe Raindown::TUI::Layout do
       lines = described_class.new(navigator, width: 90, height: 12).lines
 
       expect(main(lines)[2..7]).to eq([' ╭───────────────────────────────────────────────────────╮',
-                                       ' │ DELETE https://api.example.com/users/1        [ Run ] │',
+                                       ' │ DELETE https://api.example.com/users/1          [Run] │',
                                        ' ╰───────────────────────────────────────────────────────╯',
                                        '', ' Response · json · fetched 2026-10-26', ' {}'])
-      expect(lines[3].find { it.text == '[ Run ]' }.event).to eq(click(:main, 0, :execute))
+      expect(lines[3].find { it.text == '[Run]' }.then { [it.event, it.style] }).to eq([click(:main, 0, :execute), :button])
       expect(lines[3].find { it.text == 'DELETE' }.style).to eq(:method_delete)
       expect(text(lines).first).to include('› DELETE api.example.com/users/1')
       expect(text(lines).drop(1).map { width(it) }).to all(eq(90))
+    end
+    it 'highlights its response in the language of its code block' do
+      File.write(File.join(@root, 'api.md'), "<{ endpoint: }>\n```sh\ncurl https://api.example.com/users/1\n```\n" \
+                                             "```json\n{\"id\": 1}\n```\n<{ :endpoint }>\n")
+      navigator.next_step(:reload)
+      navigator.next_step(click(:nav, navigator.content(:nav).rows.index { it.kind == :endpoint }))
+      line = described_class.new(navigator, width: 90, height: 12).lines.find { |segments| segments.any? { it.text == '"id"' } }
+
+      expect(line.filter_map { [it.text, it.style] unless it.style == :code || it.text.strip.empty? }.last(2))
+        .to eq([['"id"', :code_constant], ['1', :code_number]])
+    end
+  end
+
+  describe 'the search' do
+    it 'drops down below the title over the panes, with what\'s typed and the matches, each clicked to open it' do
+      navigator.next_step(:search)
+      'setup'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+      lines = described_class.new(navigator, width: 60, height: 14).lines
+
+      # The box is the width less 4, between 2 columns either side.
+      expect(lines[1..4].map { columns(it, from: 2, count: 56) }).to eq(
+        ['┌─ Teleport ───────────────────────────────────────────┐',
+         '│ / setup▏                                             │',
+         '│ # Setup                            guides/setup.md:1 │',
+         '│ guides/setup.md                                      │']
+      )
+      expect(lines[3].map(&:event).compact.uniq.select { it.pane == :search }).to eq([click(:search, 0)])
+      expect(lines[3].find { it.text.include?('# Setup') }.style).to eq(:selected)
+      expect(text(lines).map { width(it) }).to all(eq(60))
+    end
+  end
+
+  describe 'code feelings' do
+    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+    # The grid's first line, below the line above the panes, which has the batch's progress, and a blank line that leaves
+    # room for the first row to be magnified.
+    def grid_line(lines) = lines[3]
+
+    # The magnified digit of the first row's cell of the method, over the blank line above it and the row's lines.
+    def magnified(lines, index)
+      lines[2..4].map { |line| line.find { it.event == click(:main, index, :focus) && it.text.match?(/[█▀▄]/) }&.text&.slice(1, 3) }
+    end
+
+    # The style of the first row's cell of the method, magnified, on the blank line above it and the row's lines.
+    def magnified_style(lines, index)
+      lines[2..4].map { |line| line.find { it.event == click(:main, index, :focus) && it.text.match?(/[█▀▄]/) }&.style }
+    end
+
+    before do
+      FileUtils.mkdir_p(File.join(@root, 'lib'))
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n    side * side\n  end\nend\n")
+      navigator.next_step(:feelings)
+      # The first draw picks the batch, as the screen draws when the view opens.
+      described_class.new(navigator, width: 90, height: 24).lines
+    end
+
+    it 'draws the methods as digits, the selected one magnified with its code below, then the six bins' do
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+      main = main(lines)
+
+      expect(text(lines).first).to include('› Code feelings')
+      expect(magnified(lines, 0)).to all(match(/\A[█▀▄ ]{3}\z/))
+      expect(magnified_style(lines, 0)).to eq(%i[selected] * 3)
+      expect(main(lines)[1].strip).to eq('0% refined')
+      expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
+      expect(main.find { it.include?('def area') }).to start_with(' │ def area').and end_with('│')
+      expect(lines.flatten.find { it.text == 'def' }.style).to eq(:code_keyword)
+      expect(main.find { it.include?('WOE') }.scan(/[A-Z]{3,}/)).to eq(%w[FROLIC HOPE NUMB WOE DREAD MALICE])
+      expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).not_to include('drift')
+      style = ->(text) { lines.flatten.find { it.text.include?(text) }.style }
+      expect(['refined', 'lib/shapes.rb:2', '02', 'HOPE'].map { style[it] }).to eq(%i[body feelings feelings feelings])
+      expect(text(lines).map { width(it) }).to all(eq(90))
+    end
+
+    it 'leaves felt methods blank, but still there to select, which shows their digits and code again' do
+      File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
+      both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      described_class.new(both, width: 90, height: 24).lines
+      felt = both.view.selected
+      both.next_step(:bin3)
+      both.next_step(:right)
+      cell = lambda do |index|
+        grid_line(described_class.new(both, width: 90, height: 24).lines).find { it.event == click(:main, index, :focus) }
+      end
+
+      expect([cell[0].text, cell[0].style, cell[0].event]).to eq([' ' * 6, :feelings, click(:main, 0, :focus)])
+
+      both.next_step(:left)
+      expect(magnified(described_class.new(both, width: 90, height: 24).lines, 0)).to all(match(/\A[█▀▄ ]{3}\z/))
+      expect(text(described_class.new(both, width: 90, height: 24).lines).join).to include(felt.label)
+    end
+
+    it 'rains over the pane when the batch is refined, then shows a waffle' do
+      navigator.next_step(:bin3)
+      rain = main(described_class.new(navigator, width: 90, height: 24).lines)
+      expect([navigator.animating?, rain.join]).to match([true, match(/[│╎]/)])
+      expect(rain.join).not_to include('Raindown')
+
+      Raindown::TUI::Celebration::RAIN_FRAMES.times { navigator.next_step(:tick) }
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+      expect(main(lines).map(&:strip)).to include('╔═══╦═══╦═══╦═══╦═══╗', '║   ║   ║███║   ║   ║', '100% refined',
+                                                  'The work is mysterious and important.')
+      expect(navigator.animating?).to be(false)
+      expect(lines.flatten.find { it.text == '███' }.style).to eq(:button)
+      expect(text(lines).map { width(it) }).to all(eq(90))
+    end
+
+    it "highlights the bin of how a felt method felt, when it's selected" do
+      File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
+      both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      bin = ->(name) { described_class.new(both, width: 90, height: 24).lines.flatten.find { it.text.include?(name) }.style }
+      expect(bin.call('MALICE')).to eq(:feelings)
+
+      both.next_step(:bin6)
+      both.next_step(:enter)
+      both.next_step(:right)
+      expect([bin.call('MALICE'), bin.call('NUMB')]).to eq(%i[feelings feelings])
+
+      both.next_step(:left)
+      expect([bin.call('MALICE'), bin.call('NUMB')]).to eq(%i[selected feelings])
+    end
+
+    it 'wraps a long note in as many lines as it takes, lined up after the question' do
+      navigator.next_step(:bin6)
+      'two negations and a hidden dependency on rows'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+      lines = described_class.new(navigator, width: 60, height: 24).lines
+      note = main(lines).drop_while { !it.include?('Why MALICE?') }.take_while { !it.include?('╰') }
+
+      expect(note).to eq([' │ Why MALICE? > two negations and a │', ' │               hidden dependency   │',
+                          ' │               on rows▏            │'])
+      expect(text(lines).map { width(it) }).to all(eq(60))
+    end
+
+    it 'magnifies the selected digits and the ones the mouse is over, over the line above and beside them, others small' do
+      File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
+      both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      described_class.new(both, width: 90, height: 24).lines
+      both.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
+      lines = described_class.new(both, width: 90, height: 24).lines
+      expect([magnified(lines, 0), magnified(lines, 1)]).to all(all(match(/\A[█▀▄ ]{3}\z/)))
+      expect([magnified_style(lines, 0), magnified_style(lines, 1)]).to eq([%i[selected] * 3, %i[feelings] * 3])
+      expect(text(lines).map { width(it) }).to all(eq(90))
+
+      both.next_step(Raindown::TUI::Hover.new(target: nil))
+      lines = described_class.new(both, width: 90, height: 24).lines
+      expect([magnified(lines, 1), grid_line(lines).find { it.event == click(:main, 1, :focus) }.text]).to match([[nil] * 3, /\A  \d   \z/])
+    end
+
+    it "shows a long method's first 8 lines, then how many more there are, clicked to show all that fit" do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n#{(1..10).map { "    #{it}\n" }.join}  end\nend\n")
+      navigator.next_step(:reload)
+      box = lambda do |lines|
+        main(lines).drop_while { !it.include?('╭─ lib') }.take_while { !it.include?('╰') }.drop(1).map { it.delete('│').strip }
+      end
+      lines = described_class.new(navigator, width: 90, height: 30).lines
+
+      expect(box.call(lines).length).to eq(9)
+      expect(box.call(lines).last(2)).to eq(['7', '[4 more lines]'])
+      more = lines.flatten.find { it.text.include?('more lines') }
+      expect([more.event, more.style]).to eq([click(:main, 0, :expand), :button])
+
+      navigator.next_step(more.event)
+      expect(box.call(described_class.new(navigator, width: 90, height: 30).lines).last(2)).to eq(['end', '[Fewer lines]'])
+    end
+
+    it 'wraps a long line of code in the box at spaces, carrying on at its indent after an ellipsis' do
+      call = "    total = #{(1..30).map { "side#{it}" }.join(' + ')}"
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n#{call}\n  end\nend\n")
+      navigator.next_step(:reload)
+      lines = described_class.new(navigator, width: 90, height: 30).lines
+      box = main(lines).drop_while { !it.include?('╭─ lib') }.take_while { !it.include?('╰') }.drop(1)
+
+      code = box.map { it[3..].delete_suffix('│').delete_suffix(' ') }
+      carried = code.drop(2).take_while { it.start_with?('  … ') }
+
+      expect([code.first.rstrip, carried.length > 1]).to eq(['def area', true])
+      pieces = [code[1], *carried.map { it.delete_prefix('  … ') }].map(&:rstrip)
+      expect([pieces.join(' '), pieces]).to match([call.delete_prefix('  '), all(match(/(side\d+|\+)\z/))])
+      expect(box.map { width(it) }.uniq).to eq([width(box.first)])
+      expect(lines.flatten.find { it.text.include?('…') }.style).to eq(:feelings)
+    end
+
+    it 'asks why below the code and a line, with the bin highlighted, while the note is typed' do
+      navigator.next_step(:bin5)
+      'tangled'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+
+      expect(text(lines).find { it.include?('Why DREAD?') }).to include('Why DREAD? > tangled▏')
+      expect(main(lines).index { it.include?('def area') }).to be < main(lines).index { it.include?('Why DREAD?') }
+      expect(main(lines)[main(lines).index { it.include?('Why DREAD?') } - 1]).to match(/\A ├─+┤\z/)
+      expect(lines.flatten.find { it.text.include?('DREAD') && it.text.start_with?('│') }.style).to eq(:selected)
     end
   end
 end

@@ -4,7 +4,8 @@ require_relative '../../actions'
 
 module Raindown
   module TUI
-    # What a Navigator does to the open file: run an endpoint, open the editor, write back and read it again.
+    # What a Navigator does to the open file: run an endpoint, open the editor, write back and read it again,
+    # and to a feeling about some code: draw the page it was noted down in, or ask Claude Code to fix the code.
     # Each sets the status, so the Screen shows how it went, and returns what the Screen should do next, if anything.
     module Commands
       def run(file, line, name) = Wait.new(message: "Running #{name}...", task: -> { run_endpoint(file, line) })
@@ -15,7 +16,19 @@ module Raindown
         Run.new(command: Actions.edit_command(file, line:))
       end
 
+      def felt(feeling) = info("Felt #{feeling.temper} about #{feeling.method.label}")
+
+      # Leaves the screen for Claude Code, asked to fix the method, and the view reads the code again after.
+      def fix_with_agent(feeling)
+        return error('Install Claude Code, the claude command, to fix code with X') unless claude?
+
+        @edited = feeling.method.path
+        Run.new(command: ['claude', feeling.prompt])
+      end
+
       private
+
+      def claude? = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).any? { File.executable?(File.join(it, 'claude')) }
 
       # Runs the endpoint selected in the outline, or listed below the files. One opened beside them runs itself.
       def execute
