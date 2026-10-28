@@ -59,6 +59,15 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect(view.batch.felt?(view.code_methods.find { it.name == 'side' })).to be(false)
   end
 
+  it 'keeps the selected method when the code is read again, like after a fix that adds methods around it' do
+    view.cursor = view.code_methods.index { it.name == 'draw' }
+    methods = (1..6).map { "  def extracted#{it} = #{it}\n" }.join
+    File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n#{methods}  def area = 1\n  def side = 2\n  def draw = 3\nend\n")
+    view.load
+
+    expect([view.selected.name, view.code_methods.length]).to eq(['draw', 9])
+  end
+
   it 'asks why for woe, dread and malice, taking every key typed until Enter, or Esc to leave it out, and stays' do
     expect(view.next_step(:bin6)).to be_nil
     expect([view.typing?, view.noting, view.next_step?(:tab)]).to eq([true, 'malice', true])

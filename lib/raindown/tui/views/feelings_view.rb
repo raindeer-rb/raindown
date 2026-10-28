@@ -45,13 +45,15 @@ module Raindown
       def animating? = celebration&.raining? == true
       def status(_navigator) = [:info, "This week's code to feel, #{batch.week}"]
 
-      # Reads the code again, keeping the batch, like after a method's edited or fixed, moving the feelings about code
-      # that's changed, or gone, to the memories.
+      # Reads the code again, keeping the batch, like after a method's edited or fixed, and the selected method, by its
+      # file and name, even when the methods around it change, moving the feelings about code that's changed, or gone, to
+      # the memories.
       def load
+        was = selected
         every = CodeMethods.list(@root)
         @log.move_stale_to_memories(every)
         @week.read(every)
-        self.cursor = @cursor
+        self.cursor = code_methods.index { [it.path, it.label] == [was&.path, was&.label] } || @cursor
       end
 
       # The Batch of files whose methods are in the grid.
