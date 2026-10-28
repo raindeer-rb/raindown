@@ -53,9 +53,9 @@ module Raindown
       end
 
       # Moves the feelings about methods that have changed, or gone, since they were felt, from the methods there are
-      # now, to the memories. A row from before checksums were kept stays while its method's there.
+      # now, to the memories.
       def move_stale_to_memories(methods)
-        now = methods.flat_map { [[relative(it.path), it.label, it.checksum], [relative(it.path), it.label, '']] }.to_set
+        now = methods.to_set { method_key(it) }
         stale, current = rows.partition { !now.include?(key(it)) }
         return if stale.empty?
 
@@ -70,14 +70,12 @@ module Raindown
         @rows ||= CSV.read(@csv, headers: true, header_converters: :symbol).map(&:to_h)
       end
 
-      # Whether the method's been felt, by its file, name and code's checksum, wherever its line is now. A row from before
-      # checksums were kept has none, so it counts until the method's felt again. The answer's kept until a feeling's added.
+      # Whether the method's been felt, by its file, name and code's checksum, wherever its line is now. The answer's kept
+      # until a feeling's added.
       def felt?(method)
         @felt ||= rows.to_set { key(it) }
         @felt_methods ||= {}
-        @felt_methods.fetch(method) do
-          @felt_methods[method] = [method.checksum, ''].any? { @felt.include?([relative(method.path), method.label, it]) }
-        end
+        @felt_methods.fetch(method) { @felt_methods[method] = @felt.include?(method_key(method)) }
       end
 
       # How the method last felt, while its code's the same as when it was felt, or nil.
@@ -91,15 +89,16 @@ module Raindown
 
       private
 
-      def felt_row?(row, method) = about?(row, method) && [method.checksum, ''].include?(row[:checksum].to_s)
+      def felt_row?(row, method) = key(row) == method_key(method)
 
       def about?(row, method) = path(row) == relative(method.path) && row[:method] == method.label
 
       # The row's file, without the line the method was on.
       def path(row) = row[:where].sub(/:\d+\z/, '')
 
-      # The row's file, method and checksum, which is empty for a row from before checksums were kept.
-      def key(row) = [path(row), row[:method], row[:checksum].to_s]
+      # The row's file, method and checksum, to match a method's.
+      def key(row) = [path(row), row[:method], row[:checksum]]
+      def method_key(method) = [relative(method.path), method.label, method.checksum]
 
       # Adds the rows to the memories, of feelings about code that's since changed or gone.
       def append_memories(rows)

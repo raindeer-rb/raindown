@@ -61,21 +61,6 @@ RSpec.describe Raindown::TUI::FeelingsLog do
     expect(memories.length).to eq(2)
   end
 
-  it 'counts a row from before checksums were kept as felt, while its method is there, until the method is felt again' do
-    FileUtils.mkdir_p(File.join(@root, '.raindown'))
-    File.write(File.join(@root, '.raindown', 'feelings.csv'),
-               "when,where,method,temper,note,commit\n2026-10-27,lib/text.rb:12,Text#fit,woe,,\n")
-    expect(log.felt?(method)).to be(true)
-
-    log.move_stale_to_memories([method])
-    expect(log.felt?(method)).to be(true)
-    log.move_stale_to_memories([other])
-    expect(log.felt?(method)).to be(false)
-
-    log.add(feeling('frolic'))
-    expect(log.rows.map { it.values_at(:temper, :checksum) }).to eq([['frolic', method.checksum]])
-  end
-
   it 'writes only .raindown/feelings.csv' do
     log.add(feeling('woe'))
 

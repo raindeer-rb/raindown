@@ -76,7 +76,6 @@ Each feeling is a row in **`.raindown/feelings.csv`**: the date, where the metho
 - **When its code changes,** a method comes back into the grid to be felt again. That's what happens after `x` has Claude Code fix it.
 - **Feeling an unchanged method again replaces its row,** as the newest, so only its latest feeling counts.
 - **Feelings about code that's changed, or gone, move to `.raindown/memories.csv`** (`FeelingsLog#move_stale_to_memories`), with the same columns. It runs whenever Code feelings reads the code, when it opens and after an edit or a fix, and when a changed method is felt again. So `feelings.csv` only says how the code feels now, and the bins and the README's code debt count only that, while the memories keep the history. It isn't trimmed to the week's batch: a method felt in an earlier week, whose code hasn't changed, stays felt.
-- **Rows from before checksums were kept** have none. They count as felt while their method's there, until it's felt again, which replaces them.
 
 Nothing else is stored. Which methods are felt, and so which files a batch picks, comes from the CSV, and a team that commits it shares its progress.
 
