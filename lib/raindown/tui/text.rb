@@ -8,6 +8,16 @@ module Raindown
     module Text
       Segment = Data.define(:text, :style, :event)
       INDENT = '  '
+      WIDTHS = 10_000
+
+      # Printable ASCII, like most code and labels, is a column a character, without asking Unicode, and other text,
+      # like boxes' borders and magnified digits, is the same every frame, so its width's remembered, up to WIDTHS texts.
+      def self.display_width(text)
+        return text.length if text.match?(/\A[ -~]*\z/)
+
+        @widths = {} if @widths.nil? || @widths.size >= WIDTHS
+        @widths[text] ||= Unicode::DisplayWidth.of(text)
+      end
 
       private
 
@@ -27,7 +37,9 @@ module Raindown
       # Text cut or padded to the width, with a cut shown by an ellipsis.
       def fit(text, width)
         return '' if width <= 0
-        return text + (' ' * (width - display_width(text))) if display_width(text) <= width
+
+        text_width = display_width(text)
+        return text + (' ' * (width - text_width)) if text_width <= width
 
         cut = +''
         cut_width = 0
@@ -83,28 +95,39 @@ module Raindown
         [*segments_between(line, 0, column), *segments, *segments_between(line, column + width, Float::INFINITY)]
       end
 
-      # The parts of the line's segments between two columns, where a wide character cut in two leaves spaces.
+      # The parts of the line's segments between two columns, where a wide character cut in two leaves spaces. A segment
+      # wholly between them, or wholly outside, is kept or left out whole, without going through its characters.
       def segments_between(line, from, to)
         column = 0
         line.filter_map do |segment|
-          text = segment.text.each_char.map do |char|
-            start = column
-            column += display_width(char)
-            overlap = [column, to].min - [start, from].max
-            overlap == display_width(char) ? char : ' ' * [overlap, 0].max
-          end.join
-          segment.with(text:) unless text.empty?
+          start = column
+          column += display_width(segment.text)
+          next if segment.text.empty? || column <= from || start >= to
+          next segment if start >= from && column <= to
+
+          segment.with(text: chars_between(segment.text, start, from, to))
         end
+      end
+
+      # The text's characters between two columns, from the column it starts at, where a wide character cut in two
+      # leaves spaces.
+      def chars_between(text, column, from, to)
+        text.each_char.map do |char|
+          start = column
+          column += display_width(char)
+          overlap = [column, to].min - [start, from].max
+          overlap == display_width(char) ? char : ' ' * [overlap, 0].max
+        end.join
       end
 
       # Tabs and control characters, like in a directive's output, would move the terminal's cursor.
       def printable(text)
+        return text unless text.match?(/[[:cntrl:]]/)
+
         text.gsub("\t", INDENT).gsub(/[[:cntrl:]]/, '')
       end
 
-      def display_width(text)
-        Unicode::DisplayWidth.of(text)
-      end
+      def display_width(text) = Text.display_width(text)
     end
   end
 end

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'curses'
-require 'unicode/display_width'
 
 require_relative '../events'
+require_relative '../text'
 require_relative 'quiet'
 
 module Raindown
@@ -94,7 +94,7 @@ module Raindown
         lines.each_with_index.flat_map do |segments, row|
           column = 0
           segments.filter_map do |segment|
-            width = Unicode::DisplayWidth.of(segment.text)
+            width = Text.display_width(segment.text)
             zone = [row, column...(column + width), segment.event] if segment.event
             column += width
             zone
