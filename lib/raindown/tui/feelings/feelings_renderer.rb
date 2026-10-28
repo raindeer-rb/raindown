@@ -8,7 +8,7 @@ require_relative 'code_box'
 require_relative 'magnifier'
 require_relative 'motion'
 require_relative 'scene'
-require_relative 'waffle'
+require_relative 'waffle/waffle'
 
 module Raindown
   module TUI

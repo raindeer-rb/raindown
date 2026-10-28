@@ -144,7 +144,7 @@ Rouge is pure Ruby, ships its languages, and runs on every OS and build Raindown
 
 ## Consequences
 
-- **Its code lives in `lib/raindown/tui/feelings/`,** apart from the other views and renderers: its view and renderer, the renderer's bins, code box and waffle, the log, the batches, finding methods, and the celebration's rain and fireworks. Its specs mirror it in `spec/raindown/tui/feelings/`. The `Highlighter` stays in `lib/raindown/tui/`, as the outline and endpoints use it too.
+- **Its code lives in `lib/raindown/tui/feelings/`,** apart from the other views and renderers: its view and renderer, the renderer's bins and code box, the log, the batches, finding methods, and the celebration's rain and fireworks. Its specs mirror it in `spec/raindown/tui/feelings/`. The `Highlighter` stays in `lib/raindown/tui/`, as the outline and endpoints use it too.
 - **It writes into the project it's run on:** `.raindown/feelings.csv` and `.raindown/memories.csv`. Teams will want to commit them on purpose.
 - **Memories depend on finding the same methods.** A feeling moves when its method isn't found with the same file, name and code, so switching between Ctags and the indentation fallback, which can name methods differently, can move feelings that are still true.
 - **Rouge is a new runtime dependency** (`~> 5.1`). It's pure Ruby, so installing Raindown still needs no native code beyond curses. It takes about a third of a second to load, so the TUI loads it as it starts, rather than whenever Raindown is required, since nothing else highlights code.

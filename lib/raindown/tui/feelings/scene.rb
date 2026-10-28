@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative '../text'
-require_relative 'balloons'
-require_relative 'confetti'
 require_relative 'fireworks'
 require_relative 'rain'
-require_relative 'sparkles'
+require_relative 'waffle/balloons'
+require_relative 'waffle/confetti'
+require_relative 'waffle/sparkles'
 
 module Raindown
   module TUI

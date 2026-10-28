@@ -2,8 +2,8 @@
 
 require 'zlib'
 
+require_relative '../rain'
 require_relative 'balloons'
-require_relative 'rain'
 
 module Raindown
   module TUI

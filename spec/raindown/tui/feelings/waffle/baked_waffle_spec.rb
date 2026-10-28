@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/feelings/baked_waffle'
+require 'raindown/tui/feelings/waffle/baked_waffle'
 
 RSpec.describe Raindown::TUI::BakedWaffle do
   let(:rows) { described_class.rows }
