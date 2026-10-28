@@ -43,7 +43,7 @@ module Raindown
       BASIC_BLUES = { selected: Curses::COLOR_CYAN }.freeze
       # Text that has no colour of its own, from the 256 colours most terminals have, or the terminal's own with 8.
       PERIWINKLE = 147
-      # Code feelings' text and lines, the Dashboard cards' charts, and code blocks, in lavender, or magenta in 8 colours.
+      # Code feelings' text and lines, in lavender, or magenta in 8 colours.
       FEELINGS = { feelings: 183 }.freeze
       BASIC_FEELINGS = { feelings: Curses::COLOR_MAGENTA }.freeze
       BRIGHT_WHITE = 15
@@ -87,13 +87,11 @@ module Raindown
         Hash.new(text).merge(plain.transform_values { it | text })
       end
 
-      # Headings, the shine on the waffle's butter, and Code feelings' text and lines, bold around the method the mouse is
-      # over, whose lavender the Dashboard cards' charts and code blocks are too, apart from highlighted code's keywords,
-      # strings and the like.
+      # Headings, the waffle's butter's shine and its syrup, and Code feelings' text and lines, bold around the method the
+      # mouse is over.
       def emphasis
-        lavender = pair(:feelings)
-        { heading: pair(:heading) | Curses::A_BOLD, feelings: lavender, nearby: lavender | Curses::A_BOLD, chart: lavender,
-          code: lavender, shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
+        { heading: pair(:heading) | Curses::A_BOLD, feelings: pair(:feelings), nearby: pair(:feelings) | Curses::A_BOLD,
+          shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
       end
 
       # Highlighted code's tokens, like keywords and comments, with comments dim in 8 colours, where there's no grey.
