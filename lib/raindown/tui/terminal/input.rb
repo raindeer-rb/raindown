@@ -4,6 +4,7 @@ require 'curses'
 require 'unicode/display_width'
 
 require_relative '../events'
+require_relative 'quiet'
 
 module Raindown
   module TUI
@@ -24,6 +25,24 @@ module Raindown
       }.freeze
 
       module_function
+
+      # The next event, or :tick when no key is pressed within the timeout, in milliseconds, or nil for keys without one,
+      # like a resize, which clears the screen to draw it again.
+      def read(timeout, zones:, typing:)
+        Curses.stdscr.timeout = timeout
+        key = Curses.stdscr.getch
+        return :tick if key.nil?
+        return mouse(zones) if key == Curses::KEY_MOUSE
+
+        Curses.stdscr.clear if key == Curses::KEY_RESIZE
+        key_event(key, typing:)
+      end
+
+      # The curses gem warns the first time it makes a MouseEvent, that it's "undefining the allocator" of the class.
+      def mouse(zones)
+        event = Quiet.quietly { Curses.getmouse }
+        mouse_event(event, zones) if event
+      end
 
       # A key from getch, which is a string for a printable character and otherwise a number.
       # Letters are the same with Shift, as the buttons show them as capitals, unless they're being typed.

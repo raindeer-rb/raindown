@@ -4,8 +4,8 @@ require 'curses'
 
 require_relative 'input'
 require_relative '../layout'
-require_relative 'quiet'
 require_relative 'ncurses_shim'
+require_relative 'quiet'
 require_relative 'styles'
 
 module Raindown
@@ -34,15 +34,26 @@ module Raindown
 
         loop do
           draw
-          effect = @navigator.next_step(read)
-          break if effect == :quit
-
-          perform(effect)
+          break if take_events == :quit
         end
       rescue Interrupt
         nil
       ensure
         stop
+      end
+
+      # The Navigator takes the next event, then any others already waiting, like the mouse's many moves, before the
+      # screen's drawn again, so drawing doesn't fall further and further behind them.
+      def take_events
+        event = Input.read(TICKS.fetch(@navigator.pace), zones: @zones, typing: @navigator.typing?)
+        loop do
+          effect = @navigator.next_step(event)
+          return effect if effect == :quit
+
+          perform(effect)
+          event = Input.read(0, zones: @zones, typing: @navigator.typing?)
+          return if event == :tick
+        end
       end
 
       # Runs a command, like the editor, then tells the Navigator, or shows a message while a slow task runs.
@@ -104,23 +115,6 @@ module Raindown
       def last_line(segments)
         *rest, last = segments
         [*rest, last.with(text: last.text[0...-1])]
-      end
-
-      # The next event, or :tick when no key is pressed in time, or nil for keys without one, like a resize.
-      def read
-        Curses.stdscr.timeout = TICKS.fetch(@navigator.pace)
-        key = Curses.stdscr.getch
-        return :tick if key.nil?
-        return mouse if key == Curses::KEY_MOUSE
-
-        Curses.stdscr.clear if key == Curses::KEY_RESIZE
-        Input.key_event(key, typing: @navigator.typing?)
-      end
-
-      # The curses gem warns the first time it makes a MouseEvent, that it's "undefining the allocator" of the class.
-      def mouse
-        event = Quiet.quietly { Curses.getmouse }
-        Input.mouse_event(event, @zones) if event
       end
 
       # Shows a message in the status line while something slow runs, like an endpoint's request.
