@@ -29,7 +29,8 @@ module Raindown
       PANES = { tab: nil, left: :nav, right: :main }.freeze
       ACTIONS = { execute: :execute, edit: :edit, write_back: :write_back, reload: :reload, tick: :refresh }.freeze
       # Keys that open the search, the project menu, the Dashboard or Code feelings, from anywhere.
-      OPENERS = { search: :open_search, projects: :toggle_menu, dashboard: :toggle_dashboard, feelings: :open_feelings }.freeze
+      OPENERS = { search: -> { open_search }, projects: -> { toggle_menu }, dashboard: -> { toggle_dashboard },
+                  feelings: -> { open_view(feelings) } }.freeze
 
       attr_reader :focus, :status
       # What the mouse is over, which a click there would send, like a Click on a method's cells, or nil.
@@ -100,7 +101,7 @@ module Raindown
         return :quit if name == :quit
         return search_event(name) if searching?
         return menu_event(name) if menu
-        return send(OPENERS[name]) if OPENERS.key?(name)
+        return instance_exec(&OPENERS[name]) if OPENERS.key?(name)
         return view.next_step(name)&.take(self) if @focus == :main && view.next_step?(name)
 
         browser_event(name)

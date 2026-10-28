@@ -39,8 +39,6 @@ module Raindown
 
       private
 
-      def open_feelings = open_view(feelings)
-
       # Switches between the dashboard and the view before it.
       def toggle_dashboard
         return open_view(@previous) if view == dashboard && @previous
