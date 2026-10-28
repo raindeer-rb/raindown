@@ -40,8 +40,8 @@ module Raindown
       FILLED_CODE_LINES = 1
       # The drift from which a method's cells are restless, and tremble now and then.
       RESTLESS = 7
-      # How far a cell's digit is from its method's drift, by its roll out of NOISE_ROLL, so about three in ten are off.
-      NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2 }.freeze
+      # How far a cell's digit is from its method's drift, by its roll out of NOISE_ROLL, so about four in ten are off.
+      NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2, 6 => -3, 7 => 3 }.freeze
       NOISE_ROLL = 20
       BUTTONS = [['Tab', 'Pane', :tab], ['1-6', 'Feel', nil], ['e', 'Edit', :edit], ['x', 'Fix', :execute],
                  ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze

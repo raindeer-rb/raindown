@@ -37,7 +37,7 @@ Each function or method in the batch (see The week's batch below) is a cluster o
 
 The digits aren't uniform, which keeps the show's feel:
 
-- **Noise:** about three cells in ten are one or two away from their method's drift. Each cell's checksum decides which, so a cell never changes from one draw to the next (`FeelingsRenderer::NOISE`).
+- **Noise:** about four cells in ten are one to three away from their method's drift. Each cell's checksum decides which, so a cell never changes from one draw to the next (`FeelingsRenderer::NOISE`).
 - **Tremble:** a method that drifts 7 or more is restless, and its cells' digits tremble now and then, about once a minute each, a column either way for four steps of 0.15 seconds, as if they're trying to escape (`Motion`). Code feelings is drawn at 10 frames a second, and the rain at 20, whether it's used with the keys or the mouse, so the frame rate doesn't jump between them.
 - **Flee:** when the mouse is over a method, the digits beside it in its row move to the far side of their cells, away from it, where they tremble twice as quickly, about every 0.6 seconds, and every cell around it, above, below and diagonally too, is bold.
 
