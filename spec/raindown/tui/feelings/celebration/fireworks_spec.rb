@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/feelings/scene'
+require 'raindown/tui/feelings/celebration/scene'
 
 RSpec.describe Raindown::TUI::Fireworks do
   def frames(animations) = (0..60).map { Raindown::TUI::Scene.new(width: 60, height: 16, animations:).lines(it) }

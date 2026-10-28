@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/feelings/scene'
+require 'raindown/tui/feelings/celebration/scene'
 require 'unicode/display_width'
 
 RSpec.describe Raindown::TUI::Rain do

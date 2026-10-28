@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/feelings/scene'
+require 'raindown/tui/feelings/celebration/scene'
 
 RSpec.describe Raindown::TUI::Balloons do
   def lines(tick) = Raindown::TUI::Scene.new(width: 60, height: 16, animations: [described_class]).lines(tick)

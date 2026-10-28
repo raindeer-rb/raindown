@@ -2,7 +2,7 @@
 
 require_relative '../events'
 require_relative 'cell_moves'
-require_relative 'celebration'
+require_relative 'celebration/celebration'
 require_relative 'code_methods'
 require_relative 'feelings_log'
 require_relative 'weekly_batch'

@@ -2,7 +2,7 @@
 
 require 'zlib'
 
-require_relative '../rain'
+require_relative '../celebration/rain'
 require_relative 'balloons'
 
 module Raindown
