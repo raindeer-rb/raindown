@@ -71,10 +71,13 @@ module Raindown
       end
 
       # Whether the method's been felt, by its file, name and code's checksum, wherever its line is now. A row from before
-      # checksums were kept has none, so it counts until the method's felt again.
+      # checksums were kept has none, so it counts until the method's felt again. The answer's kept until a feeling's added.
       def felt?(method)
         @felt ||= rows.to_set { key(it) }
-        [method.checksum, ''].any? { @felt.include?([relative(method.path), method.label, it]) }
+        @felt_methods ||= {}
+        @felt_methods.fetch(method) do
+          @felt_methods[method] = [method.checksum, ''].any? { @felt.include?([relative(method.path), method.label, it]) }
+        end
       end
 
       # How the method last felt, while its code's the same as when it was felt, or nil.
@@ -115,7 +118,7 @@ module Raindown
           csv << HEADER
           rows.each { csv << it.values_at(*HEADER) }
         end
-        @rows = @felt = nil
+        @rows = @felt = @felt_methods = nil
       end
 
       def where(method) = "#{relative(method.path)}:#{method.line}"
