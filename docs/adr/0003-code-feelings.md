@@ -14,7 +14,7 @@ The terminal UI ([ADR 1](0001-terminal-ui.md)) already has views and renderers (
 ```
                                 ▏                                                     39% refined
  📊 Dashboard                   ▏  2  7  6  7  2  3  1  3  5  7  7  9  1  1  8  8  8  5  5  0  0  5
-                                ▏  5  3  3  3  3  2  3  5  7  7  8  7  4  4  4  4  3  3  2  4  3  1
+ 🎭 Feelings                    ▏  5  3  3  3  3  2  3  5  7  7  8  7  4  4  4  4  3  3  2  4  3  1
                                 ▏ ╭─ lib/text.rb:62 · Text#segments_between ──────── changed 6× ─╮
                                 ▏ │ def segments_between(line, from, to)                          │
                                 ▏ │ [12 more lines]                                               │
@@ -143,6 +143,7 @@ Rouge is pure Ruby, ships its languages, and runs on every OS and build Raindown
 
 ## Consequences
 
+- **Its code lives in `lib/raindown/tui/feelings/`,** apart from the other views and renderers: its view and renderer, the renderer's bins, code box and waffle, the log, the batches, finding methods, and the celebration's rain and fireworks. Its specs mirror it in `spec/raindown/tui/feelings/`. The `Highlighter` stays in `lib/raindown/tui/`, as the outline and endpoints use it too.
 - **It writes into the project it's run on:** `.raindown/feelings.csv` and `.raindown/memories.csv`. Teams will want to commit them on purpose.
 - **Memories depend on finding the same methods.** A feeling moves when its method isn't found with the same file, name and code, so switching between Ctags and the indentation fallback, which can name methods differently, can move feelings that are still true.
 - **Rouge is a new runtime dependency** (`~> 5.1`). It's pure Ruby, so installing Raindown still needs no native code beyond curses. It takes about a third of a second to load, so the TUI loads it as it starts, rather than whenever Raindown is required, since nothing else highlights code.

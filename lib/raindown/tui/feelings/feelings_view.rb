@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative '../celebration'
-require_relative '../code_methods'
 require_relative '../events'
-require_relative '../feelings_log'
-require_relative '../weekly_batch'
+require_relative 'celebration'
+require_relative 'code_methods'
+require_relative 'feelings_log'
+require_relative 'weekly_batch'
 
 module Raindown
   module TUI

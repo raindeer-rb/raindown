@@ -2,7 +2,7 @@
 
 require_relative '../views/dashboard_view'
 require_relative '../views/endpoint_view'
-require_relative '../views/feelings_view'
+require_relative '../feelings/feelings_view'
 require_relative '../views/outline_view'
 
 module Raindown

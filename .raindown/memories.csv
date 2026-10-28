@@ -3,3 +3,5 @@ when,where,method,temper,note,commit,checksum
 2026-10-28,lib/raindown/tui/feelings_log.rb:45,FeelingsLog#add,dread,"the zip could be a multiline block where the args to zip are a hash, then drop the to_h. would that work?",1d2ace2,9bcb854d
 2026-10-28,lib/raindown/tui/feelings_log.rb:45,FeelingsLog#add,dread,,1d2ace2,d21d9b6f
 2026-10-28,lib/raindown/tui/terminal/styles.rb:97,Styles#code,woe,what does it refer to?,49ff701,88209dc4
+2026-10-27,lib/raindown/tui/feelings_log.rb:18,TUI#felt,numb,,e831696,
+2026-10-27,lib/raindown/tui/code_methods.rb:72,CodeMethods#indented,woe,"the it implicit block argument is too vauge in this situation, it should probably be file?",e831696,

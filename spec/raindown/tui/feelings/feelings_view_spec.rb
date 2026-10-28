@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/views/feelings_view'
+require 'raindown/tui/feelings/feelings_view'
 require 'fileutils'
 require 'tmpdir'
 

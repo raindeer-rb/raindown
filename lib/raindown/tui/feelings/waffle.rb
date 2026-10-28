@@ -2,8 +2,7 @@
 
 module Raindown
   module TUI
-    # The waffle after the rain, when a batch of code feelings is refined, like Severance's waffle party, in the
-    # middle of the pane with a pat of butter, and the week's work done:
+    # The waffle after the rain with a pat of butter, when a batch of code is refined, and the week's work is done:
     #    ╔═══╦═══╦═══╦═══╦═══╗
     #    ║   ║   ║   ║   ║   ║
     #    ╠═══╬═══╬═══╬═══╬═══╣

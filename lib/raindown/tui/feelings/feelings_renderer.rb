@@ -3,10 +3,10 @@
 require 'zlib'
 
 require_relative '../../stat'
-require_relative '../scene'
+require_relative '../renderers/renderer'
 require_relative 'bins'
 require_relative 'code_box'
-require_relative 'renderer'
+require_relative 'scene'
 require_relative 'waffle'
 
 module Raindown

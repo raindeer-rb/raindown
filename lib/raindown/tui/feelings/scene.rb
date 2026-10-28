@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../text'
 require_relative 'fireworks'
 require_relative 'rain'
-require_relative 'text'
 
 module Raindown
   module TUI

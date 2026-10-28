@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/code_methods'
+require 'raindown/tui/feelings/code_methods'
 require 'fileutils'
 require 'tmpdir'
 
