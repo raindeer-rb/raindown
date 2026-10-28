@@ -15,6 +15,9 @@ module Raindown
 
       def raining? = frame < RAIN_FRAMES
 
+      # The frames since the rain stopped, which pop the waffle.
+      def popping = frame - RAIN_FRAMES
+
       # Each tick's a frame, and any other key puts the waffle away, which is when it's over.
       def over?(key)
         @frame += 1 if key == :tick

@@ -128,7 +128,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect([view.celebration.frame, view.pace(nil)]).to eq([0, :animation])
 
     Raindown::TUI::Celebration::RAIN_FRAMES.times { view.next_step(:tick) }
-    expect([view.celebration.raining?, view.pace(nil), view.next_step?(:tab)]).to eq([false, :motion, true])
+    expect([view.celebration.raining?, view.pace(nil), view.next_step?(:tab)]).to eq([false, :animation, true])
 
     view.next_step(:right)
     expect([view.celebration, view.batch.progress]).to eq([nil, '100% refined'])
@@ -154,7 +154,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
   it 'is drawn often, wherever the mouse is, and most often while it rains' do
     over = Raindown::TUI::Click.new(pane: :main, index: 0, action: :focus)
-    expect([nil, over].map { view.pace(it) }).to eq(%i[motion motion])
+    expect([nil, over].map { view.pace(it) }).to eq(%i[active active])
 
     view.next_step(:celebrate)
     expect(view.pace(over)).to eq(:animation)

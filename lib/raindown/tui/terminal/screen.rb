@@ -14,9 +14,9 @@ module Raindown
     # Only this class draws on the terminal, so another library could draw the same Layout.
     class Screen
       # How often, in milliseconds, the screen's drawn, and the open file checked for changes, while no key is pressed, by
-      # the view's pace: every half second while it's still, at 14 frames a second while there's motion, like Code
-      # feelings' trembling digits, and at 20 during an animation, like Code feelings' rain.
-      TICKS = { still: 500, motion: 71, animation: 50 }.freeze
+      # the view's pace: every half second while it's reactive, drawn mostly as keys are pressed, at 14 frames a second
+      # while it's active, like Code feelings' trembling digits, and at 20 during an animation, like Code feelings' rain.
+      TICKS = { reactive: 500, active: 71, animation: 50 }.freeze
 
       def initialize(navigator)
         @navigator = navigator

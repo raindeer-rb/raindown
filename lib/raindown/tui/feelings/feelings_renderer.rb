@@ -69,13 +69,19 @@ module Raindown
 
       def view = navigator.view
 
-      # Instead of the grid, that there's nothing to feel, or rain and fireworks over the pane when the batch is refined,
-      # then a waffle.
+      # Instead of the grid, that there's nothing to feel, or the celebration.
       def instead
         return blank(" No functions or methods in #{File.basename(navigator.root)} to feel") if view.code_methods.empty?
-        return Scene.new(width:, height:).lines(view.celebration.frame) if view.celebration.raining?
 
-        waffle
+        celebration(view.celebration)
+      end
+
+      # Rain and fireworks over the pane when the batch is refined, then a waffle popping out, among confetti, balloons and
+      # sparkles.
+      def celebration(celebration)
+        return Scene.new(width:, height:).lines(celebration.frame) if celebration.raining?
+
+        waffle(Scene.new(width:, height:, animations: [Confetti, Balloons, Sparkles]).lines(celebration.popping), celebration.popping)
       end
 
       # The rows of the grid around the selected method's, each its cells' lines, below a blank line that leaves the first

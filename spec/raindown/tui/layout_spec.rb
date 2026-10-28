@@ -353,18 +353,28 @@ RSpec.describe Raindown::TUI::Layout do
       expect(text(described_class.new(both, width: 90, height: 24).lines).join).to include(felt.label)
     end
 
-    it 'rains over the pane when the batch is refined, then shows a waffle' do
+    it 'rains over the pane when the batch is refined, then pops a waffle out from its butter, over balloons' do
       navigator.next_step(:bin3)
       rain = main(described_class.new(navigator, width: 90, height: 24).lines)
       expect([navigator.pace, rain.join]).to match([:animation, match(/[│╎]/)])
       expect(rain.join).not_to include('Raindown')
 
       Raindown::TUI::Celebration::RAIN_FRAMES.times { navigator.next_step(:tick) }
+      # The waffle's rows, by its ridges' colour, which every row has, and its text, but not the balloons behind them.
+      waffle = ->(line) { line.any? { it.style == :code_number || it.text.match?(/refined|mysterious/) } }
+      shown = -> { described_class.new(navigator, width: 90, height: 24).lines.drop(2).count(&waffle) }
+      popping = Array.new(10) { shown.call.tap { Raindown::TUI::Waffle::POP_FRAMES.times { navigator.next_step(:tick) } } }
+      expect(popping).to eq([1, 3, 5, 7, 9, 11, 13, 13, 14, 15])
+
       lines = described_class.new(navigator, width: 90, height: 24).lines
-      expect(main(lines).map(&:strip)).to include('╔═══╦═══╦═══╦═══╦═══╗', '║   ║   ║███║   ║   ║', '100% refined',
-                                                  'The work is mysterious and important.')
-      expect(navigator.pace).to eq(:motion)
-      expect(lines.flatten.find { it.text == '███' }.style).to eq(:button)
+      expect(main(lines).join).to include('█▓▓▓▓▓█', '█░░░░░█', '▄▄▄▄▄', '100% refined', 'The work is mysterious and important.')
+      expect(navigator.pace).to eq(:animation)
+      expect(%w[▄▄ ▄▄▄].map { |text| lines.flatten.find { it.text == text }.style }).to eq(%i[shine button])
+
+      # Then the syrup pours onto the butter, and fills the pockets.
+      40.times { navigator.next_step(:tick) }
+      syrup = described_class.new(navigator, width: 90, height: 24).lines.flatten.select { it.style == :syrup }.map(&:text)
+      expect(syrup).to include('│').and(include(match(/[▓░]{3,}/)))
       expect(text(lines).map { width(it) }).to all(eq(90))
     end
 

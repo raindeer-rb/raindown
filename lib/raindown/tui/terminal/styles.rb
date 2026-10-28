@@ -13,11 +13,12 @@ module Raindown
     module Styles
       COLORS = { button: Curses::COLOR_YELLOW, error: Curses::COLOR_RED }.freeze
       # Directives, like charts' on the Dashboard, in purple, and the folders, projects and pages in the files, the title,
-      # and headings, like the outline's and the Dashboard cards', in cornflower blue, from the 256 colours most terminals
+      # and headings, like the outline's and the Dashboard cards', in cornflower blue, and the waffle's syrup in brown,
+      # from the 256 colours most terminals
       # have, or magenta and blue with 8.
-      ACCENTS = { directive: 141, folder: 111, title: 111, heading: 111 }.freeze
+      ACCENTS = { directive: 141, folder: 111, title: 111, heading: 111, syrup: 130 }.freeze
       BASIC_ACCENTS = { directive: Curses::COLOR_MAGENTA, folder: Curses::COLOR_BLUE, title: Curses::COLOR_BLUE,
-                        heading: Curses::COLOR_BLUE }.freeze
+                        heading: Curses::COLOR_BLUE, syrup: Curses::COLOR_YELLOW }.freeze
       # The colours of endpoints' HTTP methods, like GET in green, from the 256 colours most terminals have,
       # which are the same in every theme, unlike the 8 they all do, where green can look yellow.
       METHODS = { get: 40, post: 33, delete: 196, put: 220, patch: 171, head: 44, options: 44 }.freeze
@@ -86,12 +87,13 @@ module Raindown
         Hash.new(text).merge(plain.transform_values { it | text })
       end
 
-      # Headings, and Code feelings' text and lines, bold around the method the mouse is over, whose lavender the Dashboard
-      # cards' charts and code blocks are too, apart from highlighted code's keywords, strings and the like.
+      # Headings, the shine on the waffle's butter, and Code feelings' text and lines, bold around the method the mouse is
+      # over, whose lavender the Dashboard cards' charts and code blocks are too, apart from highlighted code's keywords,
+      # strings and the like.
       def emphasis
         lavender = pair(:feelings)
         { heading: pair(:heading) | Curses::A_BOLD, feelings: lavender, nearby: lavender | Curses::A_BOLD, chart: lavender,
-          code: lavender }
+          code: lavender, shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
       end
 
       # Highlighted code's tokens, like keywords and comments, with comments dim in 8 colours, where there's no grey.
@@ -133,7 +135,7 @@ module Raindown
          [:text, text, -1],
          [:selected, white, blues[:selected]], [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
          [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, text, -1],
-         [:selected_divider, text, blues[:selected]], [:cursor_divider, text, DARK_GREY]]
+         [:selected_divider, text, blues[:selected]], [:cursor_divider, text, DARK_GREY], [:shine, white, -1]]
       end
 
       def pair(name)
