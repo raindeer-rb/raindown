@@ -127,13 +127,16 @@ module Raindown
       end
 
       # Leaves the screen to the command, like the editor, and comes back to it after. The command isn't sent the
-      # mouse's moves meanwhile.
+      # mouse's moves meanwhile. Ctrl+C, like to leave Claude Code, goes to the TUI too, which waits for the command
+      # rather than quitting, while the command gets Ctrl+C as usual.
       def suspend
+        interrupt = trap('INT') { nil }
         Curses.def_prog_mode
         Input.untrack_mouse
         Curses.close_screen
         yield
       ensure
+        trap('INT', interrupt)
         Curses.reset_prog_mode
         Input.track_mouse
         Curses.stdscr.clear
