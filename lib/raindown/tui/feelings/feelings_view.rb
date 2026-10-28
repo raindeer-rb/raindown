@@ -72,6 +72,12 @@ module Raindown
 
       def selected = code_methods[@cursor]
 
+      # The method's highlighted code, kept from frame to frame while it's the one shown.
+      def highlighted(method)
+        @highlighted = { method => yield } unless @highlighted&.key?(method)
+        @highlighted[method]
+      end
+
       def cursor=(index)
         index = index.clamp(0, [code_methods.length - 1, 0].max)
         @expanded = false unless index == @cursor

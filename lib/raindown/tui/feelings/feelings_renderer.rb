@@ -128,14 +128,17 @@ module Raindown
       # The cell's line: its digit small on the first, where it moves, or blank once its method's felt, but still there to
       # select, which shows it again with its code.
       def cell_text(owner, index, line)
-        return ' ' * CELL if hidden?(owner) || line.nonzero?
+        return ' ' * CELL if line.nonzero? || hidden?(owner)
 
         column = digit_column(owner, index)
         "#{' ' * column}#{digit(owner, index)}#{' ' * (CELL - 1 - column)}"
       end
 
-      # Whether the method's felt, and not selected, so its cells are blank.
-      def hidden?(owner) = owner != view.cursor && view.batch.felt?(view.code_methods[owner])
+      # Whether the method's felt, and not selected, so its cells are blank, asked once a frame for each method.
+      def hidden?(owner)
+        @hidden ||= Hash.new { |hidden, felt| hidden[felt] = felt != view.cursor && view.batch.felt?(view.code_methods[felt]) }
+        @hidden[owner]
+      end
 
       # Near the method's drift, from 0 to 9: a cell's checksum rolls a small chance of it being one or two away.
       def digit(owner, index)

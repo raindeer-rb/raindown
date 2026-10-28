@@ -60,7 +60,8 @@ module Raindown
 
       # Bold around the method the mouse is over, beside it, above it, below it, or diagonally.
       def cell_style(index)
-        return :nearby if !hovered.include?(index) && around(index).any? { hovered.include?(it) }
+        @nearby ||= hovered.flat_map { around(it) }.to_set - hovered
+        return :nearby if @nearby.include?(index)
 
         :feelings
       end
