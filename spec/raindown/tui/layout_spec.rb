@@ -301,7 +301,12 @@ RSpec.describe Raindown::TUI::Layout do
 
     # The magnified digit of the first row's cell of the method, over the blank line above it and the row's lines.
     def magnified(lines, index)
-      lines[2..4].map { |line| line.find { it.event == click(:main, index, :focus) && it.text.length == 3 }&.text }
+      lines[2..4].map { |line| line.find { it.event == click(:main, index, :focus) && it.text.match?(/[█▀▄]/) }&.text&.slice(1, 3) }
+    end
+
+    # The style of the first row's cell of the method, magnified, on the blank line above it and the row's lines.
+    def magnified_style(lines, index)
+      lines[2..4].map { |line| line.find { it.event == click(:main, index, :focus) && it.text.match?(/[█▀▄]/) }&.style }
     end
 
     before do
@@ -318,7 +323,7 @@ RSpec.describe Raindown::TUI::Layout do
 
       expect(text(lines).first).to include('› Code feelings')
       expect(magnified(lines, 0)).to all(match(/\A[█▀▄ ]{3}\z/))
-      expect(lines.flatten.map(&:style)).not_to include(:selected)
+      expect(magnified_style(lines, 0)).to eq(%i[selected] * 3)
       expect(main(lines)[1].strip).to eq('0% refined')
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
       expect(main.find { it.include?('def area') }).to start_with(' │ def area').and end_with('│')
@@ -396,6 +401,7 @@ RSpec.describe Raindown::TUI::Layout do
       both.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
       lines = described_class.new(both, width: 90, height: 24).lines
       expect([magnified(lines, 0), magnified(lines, 1)]).to all(all(match(/\A[█▀▄ ]{3}\z/)))
+      expect([magnified_style(lines, 0), magnified_style(lines, 1)]).to eq([%i[selected] * 3, %i[feelings] * 3])
       expect(text(lines).map { width(it) }).to all(eq(90))
 
       both.next_step(Raindown::TUI::Hover.new(target: nil))

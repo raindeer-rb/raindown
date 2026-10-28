@@ -93,15 +93,27 @@ module Raindown
       end
 
       # The lines with the digits of the selected method, and the one the mouse is over, magnified, over the line above them
-      # and beside them.
+      # and beside them, each across its whole cell and the line above it.
       def magnified(lines, cells, first, rows)
         magnified_cells(cells, first, rows).each do |index, click|
-          top = ((index / columns) - first) * CELL_LINES
-          Stat::DIGITS[digit(cells[index], index).to_s].each_with_index do |text, line|
-            magnify(lines, top + line, segment(text, :feelings, width: 3, event: click), 2 + (index % columns * CELL))
-          end
+          magnify_cell(lines, ((index / columns) - first) * CELL_LINES, cells[index], index, click)
         end
         lines
+      end
+
+      # The cell's digit magnified over the lines from the top one, across the whole cell.
+      def magnify_cell(lines, top, owner, index, click)
+        style = magnified_style(owner)
+        Stat::DIGITS[digit(owner, index).to_s].each_with_index do |text, line|
+          magnify(lines, top + line, segment(" #{text}  ", style, width: CELL, event: click), 1 + (index % columns * CELL))
+        end
+      end
+
+      # The selected method's cells, across the whole of each, on the selection's blue, so they join into one block.
+      def magnified_style(owner)
+        return :selected if owner == view.cursor
+
+        :feelings
       end
 
       # The cells of the rows from the first that are the selected method's, or the one the mouse is over's, with its click,
