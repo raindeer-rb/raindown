@@ -45,13 +45,13 @@ RSpec.describe Raindown::TUI::Layout do
       [' 🌧  Raindown  ~/docs › guides/setup.md',
        '                    ▏',
        ' 📊 Dashboard       ▏ # Setup',
-       '                    ▏   endpoint:                 [+6] [Run]',
+       ' 🎭 Feelings        ▏   endpoint:                 [+6] [Run]',
+       '                    ▏',
        ' ▾ guides/          ▏',
        '   setup.md         ▏',
        ' README.md          ▏',
        '                    ▏',
        ' GET example.com    ▏',
-       '                    ▏',
        '                    ▏',
        '                    ▏',
        ' Opened guides/setup.md',
@@ -65,13 +65,13 @@ RSpec.describe Raindown::TUI::Layout do
     divider = ->(line) { line.find { it.text == described_class::DIVIDER }.style }
 
     expect(lines[2].last.style).to eq(:selected)
-    expect(lines[5].first.style).to eq(:cursor)
-    expect([lines[3].first.style, lines[3].first.event]).to eq([:blank, nil])
+    expect(lines[6].first.style).to eq(:cursor)
+    expect([lines[4].first.style, lines[4].first.event]).to eq([:blank, nil])
     expect([divider[lines[1]], divider[lines[2]], divider[lines[3]]]).to eq(%i[divider selected_divider divider])
     navigator.next_step(:left)
     lines = described_class.new(navigator, width: 60, height: 14).lines
-    expect([lines[2].last.style, lines[5].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
-    expect(lines[2].first.style).to eq(:dashboard)
+    expect([lines[2].last.style, lines[6].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
+    expect([lines[2].first.style, lines[3].first.style]).to eq(%i[page page])
     expect(lines[3].last(2).map(&:style)).to eq(%i[button button])
   end
 
@@ -79,9 +79,10 @@ RSpec.describe Raindown::TUI::Layout do
     lines = described_class.new(navigator, width: 80, height: 14).lines
 
     expect(lines[2].first.event).to eq(click(:nav, 0))
-    expect(lines[4].first.event).to eq(click(:nav, 2))
-    expect(lines[8].first.event).to eq(click(:nav, 6))
-    expect(lines[7].first.event).to be_nil
+    expect(lines[3].first.event).to eq(click(:nav, 1))
+    expect(lines[5].first.event).to eq(click(:nav, 3))
+    expect(lines[9].first.event).to eq(click(:nav, 7))
+    expect([lines[4].first.event, lines[8].first.event]).to eq([nil, nil])
     expect(lines[2].last.event).to eq(click(:main, 0))
     expect(lines[3].last.event).to eq(click(:main, 1, :execute))
     expect(lines.last.map(&:event).compact.uniq).to eq(%i[tab enter execute edit write_back reload search quit])
@@ -301,6 +302,8 @@ RSpec.describe Raindown::TUI::Layout do
       FileUtils.mkdir_p(File.join(@root, 'lib'))
       File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n    side * side\n  end\nend\n")
       navigator.next_step(:feelings)
+      # The first draw picks the batch, as the screen draws when the view opens.
+      described_class.new(navigator, width: 90, height: 24).lines
     end
 
     it 'draws the methods as digits, the selected one highlighted with its code below, then the five bins' do
@@ -321,7 +324,6 @@ RSpec.describe Raindown::TUI::Layout do
     it 'leaves felt methods blank, but still there to select, which shows their digits and code again' do
       File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
       both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
-      # The first draw fills the batch, as the screen draws before any key.
       described_class.new(both, width: 90, height: 24).lines
       felt = both.view.selected
       both.next_step(:bin5)
@@ -337,6 +339,36 @@ RSpec.describe Raindown::TUI::Layout do
       expect(text(described_class.new(both, width: 90, height: 24).lines).join).to include(felt.label)
     end
 
+    it 'rains over the pane when the batch is refined, then shows a waffle' do
+      navigator.next_step(:bin5)
+      rain = main(described_class.new(navigator, width: 90, height: 24).lines)
+      expect([navigator.animating?, rain.join]).to match([true, match(/[│╎]/)])
+      expect(rain.join).not_to include('Raindown')
+
+      Raindown::TUI::Celebration::RAIN_FRAMES.times { navigator.next_step(:tick) }
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+      expect(main(lines).map(&:strip)).to include('╔═══╦═══╦═══╦═══╦═══╗', '║   ║   ║███║   ║   ║', '100% refined',
+                                                  'The work is mysterious and important.')
+      expect(navigator.animating?).to be(false)
+      expect(lines.flatten.find { it.text == '███' }.style).to eq(:button)
+      expect(text(lines).map { width(it) }).to all(eq(90))
+    end
+
+    it "highlights the bin of how a felt method felt, when it's selected" do
+      File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
+      both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      bin = ->(name) { described_class.new(both, width: 90, height: 24).lines.flatten.find { it.text.include?(name) }.style }
+      expect(bin.call('MALICE')).to eq(:border)
+
+      both.next_step(:bin4)
+      both.next_step(:enter)
+      both.next_step(:right)
+      expect([bin.call('MALICE'), bin.call('NUMB')]).to eq(%i[border border])
+
+      both.next_step(:left)
+      expect([bin.call('MALICE'), bin.call('NUMB')]).to eq(%i[selected border])
+    end
+
     it 'wraps a long note in as many lines as it takes, lined up after the question' do
       navigator.next_step(:bin4)
       'two negations and a hidden dependency on rows'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
@@ -350,8 +382,8 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'draws the cells the mouse is over in bold, and the selected ones highlighted' do
       File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
-      # A reload keeps the batch, so it's picked again with both files.
       both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      described_class.new(both, width: 90, height: 24).lines
       both.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
       cells = grid_line(described_class.new(both, width: 90, height: 24).lines).select { it.event&.pane == :main }
 
@@ -367,12 +399,29 @@ RSpec.describe Raindown::TUI::Layout do
       lines = described_class.new(navigator, width: 90, height: 30).lines
 
       expect(box.call(lines).length).to eq(9)
-      expect(box.call(lines).last(2)).to eq(['7', '… 4 more lines'])
+      expect(box.call(lines).last(2)).to eq(['7', '[4 more lines]'])
       more = lines.flatten.find { it.text.include?('more lines') }
       expect(more.event).to eq(click(:main, 0, :expand))
 
       navigator.next_step(more.event)
-      expect(box.call(described_class.new(navigator, width: 90, height: 30).lines).last(2)).to eq(['end', '▴ Fewer lines'])
+      expect(box.call(described_class.new(navigator, width: 90, height: 30).lines).last(2)).to eq(['end', '[Fewer lines]'])
+    end
+
+    it 'wraps a long line of code in the box at spaces, carrying on at its indent after an ellipsis' do
+      call = "    total = #{(1..30).map { "side#{it}" }.join(' + ')}"
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n#{call}\n  end\nend\n")
+      navigator.next_step(:reload)
+      lines = described_class.new(navigator, width: 90, height: 30).lines
+      box = main(lines).drop_while { !it.include?('╭─ lib') }.take_while { !it.include?('╰') }.drop(1)
+
+      code = box.map { it[3..].delete_suffix('│').delete_suffix(' ') }
+      carried = code.drop(2).take_while { it.start_with?('  … ') }
+
+      expect([code.first.rstrip, carried.length > 1]).to eq(['def area', true])
+      pieces = [code[1], *carried.map { it.delete_prefix('  … ') }].map(&:rstrip)
+      expect([pieces.join(' '), pieces]).to match([call.delete_prefix('  '), all(match(/(side\d+|\+)\z/))])
+      expect(box.map { width(it) }.uniq).to eq([width(box.first)])
+      expect(lines.flatten.find { it.text.include?('…') }.style).to eq(:body)
     end
 
     it 'asks why below the code and a line, with the bin highlighted, while the note is typed' do

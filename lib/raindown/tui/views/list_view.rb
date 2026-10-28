@@ -14,6 +14,7 @@ module Raindown
 
       def renderer = ListRenderer
       def typing? = false
+      def animating? = false
 
       def rows = @rows.call
       def selected = rows[cursor]

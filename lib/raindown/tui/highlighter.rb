@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rouge'
-
 module Raindown
   module TUI
     # Code coloured with Rouge, which knows over 200 languages, as each line's [text, style] parts. Each part's style is
@@ -30,7 +28,9 @@ module Raindown
         end
       end
 
+      # Rouge takes about a third of a second to load, so the TUI loads it when it starts, rather than with its code.
       def lexer(filename:, language:)
+        require 'rouge'
         lexer = Rouge::Lexer.find_fancy(language) unless language.to_s.empty?
         lexer ||= Rouge::Lexer.guess_by_filename(filename).new if filename
         lexer unless lexer.is_a?(Rouge::Lexers::PlainText)

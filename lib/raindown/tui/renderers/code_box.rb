@@ -8,7 +8,7 @@ module Raindown
     # fit, then why it felt that way while that's typed, below a line:
     #    ╭─ lib/text.rb:62 · Text#segments_between ──────────── changed 6× ─╮
     #    │ def segments_between(line, from, to)                              │
-    #    │ … 12 more lines                                                   │
+    #    │ [12 more lines]                                                   │
     #    ├───────────────────────────────────────────────────────────────────┤
     #    │ Why DREAD? > column maths, a character at a time▏                 │
     #    ╰───────────────────────────────────────────────────────────────────╯
@@ -29,22 +29,65 @@ module Raindown
          box_edge('╰', '╯')]
       end
 
-      # The method's first lines, or all that fit in the room when it's expanded, highlighted, then how many more
-      # there are, clicked to show them, or a line to show fewer again.
+      # The method's first lines, or all that fit in the room when it's expanded, highlighted and wrapped to fit the box,
+      # then how many more there are, clicked to show them, or a line to show fewer again.
       def code_lines(room)
-        method = view.selected
         shown = CODE_LINES
         shown = [room, CODE_LINES].max if view.expanded
-        code = Highlighter.lines(dedented(method.lines.first(shown)), filename: method.path).map { boxed(it) }
-        return code if method.lines.length <= CODE_LINES
+        lines = highlighted_code.map { wrapped(it) }
+        fitting = lines.take_while { (shown -= it.length) >= 0 }
+        code = fitting.flatten(1).map { boxed(it) }
+        return code if lines.sum(&:length) <= CODE_LINES
 
-        [*code, more_line(method.lines.length - shown)]
+        [*code, more_line(lines.length - fitting.length)]
+      end
+
+      def highlighted_code = Highlighter.lines(dedented(view.selected.lines), filename: view.selected.path)
+
+      # The highlighted line's [text, style] parts in as many lines as it takes to fit the box, like a note's, those
+      # after the first carrying on after an ellipsis.
+      def wrapped(parts)
+        room = width - 6
+        lead = [carried_lead(parts, room), :body]
+        rest = room - display_width(lead[0])
+        return [parts] if rest < 1
+
+        first, *others = line_breaks(parts.map { printable(it[0]) }.join, room, rest).each_cons(2).map { parts_between(parts, *it) }
+        [first, *others.map { [lead, *it] }]
+      end
+
+      # Where the text breaks into lines, the first fitting the room and the others the rest.
+      def line_breaks(text, room, rest)
+        breaks = [0]
+        fits = room
+        while text.length - breaks.last > fits
+          breaks << line_break(text, breaks.last, fits)
+          fits = rest
+        end
+        breaks << text.length
+      end
+
+      # Where a line from the column breaks: after the last space that fits, or where it's full when none does.
+      def line_break(text, from, fits)
+        space = text[from, fits].rindex(' ').to_i
+        return from + fits unless space.positive?
+
+        from + space + 1
+      end
+
+      # An ellipsis at the line's own indent, up to half the room, which the lines it's wrapped onto start with.
+      def carried_lead(parts, room) = "#{' ' * [parts.map(&:first).join[/\A */].length, room / 2].min}… "
+
+      # The parts' text between two columns, in their styles.
+      def parts_between(parts, from, to)
+        segments = parts.map { |text, style| Text::Segment.new(text: printable(text), style:, event: nil) }
+        segments_between(segments, from, to).map { [it.text, it.style] }
       end
 
       def more_line(hidden)
-        text = "… #{hidden} more lines"
-        text = '… 1 more line' if hidden == 1
-        text = "▴ Fewer lines#{" · #{hidden} more don't fit" if hidden.positive?}" if view.expanded
+        text = "[#{hidden} more lines]"
+        text = '[1 more line]' if hidden == 1
+        text = "[Fewer lines]#{" · #{hidden} more don't fit" if hidden.positive?}" if view.expanded
         boxed([[text, :body]], event: Click.new(pane:, index: view.cursor, action: :expand))
       end
 

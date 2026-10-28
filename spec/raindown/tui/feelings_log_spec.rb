@@ -27,43 +27,59 @@ RSpec.describe Raindown::TUI::FeelingsLog do
     log.add(feeling('malice', 'two negations | and a hidden @rows'))
     log.add(feeling('numb', about: other))
 
-    expect(log.rows.map { it.values_at('where', 'method', 'temper', 'note', 'checksum') })
+    expect(log.rows.map { it.values_at(:where, :method, :temper, :note, :checksum) })
       .to eq([['lib/text.rb:12', 'Text#fit', 'malice', 'two negations | and a hidden @rows', method.checksum],
               ['lib/text.rb:30', 'Text#spread', 'numb', nil, other.checksum]])
     expect(log.counts).to eq('woe' => 0, 'frolic' => 0, 'dread' => 0, 'malice' => 1, 'numb' => 1)
-    expect(File.read(File.join(@root, '.raindown', 'tempers.csv'))).to start_with("temper,feelings\nwoe,0\n")
   end
 
-  it "replaces a feeling about a method whose code hasn't changed, and keeps it once the code has" do
+  def memories = CSV.read(File.join(@root, '.raindown', 'memories.csv'), headers: true).map { it.to_h.values_at('method', 'temper') }
+
+  it "replaces a feeling about a method whose code hasn't changed, and moves it to the memories once the code has" do
     log.add(feeling('malice'))
     log.add(feeling('numb'))
-    expect(log.rows.map { it['temper'] }).to eq(['numb'])
+    expect(log.rows.map { it[:temper] }).to eq(['numb'])
 
     changed = method.with(lines: ['def fit = 1'])
     expect([log.felt?(method), log.felt?(changed)]).to eq([true, false])
+    expect([log.temper(method), log.temper(changed)]).to eq(['numb', nil])
 
     log.add(feeling('woe', about: changed))
-    expect(log.rows.map { it['temper'] }).to eq(%w[numb woe])
+    expect([log.rows.map { it[:temper] }, memories]).to eq([['woe'], [%w[Text#fit numb]]])
   end
 
-  it 'counts a row from before checksums were kept as felt, until the method is felt again' do
+  it 'moves the feelings about methods that have changed or gone to the memories, keeping the rest' do
+    log.add(feeling('malice'))
+    log.add(feeling('numb', about: other))
+    log.add(feeling('dread', about: other.with(name: 'gone', line: 50)))
+
+    log.move_stale_to_memories([method, other.with(lines: ['def spread = 2'])])
+    expect([log.rows.map { it[:temper] }, memories]).to eq([['malice'], [%w[Text#spread numb], %w[Text#gone dread]]])
+    expect(log.counts.values.sum).to eq(1)
+
+    log.move_stale_to_memories([method])
+    expect(memories.length).to eq(2)
+  end
+
+  it 'counts a row from before checksums were kept as felt, while its method is there, until the method is felt again' do
     FileUtils.mkdir_p(File.join(@root, '.raindown'))
     File.write(File.join(@root, '.raindown', 'feelings.csv'),
                "when,where,method,temper,note,commit\n2026-10-27,lib/text.rb:12,Text#fit,woe,,\n")
     expect(log.felt?(method)).to be(true)
 
+    log.move_stale_to_memories([method])
+    expect(log.felt?(method)).to be(true)
+    log.move_stale_to_memories([other])
+    expect(log.felt?(method)).to be(false)
+
     log.add(feeling('frolic'))
-    expect(log.rows.map { it.values_at('temper', 'checksum') }).to eq([['frolic', method.checksum]])
+    expect(log.rows.map { it.values_at(:temper, :checksum) }).to eq([['frolic', method.checksum]])
   end
 
-  it 'writes the feelings page, with a chart of the tempers and a table, newest first' do
+  it 'writes only .raindown/feelings.csv' do
     log.add(feeling('woe'))
-    log.add(feeling('malice', 'a | b', about: other))
-    page = File.read(log.page)
 
-    expect(page).to include("<{ chart: '.raindown/tempers.csv' width: 30 }>\n<{ :chart }>")
-    expect(page.lines.grep(/\A\| \d/).map { it.split(' | ')[3] }).to eq(%w[malice woe])
-    expect(page).to include('a \\| b')
+    expect(Dir.glob('**/*', File::FNM_DOTMATCH, base: @root).select { File.file?(File.join(@root, it)) }).to eq(['.raindown/feelings.csv'])
   end
 
   it 'asks Claude Code to refactor the method, with how it felt' do

@@ -23,6 +23,13 @@ module Raindown
                code_comment: 244 }.freeze
       BASIC_CODE = { code_keyword: Curses::COLOR_MAGENTA, code_string: Curses::COLOR_GREEN, code_number: Curses::COLOR_YELLOW,
                      code_function: Curses::COLOR_BLUE, code_constant: Curses::COLOR_CYAN, code_comment: Curses::COLOR_WHITE }.freeze
+      # Code feelings' bright colours, for its rain and fireworks, from the 256 colours most terminals have, or
+      # the 8 they all do.
+      BRIGHT = { bright_red: 203, bright_orange: 215, bright_yellow: 227, bright_green: 120, bright_cyan: 87,
+                 bright_blue: 75, bright_purple: 177, bright_pink: 213 }.freeze
+      BASIC_BRIGHT = { bright_red: Curses::COLOR_RED, bright_orange: Curses::COLOR_YELLOW, bright_yellow: Curses::COLOR_YELLOW,
+                       bright_green: Curses::COLOR_GREEN, bright_cyan: Curses::COLOR_CYAN, bright_blue: Curses::COLOR_BLUE,
+                       bright_purple: Curses::COLOR_MAGENTA, bright_pink: Curses::COLOR_MAGENTA }.freeze
       # The title's and the selected row's blues, from the 256 colours most terminals have, or the 8 they all do.
       BLUES = { title: 25, selected: 33 }.freeze
       BASIC_BLUES = { title: Curses::COLOR_BLUE, selected: Curses::COLOR_CYAN }.freeze
@@ -42,7 +49,7 @@ module Raindown
       def plain
         { title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, selected_button: Curses::A_REVERSE,
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
-          body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, dashboard: Curses::A_BOLD,
+          body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, page: Curses::A_BOLD,
           key: Curses::A_REVERSE, border: Curses::A_DIM, run: Curses::A_REVERSE | Curses::A_BOLD, divider: Curses::A_BOLD,
           selected_divider: Curses::A_REVERSE, cursor_divider: Curses::A_BOLD, hover: Curses::A_BOLD,
           code_keyword: Curses::A_BOLD, code_comment: Curses::A_DIM }
@@ -53,7 +60,7 @@ module Raindown
           title: pair(:title) | Curses::A_BOLD, selected: pair(:selected) | white_bold,
           selected_button: pair(:selected_button) | Curses::A_BOLD, directive: pair(:directive),
           error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD, **emphasis,
-          **dividers, **code, **files, **unfocused
+          **dividers, **code, **bright, **files, **unfocused
         )
       end
 
@@ -67,12 +74,15 @@ module Raindown
         code
       end
 
+      # The bright colours, bold, so they're bright in 8 colours too.
+      def bright = BRIGHT.keys.to_h { [it, pair(it) | Curses::A_BOLD] }
+
       # The line between the panes, and where it meets a selected row.
       def dividers = { divider: pair(:divider), selected_divider: pair(:selected_divider) }
 
       def files
         { folder: pair(:folder) | Curses::A_BOLD, project: pair(:directive) | Curses::A_BOLD,
-          dashboard: pair(:directive) | Curses::A_BOLD, **METHODS.keys.to_h { [:"method_#{it}", pair(:"method_#{it}") | Curses::A_BOLD] } }
+          page: pair(:directive) | Curses::A_BOLD, **METHODS.keys.to_h { [:"method_#{it}", pair(:"method_#{it}") | Curses::A_BOLD] } }
       end
 
       # The selected rows of the panes without the focus, on dark grey where there's one.
@@ -90,7 +100,7 @@ module Raindown
 
         [*COLORS.map { |name, color| [name, color, -1] },
          *(many ? METHODS : BASIC_METHODS).map { |name, color| [:"method_#{name}", color, -1] },
-         *(many ? CODE : BASIC_CODE).map { |name, color| [name, color, -1] },
+         *(many ? CODE.merge(BRIGHT) : BASIC_CODE.merge(BASIC_BRIGHT)).map { |name, color| [name, color, -1] },
          [:title, white, blues[:title]],
          [:selected, white, blues[:selected]], [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
          [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, blues[:title], -1],

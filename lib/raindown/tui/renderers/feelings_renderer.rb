@@ -2,13 +2,16 @@
 
 require 'zlib'
 
+require_relative '../scene'
 require_relative 'code_box'
 require_relative 'renderer'
+require_relative 'waffle'
 
 module Raindown
   module TUI
     # Code feelings, right of the files: the methods as clusters of digits in a grid, with the selected one highlighted
-    # and its code below, then why it felt that way while that's typed, then the five bins and how many each holds:
+    # and its code below, then why it felt that way while that's typed, then the five bins and how many each holds.
+    # When the batch is refined, it rains over them, then there's a waffle:
     #     0  0  2  2  2  5  5  9  9  9  9  1
     #     1  3  3  7  7  7  6  4  4  0  8  8
     #    ╭─ lib/text.rb:62 · Text#segments_between ──────────── changed 6× ─╮
@@ -20,6 +23,7 @@ module Raindown
     #    ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯
     class FeelingsRenderer < Renderer
       include CodeBox
+      include Waffle
 
       # Columns a digit takes, with a space either side.
       CELL = 3
@@ -33,37 +37,49 @@ module Raindown
       NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2 }.freeze
       NOISE_ROLL = 20
       BUTTONS = [['Tab', 'Pane', :tab], ['1-5', 'Feel', nil], ['e', 'Edit', :edit], ['x', 'Fix', :execute],
-                 ['n', 'Next files', :next], ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
+                 ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
 
       def buttons = BUTTONS
       def page = 'Code feelings'
 
-      # How much of the batch has been refined, on the right of the line above the panes, or to move on once it all has.
+      # How much of the batch has been refined, on the right of the line above the panes.
       def spacer
         progress = "#{view.batch.progress} "
         progress_width = display_width(progress)
         padded([segment('', :blank, width: [width - progress_width, 0].max), segment(progress, :body, width: progress_width)])
       end
 
+      # The cells come first, as the first draw picks the batch to fill them.
       def lines
-        return blank(" No functions or methods in #{File.basename(navigator.root)} to feel") if view.code_methods.empty?
+        cells = view.cells(columns, filled_rows)
+        return instead if view.code_methods.empty? || view.celebration
 
         below = [*code_box, *bins]
-        (grid([height - below.length, 0].max) + below).first(height)
+        (grid(cells, below.length) + below).first(height)
       end
 
       private
 
       def view = navigator.view
 
-      # The rows of the grid around the selected method's.
-      def grid(rows)
-        columns = [(width - 1) / CELL, 1].max
-        cells = view.cells(columns, filled_rows)
+      # Instead of the grid, that there's nothing to feel, or rain and fireworks over the pane when the batch is refined,
+      # then a waffle.
+      def instead
+        return blank(" No functions or methods in #{File.basename(navigator.root)} to feel") if view.code_methods.empty?
+        return Scene.new(width:, height:).lines(view.celebration.frame) if view.animating?
+
+        waffle
+      end
+
+      # The rows of the grid around the selected method's, above the lines below it.
+      def grid(cells, below)
+        rows = [height - below, 0].max
         first = first_row(cells, columns, rows)
 
         Array.new(rows) { |row| grid_line(cells, (first + row) * columns, columns) }
       end
+
+      def columns = [(width - 1) / CELL, 1].max
 
       # The grid's rows with a code box of FILLED_CODE_LINES, between its top and bottom, which a batch fills. A taller box
       # takes rows from the grid, which then scrolls to keep the selected method in view.
@@ -116,20 +132,24 @@ module Raindown
       def bins
         counts = view.log.counts
         most = [counts.values.max, 1].max
-        boxes = counts.each_with_index.map { |(temper, count), index| bin(index + 1, temper, count, most) }
+        chosen = chosen_temper
+        boxes = counts.each_with_index.map { |(temper, count), index| bin(index + 1, temper, count, most, chosen) }
 
         Array.new(BIN_LINES) do |line|
           padded([segment('', :blank, width: 1), *boxes.flat_map { [it[line], segment(' ', :blank, width: 1)] }])
         end
       end
 
+      # The temper being noted, or else how the selected method felt, if it's been felt.
+      def chosen_temper = view.noting || view.log.temper(view.selected)
+
       # As wide as five fit, which cuts their borders short in a pane too narrow for them.
       def bin_width = [(width - 6) / 5, 1].max
 
-      # The bin's lines, highlighted while its temper's note is typed.
-      def bin(number, temper, count, most)
+      # The bin's lines, highlighted when it's the chosen temper: the one being noted, or how the selected method felt.
+      def bin(number, temper, count, most, chosen)
         style = :border
-        style = :selected if view.noting == temper
+        style = :selected if temper == chosen
         lines = ["╭─ 0#{number} #{'─' * [bin_width - 7, 0].max}╮", "│ #{temper.upcase.ljust(bin_width - 4)} │",
                  "│ #{bar(count, most)} #{count} │", "╰#{'─' * (bin_width - 2)}╯"]
 

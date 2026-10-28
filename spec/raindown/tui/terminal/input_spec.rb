@@ -15,6 +15,7 @@ RSpec.describe Raindown::TUI::Input do
       expect(described_class.key_event('E')).to eq(:edit)
       expect(described_class.key_event('Q')).to eq(:quit)
       expect(%w[f 1 5].map { described_class.key_event(it) }).to eq(%i[feelings bin1 bin5])
+      expect([20, "\x14"].map { described_class.key_event(it) }).to eq(%i[celebrate celebrate])
     end
   end
 

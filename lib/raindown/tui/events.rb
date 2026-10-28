@@ -39,8 +39,8 @@ module Raindown
       def take(navigator) = navigator.run(path, line, name)
     end
 
-    Felt = Data.define(:feeling, :page) do
-      def take(navigator) = navigator.felt(feeling, page)
+    Felt = Data.define(:feeling) do
+      def take(navigator) = navigator.felt(feeling)
     end
 
     Fix = Data.define(:feeling) do

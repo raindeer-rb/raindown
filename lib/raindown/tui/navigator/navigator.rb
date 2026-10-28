@@ -76,6 +76,9 @@ module Raindown
       # While the search, or the view, like a feeling's note, takes what's typed, rather than keys' events.
       def typing? = searching? || view.typing?
 
+      # While the view wants drawing faster than the ticks, like Code feelings' rain.
+      def animating? = view.animating?
+
       # What's in a pane: the nav's ListView on the left, or the view on the right, which keeps its own cursor.
       def content(pane) = pane == :nav ? @nav : view
 
@@ -131,11 +134,13 @@ module Raindown
         send(ACTIONS[name]) if ACTIONS.key?(name)
       end
 
-      # The Dashboard, which every terminal draws two columns wide, then the files and the endpoints,
-      # with a blank line between each section that has rows.
+      # The Dashboard and Code feelings, whose emoji every terminal draws two columns wide, then the files and the
+      # endpoints, with a blank line between each section that has rows.
       def nav_rows
-        dashboard_row = Row.new(text: '📊 Dashboard', depth: 0, kind: :dashboard, target: dashboard, open: OpenView.new(view: dashboard))
-        [[dashboard_row], @files.rows, @endpoints.rows].reject(&:empty?).flat_map { [Row::SEPARATOR, *it] }.drop(1)
+        pages = { '📊 Dashboard' => dashboard, '🎭 Feelings' => feelings }.map do |text, view|
+          Row.new(text:, depth: 0, kind: :page, target: view, open: OpenView.new(view:))
+        end
+        [pages, @files.rows, @endpoints.rows].reject(&:empty?).flat_map { [Row::SEPARATOR, *it] }.drop(1)
       end
 
       def selected

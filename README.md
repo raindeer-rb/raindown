@@ -18,6 +18,18 @@ f99385c  -126         ▐██│██▍                  +119
 
 <{ :Commits }>
 
+<{ Feelings: width=30 }>
+
+```
+woe     ████████████████████████       4
+frolic  ████████████████████████       4
+dread   ██████████████████████████████ 5
+malice  ████████████████████████       4
+numb    ██████████████████             3
+```
+
+<{ :Feelings }>
+
 ## CLI
 
 The gem ships a `raindown` executable that watches Markdown files and writes back to them as they're saved, like their tables of contents, tables and endpoint responses.
@@ -56,7 +68,7 @@ Below the files, after a blank line, is every endpoint in the project, by its re
 
 Code is highlighted with [Rouge](https://rouge.jneen.net), which knows over 200 languages: a directive's body when it's expanded in the outline, with its code blocks in their own languages, an endpoint's response, in the language of its code block, and the code in Code feelings, by its file's name.
 
-**Code feelings**, with `f`, shows the project's functions and methods as clusters of digits in a grid, like the refiners' screens in Severance. It works through a batch of files at a time, as many as fill the screen, picked in a random order for the week from those with methods left to feel, and named above the grid with how much of the batch is refined. Felt methods dim, and `n` moves on to the next files, once they're all felt or to skip them. It finds them in any language with [Universal Ctags](https://ctags.io) when it's installed, or else by how the code's indented. Long methods, and ones whose files keep changing, drift. Move between them with the arrow keys to see each one's code, its first 8 lines, or as much as fits with Enter or by clicking how many more lines there are. Sort how it makes you feel with `1` to `5`: woe, frolic, dread, malice or numb. Woe, dread and malice ask why, which you type, then Enter, or Esc to leave it out. Either way, the cursor stays on the method, ready to fix. Each feeling goes into `.raindown/feelings.csv`, with the commit it was felt at and a checksum of the method's code. Feeling a method again replaces how it felt, until its code changes, when it comes back into the grid to be felt again, and the earlier feeling is kept. The feelings also go into `docs/code-feelings.md`, with a chart of how many there are of each temper and a table of them all. `e` opens the method in your editor, and `x` asks [Claude Code](https://claude.com/claude-code) to fix it, with how it felt, when the `claude` command is installed. Either way, the code is read again after, to be felt again.
+**Code feelings**, under the Dashboard in the files (or `f`), shows the project's functions and methods as clusters of digits in a grid, like the refiners' screens in Severance. Each week it shows a batch of files, as many as fill the screen, the first in a random order for the week, with how much of the batch is refined above the grid. Felt methods go blank, and once they're all felt, that's the week's work done. It finds them in any language with [Universal Ctags](https://ctags.io) when it's installed, or else by how the code's indented. Long methods, and ones whose files keep changing, drift. Move between them with the arrow keys to see each one's code, its first 8 lines, or as much as fits with Enter or by clicking how many more lines there are. Sort how it makes you feel with `1` to `5`: woe, frolic, dread, malice or numb. Woe, dread and malice ask why, which you type, then Enter, or Esc to leave it out. Either way, the cursor stays on the method, ready to fix. Each feeling goes into `.raindown/feelings.csv`, with the commit it was felt at and a checksum of the method's code. Feeling a method again replaces how it felt. Once its code changes, or it's gone, its feeling moves to `.raindown/memories.csv`, so `feelings.csv` only says how the code feels now, and the method comes back into the grid to be felt again. A chart can count them, like the one at the top of this README, drawn by a `Feelings` node in `.raindown`. `e` opens the method in your editor, and `x` asks [Claude Code](https://claude.com/claude-code) to fix it, with how it felt, when the `claude` command is installed. Either way, the code is read again after, to be felt again.
 
 ### Directives
 

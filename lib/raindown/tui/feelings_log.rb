@@ -22,59 +22,91 @@ module Raindown
       end
     end
 
-    # The feelings everyone's sorted, kept in .raindown/feelings.csv with the commit they were felt at, and written to
-    # docs/code-feelings.md as a chart of how many there are of each temper, and a table, newest first.
-    # A write-back draws the chart, from .raindown/tempers.csv.
+    # The feelings everyone's sorted about the code as it is now, kept in .raindown/feelings.csv with the commit they were
+    # felt at, which a chart can count, like the README's. A feeling about code that's since changed, or gone, moves to
+    # .raindown/memories.csv, so the feelings stay few, and the history's kept.
     class FeelingsLog
       TEMPERS = %w[woe frolic dread malice numb].freeze
-      HEADER = %w[when where method temper note commit checksum].freeze
-      # The page's table leaves out the checksum.
-      TABLE = %w[when where method temper note commit].freeze
-
-      attr_reader :page
-
+      HEADER = %i[when where method temper note commit checksum].freeze
       def initialize(root:)
         @root = root
         @csv = File.join(root, '.raindown', 'feelings.csv')
-        @tempers = File.join(root, '.raindown', 'tempers.csv')
-        @page = File.join(root, 'docs', 'code-feelings.md')
+        @memories = File.join(root, '.raindown', 'memories.csv')
       end
 
-      # Adds the feeling, as the newest, in place of one about the method before, unless its code's changed since,
-      # which keeps that one too.
+      # Adds the feeling, as the newest, in place of one about the method before, which moves to the memories if it was
+      # about the method's code before it changed.
       def add(feeling)
         method = feeling.method
-        row = HEADER.zip([Date.today.iso8601, where(method), method.label, feeling.temper, feeling.note, commit, method.checksum]).to_h
-        write_rows(rows.reject { felt_row?(it, method) } + [row])
-        write_tempers
-        write_page
+        row = {
+          when: Date.today.iso8601,
+          where: where(method),
+          method: method.label,
+          temper: feeling.temper,
+          note: feeling.note,
+          commit:,
+          checksum: method.checksum
+        }
+        changed, others = rows.reject { felt_row?(it, method) }.partition { about?(it, method) }
+        append_memories(changed)
+        write_rows(others + [row])
+      end
+
+      # Moves the feelings about methods that have changed, or gone, since they were felt, from the methods there are
+      # now, to the memories. A row from before checksums were kept stays while its method's there.
+      def move_stale_to_memories(methods)
+        now = methods.flat_map { [[relative(it.path), it.label, it.checksum], [relative(it.path), it.label, '']] }.to_set
+        stale, current = rows.partition { !now.include?(key(it)) }
+        return if stale.empty?
+
+        append_memories(stale)
+        write_rows(current)
       end
 
       # Read once, and again after a feeling's added.
       def rows
         return [] unless File.exist?(@csv)
 
-        @rows ||= CSV.read(@csv, headers: true).map(&:to_h)
+        @rows ||= CSV.read(@csv, headers: true, header_converters: :symbol).map(&:to_h)
       end
 
       # Whether the method's been felt, by its file, name and code's checksum, wherever its line is now. A row from before
       # checksums were kept has none, so it counts until the method's felt again.
       def felt?(method)
-        @felt ||= rows.to_set { [it['where'].sub(/:\d+\z/, ''), it['method'], it['checksum'].to_s] }
+        @felt ||= rows.to_set { key(it) }
         [method.checksum, ''].any? { @felt.include?([relative(method.path), method.label, it]) }
       end
 
+      # How the method last felt, while its code's the same as when it was felt, or nil.
+      def temper(method) = rows.reverse.find { felt_row?(it, method) }&.fetch(:temper)
+
       # How many feelings there are of each temper, in the bins' order.
       def counts
-        tally = rows.map { it['temper'] }.tally
+        tally = rows.map { it[:temper] }.tally
         TEMPERS.to_h { [it, tally.fetch(it, 0)] }
       end
 
       private
 
-      def felt_row?(row, method)
-        row['where'].sub(/:\d+\z/, '') == relative(method.path) && row['method'] == method.label &&
-          [method.checksum, ''].include?(row['checksum'].to_s)
+      def felt_row?(row, method) = about?(row, method) && [method.checksum, ''].include?(row[:checksum].to_s)
+
+      def about?(row, method) = path(row) == relative(method.path) && row[:method] == method.label
+
+      # The row's file, without the line the method was on.
+      def path(row) = row[:where].sub(/:\d+\z/, '')
+
+      # The row's file, method and checksum, which is empty for a row from before checksums were kept.
+      def key(row) = [path(row), row[:method], row[:checksum].to_s]
+
+      # Adds the rows to the memories, of feelings about code that's since changed or gone.
+      def append_memories(rows)
+        return if rows.empty?
+
+        header = !File.exist?(@memories)
+        CSV.open(@memories, 'a') do |csv|
+          csv << HEADER if header
+          rows.each { csv << it.values_at(*HEADER) }
+        end
       end
 
       def write_rows(rows)
@@ -95,35 +127,6 @@ module Raindown
         sha.strip if status.success?
       rescue SystemCallError
         nil
-      end
-
-      def write_tempers
-        CSV.open(@tempers, 'w') do |csv|
-          csv << %w[temper feelings]
-          counts.each { |temper, count| csv << [temper, count] }
-        end
-      end
-
-      def write_page
-        FileUtils.mkdir_p(File.dirname(@page))
-        File.write(@page, <<~MARKDOWN)
-          # Code feelings
-
-          How the code felt, sorted with `raindown tui`'s Code feelings by Severance's four tempers, or numb.
-          Each row is a method someone sorted, at the commit it was felt at.
-
-          <{ chart: '.raindown/tempers.csv' width: 30 }>
-          <{ :chart }>
-
-          | When | Where | Method | Temper | Note | Commit |
-          | ---- | ----- | ------ | ------ | ---- | ------ |
-          #{rows.reverse.map { table_row(it) }.join("\n")}
-        MARKDOWN
-      end
-
-      def table_row(row)
-        cells = row.values_at(*TABLE).map { it.to_s.gsub('|', '\|') }
-        "| #{cells.join(' | ')} |"
       end
     end
   end

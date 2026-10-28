@@ -16,13 +16,7 @@ module Raindown
         Run.new(command: Actions.edit_command(file, line:))
       end
 
-      # Draws the chart in the page the feeling was noted down in, like a save while it's watched.
-      def felt(feeling, page)
-        @workers.for(page).call(:write_back, page)
-        info("Felt #{feeling.temper} about #{feeling.method.label}")
-      rescue StandardError => e
-        error(e.message)
-      end
+      def felt(feeling) = info("Felt #{feeling.temper} about #{feeling.method.label}")
 
       # Leaves the screen for Claude Code, asked to fix the method, and the view reads the code again after.
       def fix_with_agent(feeling)

@@ -12,7 +12,13 @@ RSpec.describe Raindown::TUI::FeelingsView do
     end
   end
 
-  let(:view) { described_class.new(root: @root).tap(&:load) }
+  # Drawn once, as it is when it opens, which picks the batch.
+  let(:view) do
+    described_class.new(root: @root).tap do
+      it.load
+      it.cells(2, 2)
+    end
+  end
 
   before do
     FileUtils.mkdir_p(File.join(@root, 'lib'))
@@ -38,9 +44,19 @@ RSpec.describe Raindown::TUI::FeelingsView do
     first = view.selected
     step = view.next_step(:bin2)
 
-    expect(step).to eq(Raindown::TUI::Felt.new(feeling: step.feeling, page: File.join(@root, 'docs', 'code-feelings.md')))
+    expect(step).to eq(Raindown::TUI::Felt.new(feeling: step.feeling))
     expect([step.feeling.temper, step.feeling.method, view.cursor]).to eq(['frolic', first, 0])
     expect(view.log.counts['frolic']).to eq(1)
+  end
+
+  it "moves a feeling to the memories when the method's code changes, and it's read again" do
+    view.cursor = view.code_methods.index { it.name == 'side' }
+    view.next_step(:bin2)
+    File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area = 1\n  def side = 4\n  def draw = 3\nend\n")
+    view.load
+
+    expect([view.log.rows, File.read(File.join(@root, '.raindown', 'memories.csv'))]).to match([[], include('Square#side,frolic')])
+    expect(view.batch.felt?(view.code_methods.find { it.name == 'side' })).to be(false)
   end
 
   it 'asks why for woe, dread and malice, taking every key typed until Enter, or Esc to leave it out, and stays' do
@@ -77,7 +93,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect(view.expanded).to be(false)
   end
 
-  it "works through as many files as fill the grid, the week's order, and moves on to the next with n" do
+  it "fills the grid with the week's first files, which stay the same once they're refined, even after a restart" do
     FileUtils.mkdir_p(File.join(@root, 'more'))
     5.times { File.write(File.join(@root, 'more', "f#{it}.rb"), "def f#{it} = 1\n") }
     view.load
@@ -87,14 +103,30 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect([view.code_methods.sum(&:size), view.code_methods.map(&:path).uniq.sort]).to eq([4, batch.sort])
     expect(view.batch.progress).to eq('0% refined')
 
-    view.code_methods.length.times do
+    view.code_methods.each_index do
+      view.cursor = it
       view.next_step(:bin5)
-      view.next_step(:right)
     end
-    expect(view.batch.progress).to eq('100% refined · N for the next files')
+    restarted = described_class.new(root: @root).tap(&:load).tap { it.cells(2, 2) }
+    expect([restarted.batch.files, restarted.batch.progress, restarted.next_step?(:next)]).to eq([batch, '100% refined', false])
+  end
 
-    view.next_step(:next)
-    expect([view.batch.files & batch, view.cursor]).to eq([[], 0])
+  it 'rains when the last of the batch is felt, then shows a waffle until a key is pressed, or with Ctrl+T to try it' do
+    view.code_methods.each_index do
+      view.cursor = it
+      view.next_step(:bin5)
+    end
+    expect([view.celebration.frame, view.animating?]).to eq([0, true])
+
+    Raindown::TUI::Celebration::RAIN_FRAMES.times { view.next_step(:tick) }
+    expect([view.celebration.raining?, view.animating?, view.next_step?(:tab)]).to eq([false, false, true])
+
+    view.next_step(:right)
+    expect([view.celebration, view.batch.progress]).to eq([nil, '100% refined'])
+    view.next_step(:bin2)
+    expect(view.celebration).to be_nil
+
+    expect([view.next_step(:celebrate), view.animating?]).to eq([nil, true])
   end
 
   it 'picks the same files all week' do

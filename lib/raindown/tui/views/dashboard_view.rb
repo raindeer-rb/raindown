@@ -32,6 +32,7 @@ module Raindown
       def path = nil
       def changed? = false
       def typing? = false
+      def animating? = false
 
       def status(_navigator)
         found = "#{charts.length} #{charts.length == 1 ? 'chart' : 'charts'} in #{File.basename(project || root)}"
@@ -46,7 +47,7 @@ module Raindown
 
       # The charts, as each project's Worker drew them, of the project they're narrowed to, if any.
       def charts
-        project ? @cards.select { it.project == project } : @cards
+        project ? @cards.filter { it.project == project } : @cards
       end
 
       # Narrows the charts to a project's, or with nil, shows every project's.
