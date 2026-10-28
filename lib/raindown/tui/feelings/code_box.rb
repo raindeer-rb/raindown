@@ -42,7 +42,9 @@ module Raindown
         [*code, more_line(lines.length - fitting.length)]
       end
 
-      def highlighted_code = Highlighter.lines(dedented(view.selected.lines), filename: view.selected.path)
+      def highlighted_code
+        view.highlighted(view.selected) { Highlighter.lines(dedented(view.selected.lines), filename: view.selected.path) }
+      end
 
       # The highlighted line's [text, style] parts in as many lines as it takes to fit the box, like a note's, those
       # after the first carrying on after an ellipsis.
