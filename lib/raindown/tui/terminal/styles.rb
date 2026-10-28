@@ -75,7 +75,7 @@ module Raindown
           title: pair(:title) | Curses::A_BOLD, selected: pair(:selected) | white_bold,
           selected_button: pair(:selected_button) | Curses::A_BOLD, directive: pair(:directive),
           error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD, **emphasis,
-          **dividers, **code, **bright, **files, **unfocused
+          **dividers, **code_tokens, **bright, **files, **unfocused
         )
       end
 
@@ -93,11 +93,11 @@ module Raindown
         { heading: pair(:heading) | Curses::A_BOLD, feelings: lavender, chart: lavender, code: lavender }
       end
 
-      # Highlighted code, with comments dim in 8 colours, where there's no grey.
-      def code
-        code = CODE.keys.to_h { [it, pair(it)] }
-        code[:code_comment] |= Curses::A_DIM if Curses.colors < 256
-        code
+      # Highlighted code's tokens, like keywords and comments, with comments dim in 8 colours, where there's no grey.
+      def code_tokens
+        tokens = CODE.keys.to_h { [it, pair(it)] }
+        tokens[:code_comment] |= Curses::A_DIM if Curses.colors < 256
+        tokens
       end
 
       # The bright colours, bold, so they're bright in 8 colours too.

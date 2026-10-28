@@ -18,3 +18,5 @@ when,where,method,temper,note,commit,checksum
 2026-10-28,lib/raindown/tui/views/dashboard_view.rb:49,DashboardView#charts,frolic,,1d2ace2,69c07625
 2026-10-28,.raindown/code_health.rb:24,CodeHealth#score,hope,,84f352d,ff6d1099
 2026-10-28,lib/raindown/nodes.rb:24,Nodes#load,hope,,84f352d,74318048
+2026-10-28,lib/raindown/tui/terminal/styles.rb:97,Styles#code_tokens,numb,,49ff701,db5dd7fa
+2026-10-28,lib/raindown/supervisor.rb:144,ForkedWorker#stop,frolic,,49ff701,3f369e3a
