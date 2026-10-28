@@ -45,12 +45,12 @@ module Raindown
       def changed? = false
       def typing? = !noting.nil?
 
-      # As fast as an animation while it celebrates, through the rain and the waffle, and otherwise active, so its digits
+      # As fast as an animation while it celebrates, through the rain and the waffle, and otherwise reactive, so its digits
       # tremble at the same pace whether it's used with the keys or the mouse.
       def pace(_hovered)
         return :animation if celebration
 
-        :active
+        :reactive
       end
 
       def status(_navigator) = [:info, "This week's code to feel, #{batch.week}"]

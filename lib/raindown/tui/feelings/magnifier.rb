@@ -27,11 +27,13 @@ module Raindown
         end
       end
 
-      # The selected method's cells, across the whole of each, on the selection's blue, so they join into one block.
+      # The selected method's cells, across the whole of each, on the selection's blue, so they join into one block, or on
+      # green when it's already been felt.
       def magnified_style(owner)
-        return :selected if owner == view.cursor
+        return :feelings unless owner == view.cursor
+        return :felt_selected if view.batch.felt?(view.code_methods[owner])
 
-        :feelings
+        :selected
       end
 
       # The cells of the rows from the first that are the selected method's, or the one the mouse is over's, with its click,

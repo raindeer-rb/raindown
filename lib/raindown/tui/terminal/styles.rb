@@ -19,9 +19,11 @@ module Raindown
       ACCENTS = { directive: 141, folder: 111, title: 111, heading: 111, syrup: 130 }.freeze
       BASIC_ACCENTS = { directive: Curses::COLOR_MAGENTA, folder: Curses::COLOR_BLUE, title: Curses::COLOR_BLUE,
                         heading: Curses::COLOR_BLUE, syrup: Curses::COLOR_YELLOW }.freeze
+      # The green of GET, and of a selected method in Code feelings that's already been felt.
+      GREEN = 34
       # The colours of endpoints' HTTP methods, like GET in green, from the 256 colours most terminals have,
       # which are the same in every theme, unlike the 8 they all do, where green can look yellow.
-      METHODS = { get: 40, post: 33, delete: 196, put: 220, patch: 171, head: 44, options: 44 }.freeze
+      METHODS = { get: GREEN, post: 33, delete: 196, put: 220, patch: 171, head: 44, options: 44 }.freeze
       BASIC_METHODS = { get: Curses::COLOR_GREEN, post: Curses::COLOR_BLUE, delete: Curses::COLOR_RED,
                         put: Curses::COLOR_YELLOW, patch: Curses::COLOR_MAGENTA, head: Curses::COLOR_CYAN,
                         options: Curses::COLOR_CYAN }.freeze
@@ -38,9 +40,10 @@ module Raindown
       BASIC_BRIGHT = { bright_red: Curses::COLOR_RED, bright_orange: Curses::COLOR_YELLOW, bright_yellow: Curses::COLOR_YELLOW,
                        bright_green: Curses::COLOR_GREEN, bright_cyan: Curses::COLOR_CYAN, bright_blue: Curses::COLOR_BLUE,
                        bright_purple: Curses::COLOR_MAGENTA, bright_pink: Curses::COLOR_MAGENTA }.freeze
-      # The selected row's blue, from the 256 colours most terminals have, or the 8 they all do.
-      BLUES = { selected: 33 }.freeze
-      BASIC_BLUES = { selected: Curses::COLOR_CYAN }.freeze
+      # The selected row's blue, and the green of a selected method in Code feelings that's already been felt, from the 256
+      # colours most terminals have, or the 8 they all do.
+      BLUES = { selected: 33, felt: GREEN }.freeze
+      BASIC_BLUES = { selected: Curses::COLOR_CYAN, felt: Curses::COLOR_GREEN }.freeze
       # Text that has no colour of its own, from the 256 colours most terminals have, or the terminal's own with 8.
       PERIWINKLE = 147
       # Code feelings' text and lines, in lavender, or magenta in 8 colours.
@@ -62,7 +65,8 @@ module Raindown
       # Without colours, a style that isn't here is the terminal's own.
       def plain
         Hash.new(Curses::A_NORMAL).merge(
-          title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, selected_button: Curses::A_REVERSE,
+          title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, felt_selected: Curses::A_REVERSE,
+          selected_button: Curses::A_REVERSE,
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, page: Curses::A_BOLD,
           key: Curses::A_REVERSE, border: Curses::A_DIM, divider: Curses::A_BOLD,
@@ -73,11 +77,16 @@ module Raindown
 
       def colored
         in_text_color.merge(
-          title: pair(:title) | Curses::A_BOLD, selected: pair(:selected) | white_bold,
-          selected_button: pair(:selected_button) | Curses::A_BOLD, directive: pair(:directive),
-          error: pair(:error) | Curses::A_BOLD, button: pair(:button) | Curses::A_BOLD, **emphasis,
-          **dividers, **code_tokens, **bright, **files, **unfocused
+          title: pair(:title) | Curses::A_BOLD, directive: pair(:directive), error: pair(:error) | Curses::A_BOLD,
+          button: pair(:button) | Curses::A_BOLD, **selections, **emphasis, **dividers, **code_tokens, **bright, **files,
+          **unfocused
         )
+      end
+
+      # The selected row, its buttons, and a selected method in Code feelings that's already been felt.
+      def selections
+        { selected: pair(:selected) | white_bold, felt_selected: pair(:felt_selected) | white_bold,
+          selected_button: pair(:selected_button) | Curses::A_BOLD }
       end
 
       # The styles without a colour of their own, or that are only bold, dim or the like, in the text's colour, which is
@@ -131,7 +140,8 @@ module Raindown
          *(many ? CODE.merge(BRIGHT, FEELINGS, ACCENTS) : BASIC_CODE.merge(BASIC_BRIGHT, BASIC_FEELINGS, BASIC_ACCENTS))
            .map { |name, color| [name, color, -1] },
          [:text, text, -1],
-         [:selected, white, blues[:selected]], [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
+         [:selected, white, blues[:selected]], [:felt_selected, white, blues[:felt]],
+         [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
          [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, text, -1],
          [:selected_divider, text, blues[:selected]], [:cursor_divider, text, DARK_GREY], [:shine, white, -1]]
       end

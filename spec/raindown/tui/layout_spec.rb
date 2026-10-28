@@ -335,7 +335,7 @@ RSpec.describe Raindown::TUI::Layout do
       expect(text(lines).map { width(it) }).to all(eq(90))
     end
 
-    it 'leaves felt methods blank, but still there to select, which shows their digits and code again' do
+    it 'leaves felt methods blank, but still there to select, which shows their digits on green, and their code again' do
       File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
       both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
       described_class.new(both, width: 90, height: 24).lines
@@ -349,7 +349,8 @@ RSpec.describe Raindown::TUI::Layout do
       expect([cell[0].text, cell[0].style, cell[0].event]).to eq([' ' * 6, :feelings, click(:main, 0, :focus)])
 
       both.next_step(:left)
-      expect(magnified(described_class.new(both, width: 90, height: 24).lines, 0)).to all(match(/\A[█▀▄ ]{3}\z/))
+      selected = described_class.new(both, width: 90, height: 24).lines
+      expect([magnified(selected, 0), magnified_style(selected, 0)]).to match([all(match(/\A[█▀▄ ]{3}\z/)), %i[felt_selected] * 3])
       expect(text(described_class.new(both, width: 90, height: 24).lines).join).to include(felt.label)
     end
 

@@ -154,7 +154,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
   it 'is drawn often, wherever the mouse is, and most often while it rains' do
     over = Raindown::TUI::Click.new(pane: :main, index: 0, action: :focus)
-    expect([nil, over].map { view.pace(it) }).to eq(%i[active active])
+    expect([nil, over].map { view.pace(it) }).to eq(%i[reactive reactive])
 
     view.next_step(:celebrate)
     expect(view.pace(over)).to eq(:animation)
