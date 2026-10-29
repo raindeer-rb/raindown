@@ -4,8 +4,8 @@ require_relative '../highlighter'
 
 module Raindown
   module TUI
-    # Code feelings' box below the grid: the code of the method the mouse is over, or else the selected one, highlighted,
-    # its first lines or, expanded, all that fit, then why it felt that way while that's typed, below a line:
+    # Code feelings' box below the grid: the selected method's code, highlighted, its first lines or, expanded, all that
+    # fit, then why it felt that way while that's typed, below a line:
     #    ╭─ lib/text.rb:62 · Text#segments_between ──────────── changed 6× ─╮
     #    │ def segments_between(line, from, to)                              │
     #    │ [12 more lines]                                                   │
@@ -21,51 +21,29 @@ module Raindown
 
       private
 
-      # The code of the method the mouse is over, or else the selected one, in a box, then why it felt that way while that's
-      # typed, below a line.
+      # The selected method's code in a box, then why it felt that way while that's typed, below a line.
       def code_box
         notes = []
         notes = note_lines if view.typing?
-        [box_top(hovered_method || view.selected), *shown_code_lines(notes.length), *notes, box_edge('╰', '╯')]
-      end
-
-      # The selected method's code, or the hovered one's first lines in as many lines as the selected one's take, so the
-      # grid above stays still.
-      def shown_code_lines(notes)
-        code = code_lines(view.selected, code_room(notes), view.expanded)
-        return code unless hovered_method
-
-        lines = code_lines(hovered_method, 0, false).first(code.length)
-        [*lines, *Array.new(code.length - lines.length) { boxed([]) }]
-      end
-
-      # The lines the code can take when it's expanded, leaving the grid its rows.
-      def code_room(notes) = height - Bins::BIN_LINES - BOX_LINES - MIN_GRID_ROWS - notes
-
-      # The method the mouse is over in the grid, unless it's the selected one, or a note's being typed about that.
-      def hovered_method
-        hovered = navigator.hovered
-        return unless hovered.is_a?(Click) && hovered.pane == pane && hovered.action == :focus
-        return if hovered.index == view.cursor || view.typing?
-
-        view.code_methods[hovered.index]
+        [box_top(view.selected), *code_lines(height - Bins::BIN_LINES - BOX_LINES - MIN_GRID_ROWS - notes.length), *notes,
+         box_edge('╰', '╯')]
       end
 
       # The method's first lines, or all that fit in the room when it's expanded, highlighted and wrapped to fit the box,
       # then how many more there are, clicked to show them, or a line to show fewer again.
-      def code_lines(method, room, expanded)
+      def code_lines(room)
         shown = CODE_LINES
-        shown = [room, CODE_LINES].max if expanded
-        lines = highlighted_code(method).map { wrapped(it) }
+        shown = [room, CODE_LINES].max if view.expanded
+        lines = highlighted_code.map { wrapped(it) }
         fitting = lines.take_while { (shown -= it.length) >= 0 }
         code = fitting.flatten(1).map { boxed(it) }
         return code if lines.sum(&:length) <= CODE_LINES
 
-        [*code, more_line(lines.length - fitting.length, expanded)]
+        [*code, more_line(lines.length - fitting.length)]
       end
 
-      def highlighted_code(method)
-        view.highlighted(method) { Highlighter.lines(dedented(method.lines), filename: method.path) }
+      def highlighted_code
+        view.highlighted(view.selected) { Highlighter.lines(dedented(view.selected.lines), filename: view.selected.path) }
       end
 
       # The highlighted line's [text, style] parts in as many lines as it takes to fit the box, like a note's, those
@@ -108,10 +86,10 @@ module Raindown
         segments_between(segments, from, to).map { [it.text, it.style] }
       end
 
-      def more_line(hidden, expanded)
+      def more_line(hidden)
         text = "[#{hidden} more lines]"
         text = '[1 more line]' if hidden == 1
-        text = "[Fewer lines]#{" · #{hidden} more don't fit" if hidden.positive?}" if expanded
+        text = "[Fewer lines]#{" · #{hidden} more don't fit" if hidden.positive?}" if view.expanded
         boxed([[text, :button]], event: Click.new(pane:, index: view.cursor, action: :expand))
       end
 
