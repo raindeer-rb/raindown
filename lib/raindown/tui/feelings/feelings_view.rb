@@ -63,6 +63,11 @@ module Raindown
         every = CodeMethods.list(@root)
         @log.move_stale_to_memories(every)
         @week.read(every)
+        reselect(was)
+      end
+
+      # Selects the method again, by its file and name, wherever it is now, or keeps the cursor where it was.
+      def reselect(was)
         self.cursor = code_methods.index { [it.path, it.label] == [was&.path, was&.label] } || @cursor
       end
 

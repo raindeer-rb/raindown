@@ -7,9 +7,11 @@ module Raindown
     module CellMoves
       # Each cell's method, by its index, in reading order, in a grid as many cells across as the columns.
       # They're kept, so up and down move a row.
-      # The first time the grid's drawn, with its rows, right after the view opens, the batch is picked to fill them.
+      # The first time the grid's drawn, with its rows, right after the view opens, the batch is picked to fill them, and
+      # again a while after the screen's resized, keeping the selected method where it's still in the batch.
       def cells(columns, rows = nil)
-        @week.fill(columns * rows) if rows
+        was = selected
+        reselect(was) if rows && @week.fill(columns * rows)
         @columns = columns
         @cells = code_methods.each_with_index.flat_map { |method, index| [index] * method.size }
       end

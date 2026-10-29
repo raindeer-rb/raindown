@@ -515,6 +515,23 @@ RSpec.describe Raindown::TUI::Layout do
       expect(shown[long]).to eq(shown[short])
     end
 
+    it 'picks the batch again to fill a resized screen, once it has kept its size for 2 seconds, keeping the selection' do
+      (1..300).each { File.write(File.join(@root, 'lib', "f#{it}.rb"), "def f#{it} = #{it}\n") }
+      fresh = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      draw = lambda do |seconds, width|
+        allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return(seconds)
+        described_class.new(fresh, width:, height: 24).lines
+        fresh.view.code_methods.length
+      end
+      small = draw[0, 90]
+      fresh.view.cursor = 3
+      selected = fresh.view.selected
+
+      expect([draw[10, 150], draw[11.5, 150]]).to eq([small, small])
+      expect(draw[12.5, 150]).to be > small
+      expect(fresh.view.selected).to eq(selected)
+    end
+
     it "shows a long method's first 6 lines, then how many more there are, clicked to show all that fit" do
       File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n#{(1..10).map { "    #{it}\n" }.join}  end\nend\n")
       navigator.next_step(:reload)
