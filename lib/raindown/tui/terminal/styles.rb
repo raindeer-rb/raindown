@@ -46,9 +46,10 @@ module Raindown
       BASIC_BLUES = { selected: Curses::COLOR_CYAN, felt: Curses::COLOR_GREEN }.freeze
       # Text that has no colour of its own, from the 256 colours most terminals have, or the terminal's own with 8.
       PERIWINKLE = 147
-      # Code feelings' text and lines, in lavender, or magenta in 8 colours.
-      FEELINGS = { feelings: 183 }.freeze
-      BASIC_FEELINGS = { feelings: Curses::COLOR_MAGENTA }.freeze
+      # Code feelings' text and lines, in lavender, or magenta in 8 colours, and the purple its magnified digits take turns
+      # with, or blue.
+      FEELINGS = { feelings: 183, feelings_purple: 135 }.freeze
+      BASIC_FEELINGS = { feelings: Curses::COLOR_MAGENTA, feelings_purple: Curses::COLOR_BLUE }.freeze
       BRIGHT_WHITE = 15
       DARK_GREY = 238
 
@@ -97,10 +98,10 @@ module Raindown
       end
 
       # Headings, the waffle's butter's shine and its syrup, and Code feelings' text and lines, bold around the method the
-      # mouse is over.
+      # mouse is over, and its purple.
       def emphasis
         { heading: pair(:heading) | Curses::A_BOLD, feelings: pair(:feelings), nearby: pair(:feelings) | Curses::A_BOLD,
-          shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
+          feelings_purple: pair(:feelings_purple), shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
       end
 
       # Highlighted code's tokens, like keywords and comments, with comments dim in 8 colours, where there's no grey.

@@ -31,11 +31,9 @@ module Raindown
       include Motion
       include Waffle
 
-      # The columns and lines a cell takes, its digit small on the first line, with room around it for the digit magnified
-      # in a stat's block digits, over the line above and the spaces beside it, when its method's selected or the mouse is
-      # over it.
-      CELL = 6
-      CELL_LINES = 2
+      # The columns a cell takes, on a line of its own, its digit small in the middle, which is magnified in a stat's block
+      # digits across the cell and over the cells above and below it when the mouse is over its method.
+      CELL = 3
       # The code box's lines of code that a batch is sized for.
       FILLED_CODE_LINES = 1
       # The drift from which a method's cells are restless, and tremble now and then.
@@ -84,28 +82,26 @@ module Raindown
         waffle(Scene.new(width:, height:, animations: [Confetti, Balloons, Sparkles]).lines(celebration.popping), celebration.popping)
       end
 
-      # The rows of the grid around the selected method's, each its cells' lines, below a blank line that leaves the first
-      # row room to be magnified, above the lines below it, and blank lines for any left over.
+      # The rows of the grid around the selected method's, between blank lines that leave the first and last rows room to
+      # be magnified, above the lines below it, and blank lines for any left over.
       def grid(cells, below)
         @cells = cells
         lines = [height - below, 0].max
-        rows = [(lines - 1) / CELL_LINES, 0].max
+        rows = [lines - 2, 0].max
         first = first_row(cells, columns, rows)
-        grid = magnified([padded([]), *grid_rows(cells, first, rows)], cells, first, rows)
+        grid = magnified([padded([]), *grid_rows(cells, first, rows), padded([])], cells, first, rows)
 
         [*grid, *Array.new(lines - grid.length) { padded([]) }].first(lines)
       end
 
       # The cells' lines of the rows from the first.
-      def grid_rows(cells, first, rows)
-        Array.new(rows * CELL_LINES) { grid_line(cells, (first + (it / CELL_LINES)) * columns, columns, it % CELL_LINES) }
-      end
+      def grid_rows(cells, first, rows) = Array.new(rows) { grid_line(cells, (first + it) * columns, columns) }
 
       def columns = [(width - 1) / CELL, 1].max
 
       # The grid's rows with a code box of FILLED_CODE_LINES, between its top and bottom, which a batch fills. A taller box
       # takes rows from the grid, which then scrolls to keep the selected method in view.
-      def filled_rows = [(height - BIN_LINES - 3 - FILLED_CODE_LINES) / CELL_LINES, 1].max
+      def filled_rows = [height - BIN_LINES - 4 - FILLED_CODE_LINES, 1].max
 
       # The first row that shows, with the selected method's row in the middle where there's room.
       def first_row(cells, columns, rows)
@@ -114,24 +110,33 @@ module Raindown
       end
 
       # The cells' line of the row from the index.
-      def grid_line(cells, from, columns, line)
+      def grid_line(cells, from, columns)
         segments = (from...(from + columns)).filter_map do |index|
           owner = cells[index]
           next unless owner
 
           click = Click.new(pane:, index: owner, action: :focus)
-          segment(cell_text(owner, index, line), cell_style(index), width: CELL, event: click)
+          segment(cell_text(owner, index), grid_style(owner, index), width: CELL, event: click)
         end
         padded([segment('', :blank, width: 1), *segments])
       end
 
-      # The cell's line: its digit small on the first, where it moves, or blank once its method's felt, but still there to
-      # select, which shows it again with its code.
-      def cell_text(owner, index, line)
-        return ' ' * CELL if line.nonzero? || hidden?(owner)
+      # The cell's digit, small, where it moves, or blank once its method's felt, but still there to select, which shows it
+      # again with its code.
+      def cell_text(owner, index)
+        return ' ' * CELL if hidden?(owner)
 
         column = digit_column(owner, index)
         "#{' ' * column}#{digit(owner, index)}#{' ' * (CELL - 1 - column)}"
+      end
+
+      # The selected method's cells, across the whole of each, on the selection's blue, so they join into one block, or on
+      # green when it's already been felt, and others as they move.
+      def grid_style(owner, index)
+        return cell_style(index) unless owner == view.cursor
+        return :felt_selected if view.batch.felt?(view.code_methods[owner])
+
+        :selected
       end
 
       # Whether the method's felt, and not selected, so its cells are blank, asked once a frame for each method.

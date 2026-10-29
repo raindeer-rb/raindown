@@ -299,14 +299,25 @@ RSpec.describe Raindown::TUI::Layout do
     # room for the first row to be magnified.
     def grid_line(lines) = lines[3]
 
-    # The magnified digit of the first row's cell of the method, over the blank line above it and the row's lines.
-    def magnified(lines, index)
-      lines[2..4].map { |line| line.find { it.event == click(:main, index, :focus) && it.text.match?(/[█▀▄]/) }&.text&.slice(1, 3) }
+    # The magnified digit of the first row's cell of the method, over the blank line above it, the row's line and the
+    # line below.
+    def magnified(lines, index) = magnified_segments(lines, index).map { it&.text }
+
+    # The style of the first row's cell of the method, magnified, on the blank line above it, its row and the line below.
+    def magnified_style(lines, index) = magnified_segments(lines, index).map { it&.style }
+
+    # The magnified segments in the column of the method's first cell on the first row, by its click there.
+    def magnified_segments(lines, index)
+      cell = lines[3].index { it.event == click(:main, index, :focus) && it.text.match?(/[█▀▄]/) }
+      return [nil] * 3 unless cell
+
+      column = lines[3].take(cell).sum { width(it.text) }
+      lines[2..4].map { |line| segment_at(line, column) }
     end
 
-    # The style of the first row's cell of the method, magnified, on the blank line above it and the row's lines.
-    def magnified_style(lines, index)
-      lines[2..4].map { |line| line.find { it.event == click(:main, index, :focus) && it.text.match?(/[█▀▄]/) }&.style }
+    def segment_at(line, column)
+      start = 0
+      line.find { (start += width(it.text)) > column }
     end
 
     before do
@@ -317,13 +328,14 @@ RSpec.describe Raindown::TUI::Layout do
       described_class.new(navigator, width: 90, height: 24).lines
     end
 
-    it 'draws the methods as digits, the selected one magnified with its code below, then the six bins' do
+    it "draws the methods as digits, the selected one on the selection's blue with its code below, then the six bins" do
       lines = described_class.new(navigator, width: 90, height: 24).lines
       main = main(lines)
 
       expect(text(lines).first).to include('› Code feelings')
-      expect(magnified(lines, 0)).to all(match(/\A[█▀▄ ]{3}\z/))
-      expect(magnified_style(lines, 0)).to eq(%i[selected] * 3)
+      selected = grid_line(lines).select { it.event == click(:main, 0, :focus) }
+      expect([magnified(lines, 0), selected.map(&:style).uniq]).to eq([[nil] * 3, %i[selected]])
+      expect(selected.first.text).to match(/\A {0,2}\d {0,2}\z/)
       expect(main(lines)[1].strip).to eq('0% refined')
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
       expect(main.find { it.include?('def area') }).to start_with(' │ def area').and end_with('│')
@@ -346,11 +358,10 @@ RSpec.describe Raindown::TUI::Layout do
         grid_line(described_class.new(both, width: 90, height: 24).lines).find { it.event == click(:main, index, :focus) }
       end
 
-      expect([cell[0].text, cell[0].style, cell[0].event]).to eq([' ' * 6, :feelings, click(:main, 0, :focus)])
+      expect([cell[0].text, cell[0].style, cell[0].event]).to eq([' ' * 3, :feelings, click(:main, 0, :focus)])
 
       both.next_step(:left)
-      selected = described_class.new(both, width: 90, height: 24).lines
-      expect([magnified(selected, 0), magnified_style(selected, 0)]).to match([all(match(/\A[█▀▄ ]{3}\z/)), %i[felt_selected] * 3])
+      expect([cell[0].text, cell[0].style]).to match([/\A {0,2}\d {0,2}\z/, :felt_selected])
       expect(text(described_class.new(both, width: 90, height: 24).lines).join).to include(felt.label)
     end
 
@@ -405,20 +416,40 @@ RSpec.describe Raindown::TUI::Layout do
       expect(text(lines).map { width(it) }).to all(eq(60))
     end
 
-    it 'magnifies the selected digits and the ones the mouse is over, over the line above and beside them, others small' do
+    it 'magnifies the digits the mouse is over, over the cells above and below them, but not the selected ones' do
       File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
       both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
       described_class.new(both, width: 90, height: 24).lines
       both.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
       lines = described_class.new(both, width: 90, height: 24).lines
-      expect([magnified(lines, 0), magnified(lines, 1)]).to all(all(match(/\A[█▀▄ ]{3}\z/)))
-      expect([magnified_style(lines, 0), magnified_style(lines, 1)]).to eq([%i[selected] * 3, %i[feelings] * 3])
+      expect([magnified(lines, 0), magnified(lines, 1)]).to match([[nil] * 3, all(match(/\A[█▀▄ ]{3}\z/))])
+      expect(magnified_style(lines, 1).uniq.length).to eq(1)
       expect(text(lines).map { width(it) }).to all(eq(90))
 
       both.next_step(Raindown::TUI::Hover.new(target: nil))
       lines = described_class.new(both, width: 90, height: 24).lines
       small = grid_line(lines).find { it.event == click(:main, 1, :focus) }.text
-      expect([magnified(lines, 1), small]).to match([[nil] * 3, /\A {1,3}\d {2,4}\z/])
+      expect([magnified(lines, 1), small]).to match([[nil] * 3, /\A {0,2}\d {0,2}\z/])
+    end
+
+    it 'clicks the cells under a magnified digit, so the mouse over it is over them' do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), (1..60).map { "def m#{it} = #{it}\n" }.join)
+      navigator.next_step(:reload)
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+      columns = grid_line(lines).count { it.event&.pane == :main }
+
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 1, :focus)))
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+      expect(magnified_segments(lines, 1).map { it.event&.index }).to eq([nil, 1, columns + 1])
+    end
+
+    it 'magnifies the digits the mouse is over in purple and lavender by turns, so neighbours stand apart' do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "def long\n#{"  1\n" * 30}end\n")
+      navigator.next_step(:reload)
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 0, :focus)))
+      styles = grid_line(described_class.new(navigator, width: 90, height: 24).lines).select { it.text.match?(/[█▀▄]/) }.map(&:style)
+
+      expect([styles.length > 2, styles.each_cons(2).map(&:uniq)]).to match([true, all(contain_exactly(:feelings, :feelings_purple))])
     end
 
     it "shows the code of the method the mouse is over, in the selected one's lines, or else the selected method's" do
@@ -449,7 +480,7 @@ RSpec.describe Raindown::TUI::Layout do
       end
       cells = ->(index) { lines.map { |line| line.find { it.event == click(:main, index, :focus) } } }
 
-      expect([1, 3].map { |index| cells[index].map { it.text.index(/\d/) }.uniq.sort }).to eq([[0, 1], [3, 4, 5]])
+      expect([1, 3].map { |index| cells[index].map { it.text.index(/\d/) }.uniq.sort }).to eq([[0, 1], [1, 2]])
       expect([1, 3, 4].map { |index| cells[index].map(&:style).uniq }).to eq([[:nearby], [:nearby], [:feelings]])
     end
 
@@ -466,8 +497,8 @@ RSpec.describe Raindown::TUI::Layout do
         cells.map { it.text.index(/\d/) }
       end
 
-      expect([navigator.view.code_methods[long].drift, columns.flatten.uniq.sort]).to eq([9, [1, 2, 3]])
-      expect(columns.transpose.map { |cell| cell.count { it != 2 } }).to all(eq(Raindown::TUI::Motion::TREMBLE.length))
+      expect([navigator.view.code_methods[long].drift, columns.flatten.uniq.sort]).to eq([9, [0, 1, 2]])
+      expect(columns.transpose.map { |cell| cell.count { it != 1 } }).to all(eq(Raindown::TUI::Motion::TREMBLE.length))
     end
 
     it "shows a long method's first 8 lines, then how many more there are, clicked to show all that fit" do

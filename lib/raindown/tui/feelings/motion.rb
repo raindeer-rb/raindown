@@ -16,8 +16,9 @@ module Raindown
       TREMBLE_EVERY = 400
       FLEEING_TREMBLE_SECONDS = 0.075
       FLEEING_TREMBLE_EVERY = 8
-      # The columns a digit flees by, from the method beside it.
-      FLEE = 2
+      # The columns a digit flees by, from the method beside it, from the middle of its cell, where it's still.
+      FLEE = 1
+      MIDDLE = 1
 
       private
 
@@ -26,14 +27,14 @@ module Raindown
       def digit_column(owner, index)
         away = flee(index)
         return fleeing_column(owner, index, away) if away.nonzero?
-        return 2 if view.code_methods[owner].drift < FeelingsRenderer::RESTLESS
+        return MIDDLE if view.code_methods[owner].drift < FeelingsRenderer::RESTLESS
 
-        2 + tremble(owner, index, TREMBLE_EVERY, TREMBLE_SECONDS)
+        MIDDLE + tremble(owner, index, TREMBLE_EVERY, TREMBLE_SECONDS)
       end
 
       # At the edge of its cell it's fled to, trembling often and quickly, but never out of the cell.
       def fleeing_column(owner, index, away)
-        (2 + away + tremble(owner, index, FLEEING_TREMBLE_EVERY, FLEEING_TREMBLE_SECONDS)).clamp(0, FeelingsRenderer::CELL - 1)
+        (MIDDLE + away + tremble(owner, index, FLEEING_TREMBLE_EVERY, FLEEING_TREMBLE_SECONDS)).clamp(0, FeelingsRenderer::CELL - 1)
       end
 
       # A column either way, during the cell's moment once every so many steps of the seconds, or else none.
