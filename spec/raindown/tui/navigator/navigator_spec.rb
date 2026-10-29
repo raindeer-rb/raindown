@@ -183,6 +183,35 @@ RSpec.describe Raindown::TUI::Navigator do
     end
   end
 
+  describe 'watching' do
+    # Stands in for Saves, telling of the paths saved since they were last taken.
+    let(:saves) { Struct.new(:paths) { def take = paths.slice!(0..) }.new([]) }
+
+    it 'writes back a Markdown file saved anywhere in the folder on the next tick, like when it is watched' do
+      other = write('guides/other.md', "# Other\n\n<{ toc: }>\n<{ :toc }>\n\n## Added\n")
+      navigator = described_class.new(root: @root, path: write('notes.md'), saves:)
+      saves.paths << other
+      navigator.next_step(:tick)
+
+      expect(File.read(other)).to include('- [Added](#added)')
+      expect(navigator.status).to eq([:info, 'Updated guides/other.md'])
+      saves.paths << other
+      navigator.next_step(:tick)
+      expect([saves.paths, navigator.status]).to eq([[], [:info, 'Updated guides/other.md']])
+    end
+
+    it "lists a Markdown file added in the folder, and loads a project's nodes again when they change" do
+      navigator = described_class.new(root: @root, path: write('notes.md'), saves:)
+      saves.paths << write('added.md')
+      navigator.next_step(:tick)
+      expect(texts(navigator, :nav)).to include('added.md')
+
+      saves.paths << write('.raindown/greeting.rb', "class Greeting < Lownode::Node; end\n")
+      navigator.next_step(:tick)
+      expect(navigator.status).to eq([:info, 'Reloaded'])
+    end
+  end
+
   describe 'clicks' do
     it 'do what Enter does in the files: open the Dashboard, fold a folder, open a file' do
       write('guides/setup.md', "# Setup\n")

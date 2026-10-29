@@ -77,10 +77,31 @@ module Raindown
         info('Reloaded')
       end
 
-      # Reads the file again when it's changed, like when it's saved in an editor or a watcher writes back to it.
+      # Writes back the files saved since the last tick, like when they're watched, then reads the open file again when
+      # it's changed, like when it's saved in an editor or written back to.
       def refresh
+        watched(@saves.take) if @saves
         view.load if view.changed?
         nil
+      end
+
+      # A change to a project's nodes loads them again, and a saved Markdown file's written back, like when it's watched,
+      # and the files and endpoints are read again for the files added, removed or changed.
+      def watched(paths)
+        markdown = paths.select { Projects.markdown?(it, root: Projects.root(it) || root) }
+        return reload if paths.any? { Projects.node?(it, root: Projects.root(it) || root) }
+        return if markdown.empty?
+
+        markdown.select { File.exist?(it) }.each { write_back_saved(it) }
+        @files.load
+        @endpoints.load
+      end
+
+      # A saved file's written back, saying so only when it's changed, as when it's watched.
+      def write_back_saved(file)
+        info("Updated #{relative(file)}") if @workers.for(file).call(:write_back, file)
+      rescue StandardError => e
+        error("#{relative(file)}: #{e.message}")
       end
 
       def info(message)

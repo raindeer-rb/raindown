@@ -73,7 +73,9 @@ The VS Code extension could call the same actions later, for example as an Execu
 - **Reload:** `r` restarts the workers, which loads their nodes again.
 - **Without `fork`:** on Windows, the workers answer in the terminal UI's process, and projects' nodes share it again.
 
-Everything above the screen layer has specs that need no terminal. The file is read again when its mtime changes, checked every 500ms while no key is pressed. So saving in an editor, or a `raindown` watcher running in another terminal, updates the outline.
+Everything above the screen layer has specs that need no terminal. The file is read again when its mtime changes, checked every 500ms while no key is pressed. So saving in an editor updates the outline.
+
+**The TUI watches its folder as `raindown` does,** so it replaces running `raindown` in another terminal. `Saves` listens to the folder with Listen, leaving out the same folders as the watcher (`Supervisor::IGNORE`), and queues each path saved, added or removed, as Listen calls back in a thread of its own. The Navigator takes them on its next tick, in the screen's thread, and writes back each saved Markdown file through its project's worker, saying "Updated" in the status line only when it changed, as the watcher prints only then. A change to a project's nodes reloads the workers, like the watcher restarting the project, and added or removed files are listed again. The write-back saves the file again, which changes nothing, so it ends there, as when watching. Specs stand a plain object in for `Saves`, so they need no Listen.
 
 **We draw with curses (the `curses` gem, a binding to ncurses).** It is a required dependency in the gemspec (`~> 1.7`), so `raindown tui` works wherever Raindown is installed, and it's in every standalone binary. It's only loaded when `raindown tui` starts, so watching and `--html` start no slower. Without a terminal, `raindown tui` stops with "raindown tui needs a terminal" instead of ncurses' "Error opening terminal".
 
@@ -116,7 +118,6 @@ ratatui_ruby is the best alternative if Rust is in the toolchain anyway: it is s
 
 ## Later
 
-- **Activity from the workers.** Workers could watch their projects' files and write back on save, sending events such as "updated", "error" and "reloaded" back to the TUI, so it could replace running `raindown` in another terminal.
 - **More on the dashboard.** It shows every chart in the project, since the Chart node's block-character charts are text that curses shows as they are (`lib/raindown/tui/dashboard.rb`). It could also show file and directive counts, how old endpoint responses are, and recent write-backs and errors.
 - **Template directives in the outline,** and headings in a component's Markdown output, if they're worth their cost.
 - **Editing text in the TUI.**

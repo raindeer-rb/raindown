@@ -24,8 +24,12 @@ module Raindown
 
       # Rouge loads here, rather than with Raindown, which doesn't highlight code outside the TUI.
       require 'rouge'
-      Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)), workers:)).run
+      # Saved files are written back, like when the folder's watched.
+      require_relative 'tui/saves'
+      saves = Saves.new(root)
+      Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)), workers:, saves:)).run
     ensure
+      saves&.stop
       workers&.stop
     end
   end

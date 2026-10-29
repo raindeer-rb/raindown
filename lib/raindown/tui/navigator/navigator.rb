@@ -36,8 +36,10 @@ module Raindown
       # What the mouse is over, which a click there would send, like a Click on a method's cells, or nil.
       attr_reader :hovered
 
-      def initialize(root:, path: nil, workers: Workers.new(root:))
+      # Saves tells of the files saved in the folder, which are written back on the next tick, like when it's watched.
+      def initialize(root:, path: nil, workers: Workers.new(root:), saves: nil)
         @workers = workers
+        @saves = saves
         @files = FileTree.new(root:, workers:)
         @endpoints = Endpoints.new(workers:)
         @dashboard = DashboardView.new(root:, workers:)
