@@ -6,17 +6,17 @@ module Raindown
   module TUI
     # Code feelings' bins below the code box, one for each temper, best to worst, each a box with its key's number, its
     # temper and a bar of how many feelings it holds, highlighted when it's the chosen temper:
-    #    ╭─ 01 ────╮ ╭─ 02 ────╮ ╭─ 03 ────╮ ╭─ 04 ────╮ ╭─ 05 ────╮ ╭─ 06 ────╮
-    #    │ FROLIC  │ │ HOPE    │ │ NUMB    │ │ WOE     │ │ DREAD   │ │ MALICE  │
-    #    │ ███░  9 │ │ ██░░  5 │ │ ████ 41 │ │ ██░░  6 │ │ █░░░  3 │ │ █░░░  2 │
-    #    ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯
+    #    ╭─ 01 ────╮ ╭─ 02 ────╮ ╭─ 03 ────╮ ╭─ 04 ────╮ ╭─ 05 ────╮
+    #    │ FROLIC  │ │ NUMB    │ │ WOE     │ │ DREAD   │ │ MALICE  │
+    #    │ ███░  9 │ │ ████ 41 │ │ ██░░  6 │ │ █░░░  3 │ │ █░░░  2 │
+    #    ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯
     module Bins
       # A bin's lines.
       BIN_LINES = 4
 
       private
 
-      # The six bins, each a box with its number, its temper, and a bar of how many feelings it holds.
+      # The five bins, each a box with its number, its temper, and a bar of how many feelings it holds.
       def bins
         counts = view.log.counts
         most = [counts.values.max, 1].max

@@ -328,7 +328,7 @@ RSpec.describe Raindown::TUI::Layout do
       described_class.new(navigator, width: 90, height: 24).lines
     end
 
-    it "draws the methods as digits, the selected one on the selection's blue with its code below, then the six bins" do
+    it "draws the methods as digits, the selected one on the selection's blue with its code below, then the five bins" do
       lines = described_class.new(navigator, width: 90, height: 24).lines
       main = main(lines)
 
@@ -340,10 +340,10 @@ RSpec.describe Raindown::TUI::Layout do
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
       expect(main.find { it.include?('def area') }).to start_with(' │ def area').and end_with('│')
       expect(lines.flatten.find { it.text == 'def' }.style).to eq(:code_keyword)
-      expect(main.find { it.include?('WOE') }.scan(/[A-Z]{3,}/)).to eq(%w[FROLIC HOPE NUMB WOE DREAD MALICE])
+      expect(main.find { it.include?('WOE') }.scan(/[A-Z]{3,}/)).to eq(%w[FROLIC NUMB WOE DREAD MALICE])
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).not_to include('drift')
       style = ->(text) { lines.flatten.find { it.text.include?(text) }.style }
-      expect(['refined', 'lib/shapes.rb:2', '02', 'HOPE'].map { style[it] }).to eq(%i[body feelings feelings feelings])
+      expect(['refined', 'lib/shapes.rb:2', '02', 'NUMB'].map { style[it] }).to eq(%i[body feelings feelings feelings])
       expect(text(lines).map { width(it) }).to all(eq(90))
     end
 
@@ -352,7 +352,7 @@ RSpec.describe Raindown::TUI::Layout do
       both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
       described_class.new(both, width: 90, height: 24).lines
       felt = both.view.selected
-      both.next_step(:bin3)
+      both.next_step(:bin2)
       both.next_step(:right)
       cell = lambda do |index|
         grid_line(described_class.new(both, width: 90, height: 24).lines).find { it.event == click(:main, index, :focus) }
@@ -366,7 +366,7 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'rains over the pane when the batch is refined, then pops a waffle out from its butter, over balloons' do
-      navigator.next_step(:bin3)
+      navigator.next_step(:bin2)
       rain = main(described_class.new(navigator, width: 90, height: 24).lines)
       expect([navigator.pace, rain.join]).to match([:animation, match(/[│╎]/)])
       expect(rain.join).not_to include('Raindown')
@@ -396,7 +396,7 @@ RSpec.describe Raindown::TUI::Layout do
       bin = ->(name) { described_class.new(both, width: 90, height: 24).lines.flatten.find { it.text.include?(name) }.style }
       expect(bin.call('MALICE')).to eq(:feelings)
 
-      both.next_step(:bin6)
+      both.next_step(:bin5)
       both.next_step(:enter)
       both.next_step(:right)
       expect([bin.call('MALICE'), bin.call('NUMB')]).to eq(%i[feelings feelings])
@@ -406,7 +406,7 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'wraps a long note in as many lines as it takes, lined up after the question' do
-      navigator.next_step(:bin6)
+      navigator.next_step(:bin5)
       'two negations and a hidden dependency on rows'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
       lines = described_class.new(navigator, width: 60, height: 24).lines
       note = main(lines).drop_while { !it.include?('Why MALICE?') }.take_while { !it.include?('╰') }
@@ -550,7 +550,7 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'asks why below the code and a line, with the bin highlighted, while the note is typed' do
-      navigator.next_step(:bin5)
+      navigator.next_step(:bin4)
       'tangled'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
       lines = described_class.new(navigator, width: 90, height: 24).lines
 

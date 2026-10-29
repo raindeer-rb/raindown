@@ -3,14 +3,14 @@
 require 'csv'
 
 # How healthy the code feels now, sorted in raindown tui's Code feelings, from 0 to 1: the average of its feelings'
-# scores, and its label how many there are. Frolic is 1, hope 0.75, for code that's promising, and numb 0.5, as it's
+# scores, and its label how many there are. Frolic is 1, and numb 0.5, as it's
 # neither good nor bad, and the bad feelings are below it, evenly, woe the mildest at a third, then dread at a sixth,
 # and malice 0:
 #   <{ CodeHealth: }>
 # Only the feelings count, not the memories, which are about code that's since changed or gone. CodeDebt counts the
 # same scores, from how far each is from numb.
 class CodeHealth < Raindown::Stat
-  SCORES = { 'frolic' => 1.0, 'hope' => 0.75, 'numb' => 0.5, 'woe' => 1.0 / 3, 'dread' => 1.0 / 6, 'malice' => 0.0 }.freeze
+  SCORES = { 'frolic' => 1.0, 'numb' => 0.5, 'woe' => 1.0 / 3, 'dread' => 1.0 / 6, 'malice' => 0.0 }.freeze
 
   # The rows of .raindown/feelings.csv or memories.csv, by name.
   def self.rows(root, name)

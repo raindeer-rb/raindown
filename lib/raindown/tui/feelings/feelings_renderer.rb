@@ -13,17 +13,17 @@ require_relative 'waffle/waffle'
 module Raindown
   module TUI
     # Code feelings, right of the files: the methods as clusters of digits in a grid, with the selected one highlighted
-    # and its code below, then why it felt that way while that's typed, then the six bins and how many each holds.
+    # and its code below, then why it felt that way while that's typed, then the five bins and how many each holds.
     # When the batch is refined, it rains over them, then there's a waffle:
     #     0  0  2  2  2  5  5  9  9  9  9  1
     #     1  3  3  7  7  7  6  4  4  0  8  8
     #    ╭─ lib/text.rb:62 · Text#segments_between ──────────── changed 6× ─╮
     #    │ def segments_between(line, from, to)                              │
     #    ╰───────────────────────────────────────────────────────────────────╯
-    #    ╭─ 01 ────╮ ╭─ 02 ────╮ ╭─ 03 ────╮ ╭─ 04 ────╮ ╭─ 05 ────╮ ╭─ 06 ────╮
-    #    │ FROLIC  │ │ HOPE    │ │ NUMB    │ │ WOE     │ │ DREAD   │ │ MALICE  │
-    #    │ ███░  9 │ │ ██░░  5 │ │ ████ 41 │ │ ██░░  6 │ │ █░░░  3 │ │ █░░░  2 │
-    #    ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯
+    #    ╭─ 01 ────╮ ╭─ 02 ────╮ ╭─ 03 ────╮ ╭─ 04 ────╮ ╭─ 05 ────╮
+    #    │ FROLIC  │ │ NUMB    │ │ WOE     │ │ DREAD   │ │ MALICE  │
+    #    │ ███░  9 │ │ ████ 41 │ │ ██░░  6 │ │ █░░░  3 │ │ █░░░  2 │
+    #    ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯
     class FeelingsRenderer < Renderer
       include Bins
       include CodeBox
@@ -39,7 +39,7 @@ module Raindown
       # How far a cell's digit is from its method's drift, by its roll out of NOISE_ROLL, so about four in ten are off.
       NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2, 6 => -3, 7 => 3 }.freeze
       NOISE_ROLL = 20
-      BUTTONS = [['Tab', 'Pane', :tab], ['1-6', 'Feel', nil], ['e', 'Edit', :edit], ['x', 'Fix', :execute],
+      BUTTONS = [['Tab', 'Pane', :tab], ['1-5', 'Feel', nil], ['e', 'Edit', :edit], ['x', 'Fix', :execute],
                  ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
 
       def buttons = BUTTONS

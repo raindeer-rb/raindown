@@ -561,14 +561,14 @@ RSpec.describe Raindown::TUI::Navigator do
       expect(navigator.status).to eq([:info, "This week's code to feel, #{Raindown::TUI::Batch.this_week}"])
 
       label = navigator.view.selected.label
-      navigator.next_step(:bin3)
+      navigator.next_step(:bin2)
       expect(navigator.status).to eq([:info, "Felt numb about #{label}"])
     end
 
     it "takes every key as the note while it asks why, even ones like q, and doesn't write back the code after the editor" do
       open_feelings
       label = navigator.view.selected.label
-      navigator.next_step(:bin6)
+      navigator.next_step(:bin5)
       expect(navigator.typing?).to be(true)
 
       navigator.next_step(Raindown::TUI::Type.new(text: 'q'))

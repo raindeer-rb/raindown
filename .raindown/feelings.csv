@@ -9,7 +9,7 @@ when,where,method,temper,note,commit,checksum
 2026-10-28,lib/raindown/tui/terminal/screen.rb:25,Screen#run,woe,,1d2ace2,596a2db3
 2026-10-28,lib/raindown/tui/card.rb:34,Card#box_height,frolic,,1d2ace2,d7b25950
 2026-10-28,lib/raindown/tui/views/dashboard_view.rb:49,DashboardView#charts,frolic,,1d2ace2,69c07625
-2026-10-28,.raindown/code_health.rb:24,CodeHealth#score,hope,,84f352d,ff6d1099
-2026-10-28,lib/raindown/nodes.rb:24,Nodes#load,hope,,84f352d,74318048
+2026-10-28,.raindown/code_health.rb:24,CodeHealth#score,numb,,84f352d,ff6d1099
+2026-10-28,lib/raindown/nodes.rb:24,Nodes#load,numb,,84f352d,74318048
 2026-10-28,lib/raindown/supervisor.rb:96,Supervisor#fork?,frolic,,eee24a1,785c315c
-2026-10-29,.raindown/code_health.rb:34,CodeHealth#label,hope,,e85db93,661b4526
+2026-10-29,.raindown/code_health.rb:34,CodeHealth#label,numb,,e85db93,661b4526

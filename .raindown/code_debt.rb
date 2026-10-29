@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # The code's debt, from how it feels now, sorted in raindown tui's Code feelings: each feeling's CodeHealth score, as how
-# far it is from numb, from 1 for frolic, and 0.5 for hope, to -1 for malice, added up, so it's in debt below zero. Its label says how many
+# far it is from numb, from 1 for frolic to -1 for malice, added up, so it's in debt below zero. Its label says how many
 # fixes there have been, feelings that scored higher when their method was felt again, once its code had changed:
 #   <{ CodeDebt: }>
 # Only the feelings count towards the debt, not the memories, which are about code that's since changed or gone.

@@ -50,7 +50,7 @@ The screen's text, digits, lines and titles are lavender (the `feelings` style, 
 
 ### Feeling a method
 
-`1` to `6` sort the selected method into **frolic, hope, numb, woe, dread or malice**, best to worst, as `CodeHealth` scores them, so the keys rate the code, rather than in *Severance*'s order. Numb is for code that gives no feeling. **The cursor stays on the method**, so the next thing you do can be about it. Woe, dread and malice first ask why, below the code. The question uses the typing mode teleport added, so keys like `q` and `j` are typed as letters. The note wraps onto as many lines as it needs, and Enter saves it, or Esc saves the feeling without one. Frolic and numb are noted straight away.
+`1` to `5` sort the selected method into **frolic, numb, woe, dread or malice**, best to worst, as `CodeHealth` scores them, so the keys rate the code, rather than in *Severance*'s order. Numb is for code that gives no feeling. **The cursor stays on the method**, so the next thing you do can be about it. Woe, dread and malice first ask why, below the code. The question uses the typing mode teleport added, so keys like `q` and `j` are typed as letters. The note wraps onto as many lines as it needs, and Enter saves it, or Esc saves the feeling without one. Frolic and numb are noted straight away.
 
 ### Finding methods, in any language
 
@@ -84,11 +84,11 @@ Nothing else is stored. Which methods are felt, and so which files a batch picks
 
 The TUI writes nothing but `.raindown/feelings.csv`. The README counts it instead, with two `Raindown::Stat` nodes in `.raindown`, which the Dashboard shows as cards too. Both use one scale, so they can't disagree:
 
-| frolic | hope | numb | woe | dread | malice |
-|---|---|---|---|---|---|
-| 1 | 0.75 | 0.5 | ⅓ | ⅙ | 0 |
+| frolic | numb | woe | dread | malice |
+|---|---|---|---|---|
+| 1 | 0.5 | ⅓ | ⅙ | 0 |
 
-Hope is for code that's promising but not a joy, which otherwise had nowhere between frolic and numb, so the good side has two grades as the bad side has three. Numb is neither good nor bad, and the bad feelings sit evenly below it, woe the mildest, as everywhere else woe's a bad feeling: it asks why, and a fix from it is a fix. **`CodeHealth`** is the feelings' average, to two places, which doesn't grow with the project, labelled with how many feelings it's the average of. **`CodeDebt`** adds up how far each is from numb, (score − 0.5) × 2, from 1 for frolic to −1 for malice, to one place, in debt below zero, labelled with how many fixes there have been: memories whose method's next feeling scored higher. Memories don't count otherwise, as they're about code that's since changed or gone. A chart of the tempers' counts, and a running total of the debt by day, were tried first. An earlier version also wrote a `docs/code-feelings.md` page, with a chart over a `.raindown/tempers.csv` of counts and a table of every feeling, which only repeated what the CSV holds.
+Hope, at 0.75 for code that's promising but not a joy, was dropped, and its feelings became numb. Numb is neither good nor bad, and the bad feelings sit evenly below it, woe the mildest, as everywhere else woe's a bad feeling: it asks why, and a fix from it is a fix. **`CodeHealth`** is the feelings' average, to two places, which doesn't grow with the project, labelled with how many feelings it's the average of. **`CodeDebt`** adds up how far each is from numb, (score − 0.5) × 2, from 1 for frolic to −1 for malice, to one place, in debt below zero, labelled with how many fixes there have been: memories whose method's next feeling scored higher. Memories don't count otherwise, as they're about code that's since changed or gone. A chart of the tempers' counts, and a running total of the debt by day, were tried first. An earlier version also wrote a `docs/code-feelings.md` page, with a chart over a `.raindown/tempers.csv` of counts and a table of every feeling, which only repeated what the CSV holds.
 
 ### The code box and fixing
 
@@ -108,7 +108,7 @@ Code feelings is the first view to use mouse **hover**. While the TUI is open, i
 |---|---|
 | `f` | open Code feelings |
 | arrows | move between methods |
-| `1` to `6` | feel frolic, hope, numb, woe, dread or malice, best to worst |
+| `1` to `5` | feel frolic, numb, woe, dread or malice, best to worst |
 | Enter, Space, or a click on "[more lines]" | show all of the method's code that fits, or fewer |
 | `e` | edit the method |
 | `x` | fix it with Claude Code |
