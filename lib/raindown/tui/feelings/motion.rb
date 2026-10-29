@@ -4,42 +4,49 @@ require 'zlib'
 
 module Raindown
   module TUI
-    # How Code feelings' digits move in their cells: the restless ones, the heaviest, now and then tremble a column either
-    # way for a moment, as if they're trying to escape, and the ones beside the method the mouse is over flee from it, to
-    # the far side of their cells, where they tremble often, while every cell around it is bold.
+    # How Code feelings' digits move in their cells: the restless ones, the heaviest, now and then flicker one lower, and
+    # the ones beside the method the mouse is over flee from it, to the far side of their cells, where they tremble often,
+    # as if they're trying to escape, while every cell around it is bold.
     module Motion
-      # The columns a digit moves by when it trembles, each for a step: a restless digit's steps are TREMBLE_SECONDS, and it
-      # trembles once every TREMBLE_EVERY of them, about every minute, while a fleeing one's are twice as quick, and it
-      # trembles once every FLEEING_TREMBLE_EVERY, about every 0.6 seconds, each cell at its own moment.
+      # The columns a fleeing digit moves by when it trembles, each for a step of FLEEING_TREMBLE_SECONDS, a little longer
+      # than a frame, so none are missed, once every FLEEING_TREMBLE_EVERY of them, about every 0.7 seconds, each cell at its
+      # own moment.
       TREMBLE = [1, -1, 1, -1].freeze
-      TREMBLE_SECONDS = 0.15
-      TREMBLE_EVERY = 400
-      FLEEING_TREMBLE_SECONDS = 0.075
+      FLEEING_TREMBLE_SECONDS = 0.09
       FLEEING_TREMBLE_EVERY = 8
       # The columns a digit flees by, from the method beside it, from the middle of its cell, where it's still.
       FLEE = 1
       MIDDLE = 1
+      # A restless digit flickers one lower for FLICKER_SECONDS, once every FLICKER_EVERY of them, about every 30 seconds.
+      FLICKER_SECONDS = 0.5
+      FLICKER_EVERY = 60
 
       private
 
-      # The column of the cell's digit in its cell, from the middle, fleeing to its edge, where it trembles often, or else
-      # trembling now and then when it's restless.
+      # The column of the cell's digit in its cell: the middle, or fleeing to its edge, where it trembles often.
       def digit_column(owner, index)
         away = flee(index)
-        return fleeing_column(owner, index, away) if away.nonzero?
-        return MIDDLE if view.code_methods[owner].drift < FeelingsRenderer::RESTLESS
+        return MIDDLE if away.zero?
 
-        MIDDLE + tremble(owner, index, TREMBLE_EVERY, TREMBLE_SECONDS)
+        fleeing_column(owner, index, away)
       end
 
       # At the edge of its cell it's fled to, trembling often and quickly, but never out of the cell.
       def fleeing_column(owner, index, away)
-        (MIDDLE + away + tremble(owner, index, FLEEING_TREMBLE_EVERY, FLEEING_TREMBLE_SECONDS)).clamp(0, FeelingsRenderer::CELL - 1)
+        (MIDDLE + away + tremble(owner, index)).clamp(0, FeelingsRenderer::CELL - 1)
       end
 
-      # A column either way, during the cell's moment once every so many steps of the seconds, or else none.
-      def tremble(owner, index, every, seconds)
-        TREMBLE.fetch(((now / seconds).floor + Zlib.crc32("#{owner}:#{index}")) % every, 0)
+      # A column either way, during the cell's moment once every FLEEING_TREMBLE_EVERY steps, or else none.
+      def tremble(owner, index)
+        TREMBLE.fetch(((now / FLEEING_TREMBLE_SECONDS).floor + Zlib.crc32("#{owner}:#{index}")) % FLEEING_TREMBLE_EVERY, 0)
+      end
+
+      # One lower, during the restless cell's moment once every FLICKER_EVERY steps of FLICKER_SECONDS, or else none.
+      def flicker(owner, index)
+        return 0 if view.code_methods[owner].drift < FeelingsRenderer::RESTLESS
+        return 0 unless (((now / FLICKER_SECONDS).floor + Zlib.crc32("#{owner}:#{index}")) % FLICKER_EVERY).zero?
+
+        -1
       end
 
       # The time the frame's drawn at, in seconds, the same for all its cells.

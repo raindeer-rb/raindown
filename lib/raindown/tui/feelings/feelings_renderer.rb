@@ -36,7 +36,7 @@ module Raindown
       CELL = 3
       # The code box's lines of code that a batch is sized for.
       FILLED_CODE_LINES = 1
-      # The drift from which a method's cells are restless, and tremble now and then.
+      # The drift from which a method's cells are restless, and flicker now and then.
       RESTLESS = 7
       # How far a cell's digit is from its method's drift, by its roll out of NOISE_ROLL, so about four in ten are off.
       NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2, 6 => -3, 7 => 3 }.freeze
@@ -145,10 +145,11 @@ module Raindown
         @hidden[owner]
       end
 
-      # Near the method's drift, from 0 to 9: a cell's checksum rolls a small chance of it being one or two away.
+      # Near the method's drift, from 0 to 9: a cell's checksum rolls a small chance of it being one to three away, and a
+      # restless one flickers one lower now and then.
       def digit(owner, index)
         drift = view.code_methods[owner].drift
-        (drift + NOISE.fetch(Zlib.crc32("#{owner}:#{index}") % NOISE_ROLL, 0)).clamp(0, 9)
+        (drift + NOISE.fetch(Zlib.crc32("#{owner}:#{index}") % NOISE_ROLL, 0)).clamp(0, 9) + flicker(owner, index)
       end
 
       def blank(message)

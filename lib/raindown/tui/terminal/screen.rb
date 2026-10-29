@@ -14,9 +14,9 @@ module Raindown
     # Only this class draws on the terminal, so another library could draw the same Layout.
     class Screen
       # How often, in milliseconds, the screen's drawn, and the open file checked for changes, while no key is pressed, by
-      # the view's pace: every half second while it's active, drawn mostly as keys are pressed, at 10 frames a second
-      # while it's reactive, like Code feelings' trembling digits, and at 20 during an animation, like Code feelings' rain.
-      TICKS = { active: 500, reactive: 100, animation: 50 }.freeze
+      # the view's pace, from when the last frame started drawing: every half second while it's active, at 12 frames a
+      # second while it's reactive, just faster than Code feelings' digits tremble, and at 20 during an animation.
+      TICKS = { active: 500, reactive: 83, animation: 50 }.freeze
 
       def initialize(navigator)
         @navigator = navigator
@@ -33,8 +33,9 @@ module Raindown
         start
 
         loop do
+          drawn_at = Process.clock_gettime(Process::CLOCK_MONOTONIC, :millisecond)
           draw
-          break if take_events == :quit
+          break if take_events(drawn_at) == :quit
         end
       rescue Interrupt
         nil
@@ -44,8 +45,8 @@ module Raindown
 
       # The Navigator takes the next event, then any others already waiting, like the mouse's many moves, before the
       # screen's drawn again, so drawing doesn't fall further and further behind them.
-      def take_events
-        event = Input.read(TICKS.fetch(@navigator.pace), zones: @zones, typing: @navigator.typing?)
+      def take_events(drawn_at)
+        event = Input.read(wait(drawn_at), zones: @zones, typing: @navigator.typing?)
         loop do
           effect = @navigator.next_step(event)
           return effect if effect == :quit
@@ -55,6 +56,9 @@ module Raindown
           return if event == :tick
         end
       end
+
+      # The milliseconds left of the pace's tick since the frame started drawing, so drawing doesn't slow the pace.
+      def wait(drawn_at) = [TICKS.fetch(@navigator.pace) + drawn_at - Process.clock_gettime(Process::CLOCK_MONOTONIC, :millisecond), 0].max
 
       # Runs a command, like the editor, then tells the Navigator, or shows a message while a slow task runs.
       def perform(effect)

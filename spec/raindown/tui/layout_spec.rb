@@ -473,21 +473,32 @@ RSpec.describe Raindown::TUI::Layout do
       expect([1, 3, 4].map { |index| cells[index].map(&:style).uniq }).to eq([[:nearby], [:nearby], [:feelings]])
     end
 
-    it 'trembles the digits of restless methods, the heaviest, a column either way for a moment now and then' do
+    it 'keeps the digits of restless methods, the heaviest, still in the middle of their cells when the mouse is away' do
       File.write(File.join(@root, 'lib', 'shapes.rb'), "def short = 1\ndef long\n#{"  1\n" * 30}end\n")
       navigator.next_step(:reload)
       navigator.view.cursor = navigator.view.code_methods.index { it.name == 'short' }
       long = navigator.view.code_methods.index { it.name == 'long' }
-      # A shorter cycle than a minute's, so it's drawn in fewer frames.
-      stub_const('Raindown::TUI::Motion::TREMBLE_EVERY', 40)
-      columns = Array.new(Raindown::TUI::Motion::TREMBLE_EVERY) do |step|
-        allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return((step + 0.5) * Raindown::TUI::Motion::TREMBLE_SECONDS)
+      columns = Array.new(40) do |step|
+        allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return((step + 0.5) * Raindown::TUI::Motion::FLEEING_TREMBLE_SECONDS)
         cells = grid_line(described_class.new(navigator, width: 90, height: 24).lines).select { it.event == click(:main, long, :focus) }
         cells.map { it.text.index(/\d/) }
       end
 
-      expect([navigator.view.code_methods[long].drift, columns.flatten.uniq.sort]).to eq([9, [0, 1, 2]])
-      expect(columns.transpose.map { |cell| cell.count { it != 1 } }).to all(eq(Raindown::TUI::Motion::TREMBLE.length))
+      expect([navigator.view.code_methods[long].drift, columns.flatten.uniq]).to eq([9, [1]])
+    end
+
+    it 'flickers the digits of restless methods one lower for a moment, rarely' do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "def short = 1\ndef long\n#{"  1\n" * 30}end\n")
+      navigator.next_step(:reload)
+      navigator.view.cursor = navigator.view.code_methods.index { it.name == 'short' }
+      long = navigator.view.code_methods.index { it.name == 'long' }
+      digits = Array.new(Raindown::TUI::Motion::FLICKER_EVERY) do |step|
+        allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return((step + 0.5) * Raindown::TUI::Motion::FLICKER_SECONDS)
+        cells = grid_line(described_class.new(navigator, width: 90, height: 24).lines).select { it.event == click(:main, long, :focus) }
+        cells.map { it.text[/\d/].to_i }
+      end
+
+      expect(digits.transpose.map { |cell| cell.tally.transform_keys { it - cell.max } }).to all(eq(0 => digits.length - 1, -1 => 1))
     end
 
     it "shows a long method's first 8 lines, then how many more there are, clicked to show all that fit" do
