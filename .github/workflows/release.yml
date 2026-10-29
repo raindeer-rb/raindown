@@ -95,7 +95,7 @@ jobs:
           run examples/markdown.md --html out.html
           grep 'Table of contents' out.html
           # Without a terminal the TUI stops once curses has loaded, which shows its extension was packaged.
-          tui=$(run tui examples < /dev/null 2>&1 || true)
+          tui=$(run examples < /dev/null 2>&1 || true)
           echo "$tui"
           grep -q 'needs a terminal' <<< "$tui"
 

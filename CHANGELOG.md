@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Minor features that don't break backwards compatibility are released as patches.
 
+## Unreleased
+
+### Changed
+
+- `raindown` opens the terminal UI, rather than `raindown tui`, and `raindown watch` watches, as `raindown` did. `--bare` and `-x` go with `watch`, like `raindown watch -x`
+- The terminal UI watches its folder like `raindown watch`, writing back to each Markdown file as it's saved, and loading a project's nodes again when they change
+
 ## 0.7.0
 
 ### Added

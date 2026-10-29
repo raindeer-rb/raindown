@@ -52,7 +52,7 @@ The VS Code extension could call the same actions later, for example as an Execu
 
 ### 3. The TUI is plain Ruby, with curses only at the edge
 
-`raindown tui [PATH]` starts it. The layers are:
+`raindown [PATH]` starts it, and `raindown watch [PATH]` watches without it. The layers are:
 
 | Layer                                                                                                                                                                                               | Files                                                                                             | Knows about the terminal? |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------- |
@@ -75,9 +75,9 @@ The VS Code extension could call the same actions later, for example as an Execu
 
 Everything above the screen layer has specs that need no terminal. The file is read again when its mtime changes, checked every 500ms while no key is pressed. So saving in an editor updates the outline.
 
-**The TUI watches its folder as `raindown` does,** so it replaces running `raindown` in another terminal. `Saves` listens to the folder with Listen, leaving out the same folders as the watcher (`Supervisor::IGNORE`), and queues each path saved, added or removed, as Listen calls back in a thread of its own. The Navigator takes them on its next tick, in the screen's thread, and writes back each saved Markdown file through its project's worker, saying "Updated" in the status line only when it changed, as the watcher prints only then. A change to a project's nodes reloads the workers, like the watcher restarting the project, and added or removed files are listed again. The write-back saves the file again, which changes nothing, so it ends there, as when watching. Specs stand a plain object in for `Saves`, so they need no Listen.
+**The TUI watches its folder as `raindown watch` does,** so it replaces running `raindown watch` in another terminal. `Saves` listens to the folder with Listen, leaving out the same folders as the watcher (`Supervisor::IGNORE`), and queues each path saved, added or removed, as Listen calls back in a thread of its own. The Navigator takes them on its next tick, in the screen's thread, and writes back each saved Markdown file through its project's worker, saying "Updated" in the status line only when it changed, as the watcher prints only then. A change to a project's nodes reloads the workers, like the watcher restarting the project, and added or removed files are listed again. The write-back saves the file again, which changes nothing, so it ends there, as when watching. Specs stand a plain object in for `Saves`, so they need no Listen.
 
-**We draw with curses (the `curses` gem, a binding to ncurses).** It is a required dependency in the gemspec (`~> 1.7`), so `raindown tui` works wherever Raindown is installed, and it's in every standalone binary. It's only loaded when `raindown tui` starts, so watching and `--html` start no slower. Without a terminal, `raindown tui` stops with "raindown tui needs a terminal" instead of ncurses' "Error opening terminal".
+**We draw with curses (the `curses` gem, a binding to ncurses).** It is a required dependency in the gemspec (`~> 1.7`), so `raindown` works wherever Raindown is installed, and it's in every standalone binary. It's only loaded when the TUI starts, so watching and `--html` start no slower. Without a terminal, `raindown` stops with "raindown needs a terminal" instead of ncurses' "Error opening terminal".
 
 ### Options considered
 
@@ -112,7 +112,7 @@ ratatui_ruby is the best alternative if Rust is in the toolchain anyway: it is s
   - Most glibc distros include it.
   - Alpine and other musl distros need `ncurses-libs`, as well as the `libgcc` they already needed.
 
-  The smoke test runs `raindown tui` without a terminal and expects "needs a terminal". That message only appears once curses has loaded, so the test fails if the extension or its library is missing.
+  The smoke test runs `raindown` without a terminal and expects "needs a terminal". That message only appears once curses has loaded, so the test fails if the extension or its library is missing.
 - The curses layer has no automated tests. The sandbox these were written in couldn't open a pseudo-terminal. The navigator, layout, key mapping and click zones all have specs, but painting, the mouse, resizing and suspending for the editor were checked by hand only.
 - UTF-8 depends on ncurses being built with wide-character support, which macOS and most Linux distributions are. The layout uses `▸`, `▾`, `│` and `…`.
 

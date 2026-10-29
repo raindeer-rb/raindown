@@ -42,15 +42,19 @@ e831696    -3     ▕│▏                              +4
 
 ## CLI
 
-The gem ships a `raindown` executable that watches Markdown files and writes back to them as they're saved, like their tables of contents, tables and endpoint responses.
+The gem ships a `raindown` executable that opens a project in the terminal, and watches its Markdown files and writes back to them as they're saved, like their tables of contents, tables and endpoint responses. `raindown watch` does the watching without the terminal UI.
 
 ```sh
-# Watch every project with a .raindown folder in the current directory, or in another one:
+# Browse a project's files and their outlines in the terminal, watching them as they're saved:
 raindown
-raindown ~/dev
+raindown README.md
+
+# Watch every project with a .raindown folder in the current directory, or in another one, without the terminal UI:
+raindown watch
+raindown watch ~/dev
 
 # Watch one file:
-raindown README.md
+raindown watch README.md
 
 # Render to HTML once, to stdout or to a file:
 raindown README.md --html
@@ -58,17 +62,13 @@ raindown README.md --html site/index.html
 
 # Render Markdown from stdin without touching the file (for editor previews):
 cat draft.rd | raindown draft.rd --stdin
-
-# Browse a project's files and their outlines in the terminal:
-raindown tui
-raindown tui README.md
 ```
 
 With `--stdin`, FILE only decides whether bare directives are allowed (by its extension), so it doesn't need to exist yet, and the TOC and tables aren't written back to it.
 
-Watching a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
+`raindown watch` on a directory watches each project in it, a folder with a `.raindown` folder, and the Markdown files below it, skipping hidden folders and ones like `node_modules` and `build`. Each project's nodes load in a process of their own, so two projects can have nodes of the same name, and saving one of a project's nodes reloads them. Files are written back as they're saved, not all at once when watching starts.
 
-`raindown tui` shows a project's Markdown files beside an outline of the open file's headings and directives. It opens on the Dashboard (below), or on the file you name, like `raindown tui README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Like `raindown`, it watches every file in the folder, and writes back to each Markdown file as it's saved, so there's no need for `raindown` running in another terminal too. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
+`raindown` shows a project's Markdown files beside an outline of the open file's headings and directives. It opens on the Dashboard (below), or on the file you name, like `raindown README.md`. Arrow keys or `j`/`k` move, Tab switches pane, and Enter opens a file or folder, or folds a heading. On a directive, Enter shows the lines it wrote back, `x` (or its `[Run]` button) runs an endpoint, and `e` opens your `$EDITOR` at the selected line, then writes back to the file when you close it. Like `raindown watch`, it watches every file in the folder, and writes back to each Markdown file as it's saved, so there's no need for `raindown watch` running in another terminal too. A click does what Enter does where it's clicked, or presses the button clicked, like `[Run]`, unless that would leave the TUI for your editor, so a stray click only moves the cursor. Scrolling does nothing.
 
 **Dashboard**, at the top of the files (or `d`), shows every chart and stat in the project beside them, each in a card under its file and heading. The projects inside it, marked 🌧 in the files, are shown too, each with its own nodes, and their charts are under their paths. Click the path in the header, or press `p`, to narrow the files and the Dashboard to one project.
 
@@ -149,7 +149,7 @@ raindown: true
 Or with the `--bare` flag:
 
 ```sh
-raindown README.md --bare
+raindown watch README.md --bare
 ```
 
 ### Table of contents
@@ -315,7 +315,7 @@ b12a47e   -4  ▕│▋                              +15
 
 Bars and lines are 40 characters wide, and columns and lines 8 lines high, which `width:` and `height:` change.
 
-`tail:` keeps only the last rows, like `tail: 12` for the latest twelve months of a CSV file that grows. In `raindown tui`, the Dashboard draws charts again every few seconds, so a chart with `tail:` follows a file that a script appends to, like a live monitor.
+`tail:` keeps only the last rows, like `tail: 12` for the latest twelve months of a CSV file that grows. In `raindown`'s terminal UI, the Dashboard draws charts again every few seconds, so a chart with `tail:` follows a file that a script appends to, like a live monitor.
 
 `chart:` is a [node](#nodes), so a project can draw charts its own way with a `Chart` node, like `class Chart < Raindown::Chart`. Raindown only watches the file being rendered, so after changing a chart's data, save the file to redraw it.
 
@@ -356,7 +356,7 @@ In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare, which e
 The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
 
 ```sh
-raindown api.md -x
+raindown watch api.md -x
 ```
 
 To refresh a response, empty its code block, and its fetched date is updated too. The date is an HTML comment, so it's hidden on the page, but anyone reading the file or the HTML source, people or agents, can tell how fresh the example is. The snippet runs with the `curl` binary but not through a shell, so pipes, redirects and `$VARIABLES` aren't supported. Curl is limited to HTTP requests, values can't read files (`-d @body.json`), and other options like `-o`, `-F` or `-K` are rejected. Raindown also runs curl without your `~/.curlrc`.

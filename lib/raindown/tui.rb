@@ -4,7 +4,7 @@ require_relative 'projects'
 require_relative 'tui/navigator/navigator'
 
 module Raindown
-  # The terminal UI, started with "raindown tui": a project's Markdown files beside the open file's outline,
+  # The terminal UI, started with "raindown": a project's Markdown files beside the open file's outline,
   # where directives fold, endpoints run and the editor opens at a line. Curses only loads here,
   # so watching and rendering start without it.
   module TUI
@@ -14,7 +14,7 @@ module Raindown
     def start(path)
       require_relative 'tui/terminal/screen'
       # Without a terminal, curses' own error is "Error opening terminal: unknown".
-      abort('raindown tui needs a terminal') unless $stdin.tty? && $stdout.tty?
+      abort('raindown needs a terminal') unless $stdin.tty? && $stdout.tty?
 
       path = File.expand_path(path)
       root = Projects.root(path) || (File.directory?(path) ? path : File.dirname(path))
