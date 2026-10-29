@@ -334,7 +334,7 @@ RSpec.describe Raindown::TUI::Layout do
 
       expect(text(lines).first).to include('› Code feelings')
       selected = grid_line(lines).select { it.event == click(:main, 0, :focus) }
-      expect([magnified(lines, 0), selected.map(&:style).uniq]).to eq([[nil] * 3, %i[selected]])
+      expect([magnified(lines, 0), selected.map(&:style).uniq]).to eq([[nil] * 3, %i[feelings_selected]])
       expect(selected.first.text).to match(/\A {0,2}\d {0,2}\z/)
       expect(main(lines)[1].strip).to eq('0% refined')
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
@@ -427,7 +427,7 @@ RSpec.describe Raindown::TUI::Layout do
       both.next_step(Raindown::TUI::Hover.new(target: click(:main, 0, :focus)))
       lines = described_class.new(both, width: 90, height: 24).lines
       selected = grid_line(lines).select { it.event == click(:main, 0, :focus) }
-      expect([magnified(lines, 0), selected.map(&:style).uniq]).to eq([[nil] * 3, %i[selected]])
+      expect([magnified(lines, 0), selected.map(&:style).uniq]).to eq([[nil] * 3, %i[feelings_selected]])
       expect(text(lines).map { width(it) }).to all(eq(90))
 
       both.next_step(Raindown::TUI::Hover.new(target: nil))
@@ -458,18 +458,27 @@ RSpec.describe Raindown::TUI::Layout do
       expect([styles.length > 2, styles.each_cons(2).map(&:uniq)]).to match([true, all(contain_exactly(:feelings, :feelings_purple))])
     end
 
-    it 'has the digits beside the method the mouse is over flee from it, trembling often, and the cells around it bold' do
-      File.write(File.join(@root, 'lib', 'shapes.rb'), (1..5).map { "def m#{it} = #{it}\n" }.join)
+    it 'has the digits beside the method the mouse is over flee, tremble, and makes neighbouring cells bold' do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), (1..8).map { "def m#{it} = #{it}\n" }.join)
       navigator.next_step(:reload)
-      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 2, :focus)))
-      lines = Array.new(Raindown::TUI::Motion::FLEEING_TREMBLE_EVERY) do |step|
-        allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return((step + 0.5) * Raindown::TUI::Motion::FLEEING_TREMBLE_SECONDS)
-        grid_line(described_class.new(navigator, width: 90, height: 24).lines)
+      fleeing = lambda do
+        lines = Array.new(Raindown::TUI::Motion::FLEEING_TREMBLE_EVERY) do |step|
+          allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return((step + 0.5) * Raindown::TUI::Motion::FLEEING_TREMBLE_SECONDS)
+          grid_line(described_class.new(navigator, width: 90, height: 24).lines)
+        end
+        cells = ->(index) { lines.map { |line| line.find { it.event == click(:main, index, :focus) } } }
+        columns = [1, 3].map { |index| cells[index].map { it.text.index(/\d/) }.uniq.sort }
+        [columns, [1, 3, 4].map { |index| cells[index].map(&:style).uniq }]
       end
-      cells = ->(index) { lines.map { |line| line.find { it.event == click(:main, index, :focus) } } }
+      fled = [[[0, 1], [1, 2]], [[:nearby], [:nearby], [:feelings]]]
 
-      expect([1, 3].map { |index| cells[index].map { it.text.index(/\d/) }.uniq.sort }).to eq([[0, 1], [1, 2]])
-      expect([1, 3, 4].map { |index| cells[index].map(&:style).uniq }).to eq([[:nearby], [:nearby], [:feelings]])
+      navigator.view.cursor = 7
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 2, :focus)))
+      expect(fleeing.call).to eq(fled)
+
+      navigator.next_step(Raindown::TUI::Hover.new(target: nil))
+      navigator.view.cursor = 2
+      expect(fleeing.call).to eq([[[1], [1]], [[:feelings]] * 3])
     end
 
     it 'keeps the digits of restless methods, the heaviest, still in the middle of their cells when the mouse is away' do

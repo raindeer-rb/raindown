@@ -143,7 +143,7 @@ module Raindown
         return cell_style(index) unless owner == view.cursor
         return :felt_selected if view.batch.felt?(view.code_methods[owner])
 
-        :selected
+        :feelings_selected
       end
 
       # Whether the method's felt, and not selected, so its cells are blank, asked once a frame for each method.

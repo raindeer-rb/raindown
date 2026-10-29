@@ -19,20 +19,24 @@ module Raindown
       ACCENTS = { directive: 141, folder: 111, title: 111, heading: 111, syrup: 130 }.freeze
       BASIC_ACCENTS = { directive: Curses::COLOR_MAGENTA, folder: Curses::COLOR_BLUE, title: Curses::COLOR_BLUE,
                         heading: Curses::COLOR_BLUE, syrup: Curses::COLOR_YELLOW }.freeze
+
       # The green of GET, and of a selected method in Code feelings that's already been felt.
       GREEN = 34
+
       # The colours of endpoints' HTTP methods, like GET in green, from the 256 colours most terminals have,
       # which are the same in every theme, unlike the 8 they all do, where green can look yellow.
       METHODS = { get: GREEN, post: 33, delete: 196, put: 220, patch: 171, head: 44, options: 44 }.freeze
       BASIC_METHODS = { get: Curses::COLOR_GREEN, post: Curses::COLOR_BLUE, delete: Curses::COLOR_RED,
                         put: Curses::COLOR_YELLOW, patch: Curses::COLOR_MAGENTA, head: Curses::COLOR_CYAN,
                         options: Curses::COLOR_CYAN }.freeze
+
       # Highlighted code's colours, by the kind of token, from the 256 colours most terminals have, or the 8 they all do,
       # where comments are dim instead of grey.
       CODE = { code_keyword: 204, code_string: 114, code_number: 179, code_function: 75, code_constant: 117,
                code_comment: 244 }.freeze
       BASIC_CODE = { code_keyword: Curses::COLOR_MAGENTA, code_string: Curses::COLOR_GREEN, code_number: Curses::COLOR_YELLOW,
                      code_function: Curses::COLOR_BLUE, code_constant: Curses::COLOR_CYAN, code_comment: Curses::COLOR_WHITE }.freeze
+
       # Code feelings' bright colours, for its rain and fireworks, from the 256 colours most terminals have, or
       # the 8 they all do.
       BRIGHT = { bright_red: 203, bright_orange: 215, bright_yellow: 227, bright_green: 120, bright_cyan: 87,
@@ -40,18 +44,22 @@ module Raindown
       BASIC_BRIGHT = { bright_red: Curses::COLOR_RED, bright_orange: Curses::COLOR_YELLOW, bright_yellow: Curses::COLOR_YELLOW,
                        bright_green: Curses::COLOR_GREEN, bright_cyan: Curses::COLOR_CYAN, bright_blue: Curses::COLOR_BLUE,
                        bright_purple: Curses::COLOR_MAGENTA, bright_pink: Curses::COLOR_MAGENTA }.freeze
+
       # The selected row's blue, and the green of a selected method in Code feelings that's already been felt, from the 256
       # colours most terminals have, or the 8 they all do.
       BLUES = { selected: 33, felt: GREEN }.freeze
       BASIC_BLUES = { selected: Curses::COLOR_CYAN, felt: Curses::COLOR_GREEN }.freeze
+
       # Text that has no colour of its own, from the 256 colours most terminals have, or the terminal's own with 8.
       PERIWINKLE = 147
+
       # Code feelings' text and lines, in lavender, or magenta in 8 colours, and the purple its magnified digits take turns
       # with, or blue.
       FEELINGS = { feelings: 183, feelings_purple: 135 }.freeze
       BASIC_FEELINGS = { feelings: Curses::COLOR_MAGENTA, feelings_purple: Curses::COLOR_BLUE }.freeze
       BRIGHT_WHITE = 15
       DARK_GREY = 238
+
       # Code feelings' red when the screen's too small for it, or the 8 colours' red.
       DARK_RED = 88
 
@@ -68,7 +76,8 @@ module Raindown
       # Without colours, a style that isn't here is the terminal's own.
       def plain
         Hash.new(Curses::A_NORMAL).merge(
-          title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, felt_selected: Curses::A_REVERSE, too_small: Curses::A_REVERSE,
+          title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, too_small: Curses::A_REVERSE,
+          feelings_selected: Curses::A_REVERSE | Curses::A_BOLD, felt_selected: Curses::A_REVERSE | Curses::A_BOLD,
           selected_button: Curses::A_REVERSE,
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, page: Curses::A_BOLD,
@@ -86,10 +95,11 @@ module Raindown
         )
       end
 
-      # The selected row, its buttons, a selected method in Code feelings that's already been felt, and Code feelings' red
-      # when the screen's too small for it.
+      # The selected row, its buttons, Code feelings' selected method, bold, on green when it's already been felt, and its
+      # red when the screen's too small for it.
       def selections
-        { selected: pair(:selected) | white_bold, felt_selected: pair(:felt_selected) | white_bold,
+        { selected: pair(:selected) | white_bold, feelings_selected: pair(:selected) | Curses::A_BOLD,
+          felt_selected: pair(:felt_selected) | Curses::A_BOLD,
           too_small: pair(:too_small) | white_bold, selected_button: pair(:selected_button) | Curses::A_BOLD }
       end
 
