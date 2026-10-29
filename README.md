@@ -149,6 +149,7 @@ raindown: true
 Or with the `--bare` flag:
 
 ```sh
+raindown README.md --bare
 raindown watch README.md --bare
 ```
 
@@ -356,6 +357,7 @@ In a [Raindown file](#raindown-files) you can write `endpoint: :x` bare, which e
 The request only runs when the response block is missing or empty, and either the directive has `:x` (or `:execute`) or you pass `-x` (or `--execute`):
 
 ```sh
+raindown api.md -x
 raindown watch api.md -x
 ```
 

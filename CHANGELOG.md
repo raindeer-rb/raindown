@@ -9,7 +9,7 @@ Minor features that don't break backwards compatibility are released as patches.
 
 ### Changed
 
-- `raindown` opens the terminal UI, rather than `raindown tui`, and `raindown watch` watches, as `raindown` did. `--bare` and `-x` go with `watch`, like `raindown watch -x`
+- `raindown` opens the terminal UI, rather than `raindown tui`, and `raindown watch` watches, as `raindown` did. Both take `--bare` and `-x`
 - Without a terminal, like in a script or a service, `raindown` says it needs one and watches instead
 - The terminal UI watches its folder like `raindown watch`, writing back to each Markdown file as it's saved, and loading a project's nodes again when they change
 

@@ -106,7 +106,7 @@ RSpec.describe Raindown::CLI do
 
       it 'does not run endpoints' do
         expect { run_with_stdin("# Title\n", [path, '--stdin', '-x']) }
-          .to raise_error(SystemExit).and output(/Unknown arguments/).to_stderr
+          .to raise_error(SystemExit).and output(/-x runs endpoints .* which --stdin doesn't do/).to_stderr
       end
     end
 

@@ -154,8 +154,8 @@ raindown watch FILE           # watch one file, writing back to it on save
 raindown FILE --html          # render to HTML once, to stdout
 raindown FILE --html out.html # render to HTML once, to a file
 cat FILE | raindown FILE --stdin   # render stdin to HTML, without rewriting FILE
-raindown watch FILE --bare    # allow bare directives in a .md file
-raindown watch FILE -x        # run endpoint snippets that have no response yet
+raindown FILE --bare          # allow bare directives in a .md file, also with raindown watch
+raindown FILE -x              # run endpoint snippets that have no response yet, also with raindown watch
 ```
 
 ## Docs

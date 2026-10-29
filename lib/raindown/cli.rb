@@ -50,35 +50,14 @@ module Raindown
       # highlight_code: false
     YAML
 
-    # "--html OUTPUT" is matched as "--html-to OUTPUT" (see run), so a flag after a bare --html isn't read as the OUTPUT.
-    OPTIONS = { html_to: ['--html-to :output'], html: ['--html'], bare: ['--bare'], execute: ['-x', '--execute'],
-                stdin: ['--stdin'] }.freeze
-
-    # Trees matches tokens in order, so there's a line for every order and spelling of the options.
-    OPTION_LINES = (0..OPTIONS.size).flat_map { |count| OPTIONS.keys.permutation(count).to_a }.flat_map do |names|
-      [[]].product(*names.map { |name| OPTIONS[name] }).map { |flags| [names, flags.flatten] }
+    # A path opens the terminal UI, or after "watch" it's watched, and with --html or --stdin it's rendered. The flags
+    # are keyword arguments, in any order, like -x for x:, and --html is the OUTPUT when it's given one.
+    line(':path') do |path, html: nil, stdin: false, bare: false, execute: false, x: false| # rubocop:disable Metrics/ParameterLists -- each keyword is a flag
+      execute { open_path(path, html:, stdin:, bare:, execute: execute || x) }
     end
 
-    OPTION_LINES.each do |names, flags|
-      # Endpoints run while formatting, which --stdin skips.
-      next if names.include?(:stdin) && names.include?(:execute)
-      next if names.include?(:html) && names.include?(:html_to)
-
-      # A path alone, with --bare or -x or neither, opens the terminal UI, and after "watch" it's watched.
-      commands = if names.include?(:stdin) then %i[render_stdin]
-                 elsif names.intersect?(%i[html html_to]) then %i[render]
-                 else %i[tui watch]
-                 end
-      options = { bare: names.include?(:bare), execute: names.include?(:execute) }
-
-      commands.each do |command|
-        pattern = [*('watch' if command == :watch), ':path', *flags].join(' ')
-        if names.include?(:html_to)
-          line(pattern) { |path, output| execute { send(command, path, output, **options) } }
-        else
-          line(pattern) { |path| execute { send(command, path, **options) } }
-        end
-      end
+    line('watch :path') do |path, bare: false, execute: false, x: false|
+      execute { watch(path, bare:, execute: execute || x) }
     end
 
     def self.run(argv)
@@ -87,7 +66,6 @@ module Raindown
       # Without a path, like "raindown", "raindown -x" or "raindown watch", it's the current directory.
       argv = ['watch', '.', *argv.drop(1)] if argv.first == 'watch' && (argv.size == 1 || argv[1].start_with?('-'))
       argv = ['.', *argv] if argv.empty? || argv.first.start_with?('-')
-      argv = html_output(argv)
 
       super || abort("Unknown arguments: #{argv.join(' ')}\n\n#{USAGE}")
     rescue StandardError => e
@@ -114,15 +92,6 @@ module Raindown
       abort("raindown: #{path}: #{error.message}")
     end
 
-    # "--html out.html" names an OUTPUT, while "--html --bare" doesn't, as OUTPUT never starts with "-".
-    def self.html_output(argv)
-      index = argv.index('--html') || (return argv)
-      output = argv[index + 1]
-      return argv if output.nil? || output.start_with?('-')
-
-      [*argv[0...index], '--html-to', *argv[(index + 1)..]]
-    end
-
     # Creates the .raindown folder that marks a project's root and holds its config.yml and nodes.
     def self.init(directory = nil)
       folder = File.join(directory || Dir.pwd, Nodes::FOLDER)
@@ -145,6 +114,16 @@ module Raindown
 
     class << self
       private
+
+      # Endpoints run while formatting, which --stdin skips, so -x can't go with it.
+      def open_path(path, html:, stdin:, bare:, execute:)
+        output = html unless html == true
+        abort("-x runs endpoints as the file's formatted, which --stdin doesn't do\n\n#{USAGE}") if stdin && execute
+        return render_stdin(path, output, bare:) if stdin
+        return render(path, output, bare:, execute:) if html
+
+        tui(path, bare:, execute:)
+      end
 
       def render(path, output = nil, bare: false, execute: false)
         ensure_exists(path)

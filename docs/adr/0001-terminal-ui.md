@@ -52,7 +52,7 @@ The VS Code extension could call the same actions later, for example as an Execu
 
 ### 3. The TUI is plain Ruby, with curses only at the edge
 
-`raindown [PATH]` starts it, and `raindown watch [PATH]` watches without it. The layers are:
+`raindown [PATH]` starts it, and `raindown watch [PATH]` watches without it. Both take `--bare` and `-x`, which the TUI gives its projects' workers, so its outlines read bare directives in any file, and its write-backs run endpoints with no response, as when watching. The layers are:
 
 | Layer                                                                                                                                                                                               | Files                                                                                             | Knows about the terminal? |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------- |
