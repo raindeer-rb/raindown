@@ -15,6 +15,6 @@ RSpec.configure do |config|
 
   # The terminal UI's workers answer in the spec's process, so its stubs apply, unless an example is tagged fork: true.
   config.before do |example|
-    Raindown::TUI::Worker.fork = example.metadata[:fork] == true if defined?(Raindown::TUI::Worker)
+    Raindown::Workers::Worker.fork = example.metadata[:fork] == true if defined?(Raindown::Workers::Worker)
   end
 end

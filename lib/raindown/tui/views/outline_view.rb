@@ -5,7 +5,7 @@ require_relative '../events'
 require_relative 'list_view'
 require_relative '../highlighter'
 require_relative '../row'
-require_relative '../workers/worker'
+require_relative '../../workers/worker'
 
 module Raindown
   module TUI
@@ -37,7 +37,7 @@ module Raindown
         @directives = outline.directives
         @highlighted = {}
         @error = nil
-      rescue Worker::Error, SystemCallError => e
+      rescue Workers::Worker::Error, SystemCallError => e
         @error = e.message
       end
 

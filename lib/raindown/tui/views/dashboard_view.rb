@@ -111,7 +111,7 @@ module Raindown
           answer = worker.call(:charts, find:)
           @cards.concat(answer[:cards])
           @errors.concat(answer[:errors])
-        rescue Worker::Error => e
+        rescue Workers::Worker::Error => e
           @errors << "#{File.basename(worker.root)}: #{e.message}"
         end
         @cards.sort_by! { [it.project, it.path, it.line] }

@@ -5,8 +5,8 @@ require 'trees'
 require_relative '../raindown'
 require_relative '../version'
 require_relative 'rewriter'
-require_relative 'supervisor'
-require_relative 'watcher'
+require_relative 'watcher/file_watcher'
+require_relative 'watcher/supervisor'
 
 module Raindown
   module CLI
@@ -142,12 +142,12 @@ module Raindown
       puts 'Put your own nodes in the same folder. See https://raindown.dev/docs/nodes'
     end
 
-    # The terminal UI loads curses, so it's only required when it starts.
+    # The terminal UI loads curses, so it's only required when it starts. Without a terminal, the path's watched instead.
     def self.tui(path)
       abort("File not found: #{path}") unless File.exist?(path)
 
       require_relative 'tui'
-      TUI.start(path)
+      TUI.start(path) || watch(path)
     end
 
     class << self
@@ -172,10 +172,10 @@ module Raindown
       # Watching only writes back to the files, while --html and --stdin render HTML.
       def watch(path, bare: false, execute: false)
         ensure_exists(path)
-        return Supervisor.new(directory: path, bare:, execute:).start if File.directory?(path)
+        return Watcher::Supervisor.new(directory: path, bare:, execute:).start if File.directory?(path)
 
         Nodes.load(path)
-        Watcher.new(path:, bare:, execute:).start
+        Watcher::FileWatcher.new(path:, bare:, execute:).start
       end
 
       def write(output, html)

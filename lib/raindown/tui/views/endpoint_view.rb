@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../events'
-require_relative '../workers/worker'
+require_relative '../../workers/worker'
 
 module Raindown
   module TUI
@@ -40,7 +40,7 @@ module Raindown
         @language = lines.first.to_s[FENCE, 1]
         @response = @language ? lines[1...-1] : lines
         @error = nil
-      rescue Worker::Error => e
+      rescue Workers::Worker::Error => e
         @response = []
         @error = e.message
       end

@@ -1,19 +1,20 @@
 # frozen_string_literal: true
 
-require_relative '../../actions'
-require_relative '../../bare_directives'
-require_relative '../../chart/chart'
-require_relative '../../document'
-require_relative '../../front_matter'
-require_relative '../../node_blocks'
-require_relative '../../nodes'
-require_relative '../../pages'
-require_relative '../../projects'
-require_relative '../../stat'
-require_relative '../card'
-require_relative '../endpoint'
-require_relative '../../code_blocks'
-require_relative '../../endpoint/curl'
+require_relative '../actions'
+require_relative '../bare_directives'
+require_relative '../chart/chart'
+require_relative '../document'
+require_relative '../front_matter'
+require_relative '../node_blocks'
+require_relative '../nodes'
+require_relative '../pages'
+require_relative '../projects'
+require_relative '../workers/workers'
+require_relative '../stat'
+require_relative 'card'
+require_relative 'endpoint'
+require_relative '../code_blocks'
+require_relative '../endpoint/curl'
 
 module Raindown
   module TUI
@@ -23,6 +24,9 @@ module Raindown
       Outline = Data.define(:lines, :headings, :directives)
 
       attr_reader :root
+
+      # Workers for the projects in the folder, each answering as a Project.
+      def self.workers(root:, **) = Workers.new(root:, **) { new(root: it) }
 
       # The projects inside this one have workers of their own, so their files are left out.
       def initialize(root:)

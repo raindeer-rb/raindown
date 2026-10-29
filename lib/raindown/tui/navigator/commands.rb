@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../../actions'
+require_relative '../../watcher/changes'
 
 module Raindown
   module TUI
@@ -88,11 +89,11 @@ module Raindown
       # A change to a project's nodes loads them again, and a saved Markdown file's written back, like when it's watched,
       # and the files and endpoints are read again for the files added, removed or changed.
       def watched(paths)
-        markdown = paths.select { Projects.markdown?(it, root: Projects.root(it) || root) }
-        return reload if paths.any? { Projects.node?(it, root: Projects.root(it) || root) }
-        return if markdown.empty?
+        changes = Watcher.changes(paths, root:)
+        return reload if changes.any?(&:nodes?)
+        return if changes.empty?
 
-        markdown.select { File.exist?(it) }.each { write_back_saved(it) }
+        changes.select(&:saved?).each { write_back_saved(it.path) }
         @files.load
         @endpoints.load
       end

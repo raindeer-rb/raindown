@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'raindown/supervisor'
+require 'raindown/watcher/supervisor'
 require 'fileutils'
 require 'tmpdir'
 
-RSpec.describe Raindown::Supervisor do
+RSpec.describe Raindown::Watcher::Supervisor do
   subject(:supervisor) { described_class.new(directory: @dir) }
 
   around do |example|
@@ -73,7 +73,7 @@ RSpec.describe Raindown::Supervisor do
         supervisor.handle([raindeer])
         eventually { File.read(raindeer).include?('Hi') }
       end.to output.to_stdout_from_any_process
-      expect(supervisor.workers.keys).to eq([File.join(@dir, 'raindeer')])
+      expect(supervisor.workers.started.keys).to eq([File.join(@dir, 'raindeer')])
     end
   end
 
@@ -87,7 +87,7 @@ RSpec.describe Raindown::Supervisor do
       expect { supervisor.handle([raindeer]) }.to output("[raindeer] Updated notes.rd\n").to_stdout
 
       expect(File.read(raindeer)).to eq("# Notes\n\nShout:\nShared process\n")
-      expect(supervisor.workers.values).to all(be_a(Raindown::ProjectWorker))
+      expect(supervisor.workers.started.values).to all(be_a(Raindown::Workers::Worker))
     end
 
     it "says to restart when a project's nodes change, as they can't be unloaded" do
@@ -107,7 +107,7 @@ RSpec.describe Raindown::Supervisor do
 
     supervisor.handle([outside, dependency, File.join(@dir, 'raindeer', 'notes.txt')])
 
-    expect(supervisor.workers).to be_empty
+    expect(supervisor.workers.started).to be_empty
     expect([File.read(outside), File.read(dependency)]).to all(include("<{ toc: }>\n<{ :toc }>"))
   end
 end

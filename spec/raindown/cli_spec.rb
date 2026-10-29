@@ -13,41 +13,41 @@ RSpec.describe Raindown::CLI do
 
   let(:path) { File.join(@dir, 'sample.md').tap { |file| File.write(file, "# Title\n") } }
   let(:output_path) { File.join(@dir, 'out.html') }
-  let(:watcher) { instance_double(Raindown::Watcher, start: nil) }
+  let(:watcher) { instance_double(Raindown::Watcher::FileWatcher, start: nil) }
 
-  let(:supervisor) { instance_double(Raindown::Supervisor, start: nil) }
+  let(:supervisor) { instance_double(Raindown::Watcher::Supervisor, start: nil) }
 
   before do
-    allow(Raindown::Watcher).to receive(:new).and_return(watcher)
-    allow(Raindown::Supervisor).to receive(:new).and_return(supervisor)
+    allow(Raindown::Watcher::FileWatcher).to receive(:new).and_return(watcher)
+    allow(Raindown::Watcher::Supervisor).to receive(:new).and_return(supervisor)
   end
 
   describe '.run' do
     it 'watches the file' do
       described_class.run(['watch', path])
 
-      expect(Raindown::Watcher).to have_received(:new).with(path:, bare: false, execute: false)
+      expect(Raindown::Watcher::FileWatcher).to have_received(:new).with(path:, bare: false, execute: false)
       expect(watcher).to have_received(:start)
     end
 
     it 'accepts the options in any order' do
       [['--bare', '-x'], ['--execute', '--bare']].each { |args| described_class.run(['watch', path, *args]) }
 
-      expect(Raindown::Watcher).to have_received(:new).with(path:, bare: true, execute: true).twice
+      expect(Raindown::Watcher::FileWatcher).to have_received(:new).with(path:, bare: true, execute: true).twice
     end
 
     it 'watches the projects in a directory' do
       described_class.run(['watch', @dir, '-x'])
 
-      expect(Raindown::Supervisor).to have_received(:new).with(directory: @dir, bare: false, execute: true)
+      expect(Raindown::Watcher::Supervisor).to have_received(:new).with(directory: @dir, bare: false, execute: true)
       expect(supervisor).to have_received(:start)
     end
 
     it 'watches the current directory without a path' do
       [[], ['--bare']].each { |args| described_class.run(['watch', *args]) }
 
-      expect(Raindown::Supervisor).to have_received(:new).with(directory: '.', bare: false, execute: false)
-      expect(Raindown::Supervisor).to have_received(:new).with(directory: '.', bare: true, execute: false)
+      expect(Raindown::Watcher::Supervisor).to have_received(:new).with(directory: '.', bare: false, execute: false)
+      expect(Raindown::Watcher::Supervisor).to have_received(:new).with(directory: '.', bare: true, execute: false)
     end
 
     it 'aborts when --html is given a directory' do
@@ -60,7 +60,7 @@ RSpec.describe Raindown::CLI do
 
         expect { described_class.run([path, '--html']) }.to output(/Table of contents/).to_stdout
         expect(File.read(path)).to include('- [Section](#section)')
-        expect(Raindown::Watcher).not_to have_received(:new)
+        expect(Raindown::Watcher::FileWatcher).not_to have_received(:new)
       end
 
       it 'writes to the given output path with the other options in any order' do
@@ -85,7 +85,7 @@ RSpec.describe Raindown::CLI do
         expect { run_with_stdin("# Title\n\n<{ :toc }>\n\n## Section\n", [path, '--stdin']) }
           .to output(/Table of contents.*Section/m).to_stdout
         expect(File.read(path)).to eq("# Title\n")
-        expect(Raindown::Watcher).not_to have_received(:new)
+        expect(Raindown::Watcher::FileWatcher).not_to have_received(:new)
       end
 
       it 'allows bare directives by the extension of a file that does not exist' do
@@ -163,7 +163,7 @@ RSpec.describe Raindown::CLI do
     describe 'tui' do
       before do
         require 'raindown/tui'
-        allow(Raindown::TUI).to receive(:start)
+        allow(Raindown::TUI).to receive(:start).and_return(true)
       end
 
       it 'starts the terminal UI on the path, or the current directory, rather than watching' do
@@ -172,8 +172,15 @@ RSpec.describe Raindown::CLI do
 
         described_class.run([])
         expect(Raindown::TUI).to have_received(:start).with('.')
-        expect(Raindown::Watcher).not_to have_received(:new)
-        expect(Raindown::Supervisor).not_to have_received(:new)
+        expect(Raindown::Watcher::FileWatcher).not_to have_received(:new)
+        expect(Raindown::Watcher::Supervisor).not_to have_received(:new)
+      end
+
+      it 'watches the path instead without a terminal' do
+        allow(Raindown::TUI).to receive(:start).and_return(false)
+        described_class.run([@dir])
+
+        expect(Raindown::Watcher::Supervisor).to have_received(:new).with(directory: @dir, bare: false, execute: false)
       end
 
       it "leaves watching's options to watch" do
@@ -192,7 +199,7 @@ RSpec.describe Raindown::CLI do
         expect { described_class.run(args) }.to raise_error(SystemExit).and output(/Usage: raindown \[PATH\]/).to_stderr
       end
 
-      expect(Raindown::Watcher).not_to have_received(:new)
+      expect(Raindown::Watcher::FileWatcher).not_to have_received(:new)
     end
   end
 end

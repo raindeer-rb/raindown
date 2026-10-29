@@ -83,7 +83,7 @@ jobs:
           # Commonmarker's musl extension needs libgcc, and curses' needs ncurses, which bare Alpine doesn't include.
           run() {
             if [ "${{ matrix.alpine }}" = "true" ]; then
-              docker run --rm -v "$PWD:/work" -w /work alpine:3.22 sh -c 'apk add --no-cache -q libgcc ncurses-libs && "$@"' sh $bin "$@"
+              docker run --rm -v "$PWD:/work" -w /work alpine:3.22 sh -c 'apk add --no-cache -q libgcc ncurses-libs && exec "$@"' sh $bin "$@"
             else
               $bin "$@"
             fi
@@ -94,10 +94,15 @@ jobs:
           grep -q 'Usage: raindown' <<< "$help"
           run examples/markdown.md --html out.html
           grep 'Table of contents' out.html
-          # Without a terminal the TUI stops once curses has loaded, which shows its extension was packaged.
-          tui=$(run examples < /dev/null 2>&1 || true)
-          echo "$tui"
-          grep -q 'needs a terminal' <<< "$tui"
+          # Without a terminal it says so once curses has loaded, which shows its extension was packaged, then watches.
+          # It runs in a subshell, as run is a function, so the subshell's children are stopped with it.
+          run examples < /dev/null > tui.log 2>&1 &
+          pid=$!
+          for _ in $(seq 60); do grep -q 'needs a terminal' tui.log && break; sleep 1; done
+          pkill -P "$pid" 2>/dev/null || true
+          kill "$pid" 2>/dev/null || true
+          cat tui.log
+          grep -q 'needs a terminal' tui.log
 
       - uses: actions/upload-artifact@v4
         with:

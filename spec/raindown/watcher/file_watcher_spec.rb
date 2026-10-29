@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'raindown/watcher'
+require 'raindown/watcher/file_watcher'
 require 'listen'
 require 'tmpdir'
 
-RSpec.describe Raindown::Watcher do
+RSpec.describe Raindown::Watcher::FileWatcher do
   around do |example|
     Dir.mktmpdir do |dir|
       @dir = dir

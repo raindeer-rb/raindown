@@ -2,7 +2,7 @@
 
 require_relative '../events'
 require_relative '../views/endpoint_view'
-require_relative '../workers/worker'
+require_relative '../../workers/worker'
 
 module Raindown
   module TUI
@@ -110,7 +110,7 @@ module Raindown
         items = (outline.headings + outline.directives).sort_by(&:line)
         [Place.new(text: where, where: '', open: Open.new(path:, line: nil)),
          *items.map { Place.new(text: item_text(it), where: "#{where}:#{it.line}", open: Open.new(path:, line: it.line)) }]
-      rescue Worker::Error
+      rescue Workers::Worker::Error
         []
       end
 

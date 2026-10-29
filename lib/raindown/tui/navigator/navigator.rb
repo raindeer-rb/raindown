@@ -10,7 +10,7 @@ require_relative '../views/list_view'
 require_relative 'project_menu'
 require_relative 'search'
 require_relative 'views'
-require_relative '../workers/workers'
+require_relative '../project'
 
 module Raindown
   module TUI
@@ -37,7 +37,7 @@ module Raindown
       attr_reader :hovered
 
       # Saves tells of the files saved in the folder, which are written back on the next tick, like when it's watched.
-      def initialize(root:, path: nil, workers: Workers.new(root:), saves: nil)
+      def initialize(root:, path: nil, workers: Project.workers(root:), saves: nil)
         @workers = workers
         @saves = saves
         @files = FileTree.new(root:, workers:)

@@ -4,10 +4,11 @@ require 'raindown/tui'
 
 RSpec.describe Raindown::TUI do
   describe '.start' do
-    it 'stops without a terminal, once curses has loaded' do
+    it 'says it needs a terminal, once curses has loaded, and returns false to be watched instead' do
       allow($stdin).to receive(:tty?).and_return(false)
 
-      expect { described_class.start('.') }.to raise_error(SystemExit).and output("raindown needs a terminal\n").to_stderr
+      expect { expect(described_class.start('.')).to be(false) }
+        .to output("raindown needs a terminal, so it's watching instead\n").to_stderr
       expect(defined?(Curses)).to eq('constant')
     end
   end

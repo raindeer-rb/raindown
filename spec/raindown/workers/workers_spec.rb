@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/workers/workers'
+require 'raindown/tui/project'
 require 'fileutils'
 require 'tmpdir'
 
-RSpec.describe Raindown::TUI::Workers do
-  subject(:workers) { described_class.new(root: @dir) }
+RSpec.describe Raindown::Workers do
+  subject(:workers) { Raindown::TUI::Project.workers(root: @dir) }
 
   around do |example|
     Dir.mktmpdir do |dir|
@@ -64,7 +64,7 @@ RSpec.describe Raindown::TUI::Workers do
 
     it "raises a project's errors, and starts a worker that stopped again" do
       expect { workers.for(raindeer).call(:outline, File.join(@dir, 'missing.md')) }
-        .to raise_error(Raindown::TUI::Worker::Error, /No such file/)
+        .to raise_error(Raindown::Workers::Worker::Error, /No such file/)
 
       worker = workers.for(raindeer)
       worker.call(:charts)

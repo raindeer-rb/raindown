@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require 'listen'
-require_relative '../supervisor'
+require_relative '../watcher/changes'
 
 module Raindown
   module TUI
@@ -10,9 +9,7 @@ module Raindown
     class Saves
       def initialize(root)
         @queue = Thread::Queue.new
-        @listener = Listen.to(root, ignore: Supervisor::IGNORE) do |modified, added, removed|
-          (modified + added + removed).each { @queue << it }
-        end
+        @listener = Watcher.listen(root) { |paths| paths.each { @queue << it } }
         @listener.start
       end
 

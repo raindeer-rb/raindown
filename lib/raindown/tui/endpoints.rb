@@ -3,7 +3,7 @@
 require_relative 'endpoint'
 require_relative 'views/endpoint_view'
 require_relative 'row'
-require_relative 'workers/worker'
+require_relative '../workers/worker'
 
 module Raindown
   module TUI
@@ -22,7 +22,7 @@ module Raindown
       def load
         @endpoints = @workers.each.flat_map do |worker|
           worker.call(:endpoints)
-        rescue Worker::Error
+        rescue Workers::Worker::Error
           []
         end
       end

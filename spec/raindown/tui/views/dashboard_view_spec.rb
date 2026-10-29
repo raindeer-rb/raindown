@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'raindown/tui/views/dashboard_view'
-require 'raindown/tui/workers/workers'
+require 'raindown/tui/project'
 require 'fileutils'
 require 'tmpdir'
 
@@ -32,7 +32,7 @@ RSpec.describe Raindown::TUI::DashboardView do
     end
   end
 
-  let(:dashboard) { described_class.new(root: @root, workers: Raindown::TUI::Workers.new(root: @root)).tap(&:load) }
+  let(:dashboard) { described_class.new(root: @root, workers: Raindown::TUI::Project.workers(root: @root)).tap(&:load) }
 
   before do
     write('data/sales.csv', "month,sales\nJan,4\nFeb,8\n")
