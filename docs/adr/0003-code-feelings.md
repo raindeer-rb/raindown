@@ -38,14 +38,15 @@ Each function or method in the batch (see The week's batch below) is a cluster o
 The digits aren't uniform, which keeps the show's feel:
 
 - **Noise:** about four cells in ten are one to three away from their method's drift. Each cell's checksum decides which, so a cell never changes from one draw to the next (`FeelingsRenderer::NOISE`).
-- **Tremble:** a method that drifts 7 or more is restless, and its cells' digits tremble now and then, about once a minute each, a column either way for four steps of 0.15 seconds, as if they're trying to escape (`Motion`). Code feelings is drawn at 10 frames a second, and the rain at 20, whether it's used with the keys or the mouse, so the frame rate doesn't jump between them.
-- **Flee:** when the mouse is over a method, the digits beside it in its row move to the far side of their cells, away from it, where they tremble twice as quickly, about every 0.6 seconds, and every cell around it, above, below and diagonally too, is bold.
+- **Still:** a method that drifts 7 or more is restless, but its digits stay in the middle of their cells unless they're fleeing the mouse, below. Restless digits used to tremble now and then on their own too, on each cell's own clock.
+- **Flicker:** a restless method's cells' digits also drop one lower for half a second now and then, about every 30 seconds each, at their own moment (`Motion#flicker`). An earlier version flickered them every 6 seconds.
+- **Flee:** when the mouse is over a method, the digits beside it in its row move to the far side of their cells, away from it, where they tremble, a column either way for four steps of 0.09 seconds, about every 0.7 seconds, and every cell around it, above, below and diagonally too, is bold. Code feelings is drawn at 12 frames a second, a little faster than those trembles' steps, so none are skipped, and the rain at 20. Each frame's wait counts from when the last one started drawing, so the time it takes to draw doesn't slow the rate (`Screen#wait`).
 
 **Cells are 3 columns wide and 1 line tall**, with the digit small in the middle, and the grid has a blank line above and below it. When the mouse is over a method, its digits are magnified, 3 columns wide and 3 lines tall, in the same block digits as the README's stats (`Raindown::Stat::DIGITS`), across their cell and over the cells above and below it. Each line of a magnified digit clicks whatever cell it covers (`Magnifier#magnify`), so the mouse over it is over that cell, and can move onto the digits it covers. Cells were 6 by 2 for a while, so magnified digits covered only blank space, but that quartered how many fit, and so the size of a batch.
 
 ### Styles
 
-The screen's text, digits, lines and titles are lavender (the `feelings` style, 256-colour 183, or magenta in 8 colours), apart from the batch's progress, in grey. The selected method's cells are white on the selection's blue, or on green once it's felt, so they join into one block. The digits under the mouse are magnified, with no highlight behind them, in lavender and purple (256-colour 135, or blue in 8 colours) by turns, like a chessboard's squares, since magnified digits beside and below each other touch. A felt method's cells go blank, but stay in place and stay selectable. Selecting one shows its digits and its code again. Nothing in the grid moves as methods are felt, so the batch visibly empties.
+The screen's text, digits, lines and titles are lavender (the `feelings` style, 256-colour 183, or magenta in 8 colours), apart from the batch's progress, in grey. The selected method's cells are white on the selection's blue, or on green once it's felt, so they join into one block. The digits under the mouse are magnified, unless they are the selected method's, which keep the selection's style, with no highlight behind them, in lavender and purple (256-colour 135, or blue in 8 colours) by turns, like a chessboard's squares, since magnified digits beside and below each other touch. A felt method's cells go blank, but stay in place and stay selectable. Selecting one shows its digits and its code again. Nothing in the grid moves as methods are felt, so the batch visibly empties.
 
 ### Feeling a method
 
@@ -100,8 +101,6 @@ The box below the grid shows the selected method's code, **highlighted with Roug
 ### The mouse
 
 Code feelings is the first view to use mouse **hover**. While the TUI is open, it asks the terminal for "any motion" tracking (`\e[?1003h`) as well as clicks, because older ncurses, like macOS's, doesn't ask every terminal for it. Each movement becomes a `Hover` event carrying whatever a click at that spot would send. Tracking is turned off when the TUI quits, and while the screen is suspended for the editor or Claude Code, so they aren't sent mouse codes.
-
-The code box shows the code of the method the mouse is over, or else the selected method's, while no note's being typed (`CodeBox#hovered_method`). It keeps the selected method's height, cutting or padding the hovered method's first lines to fit, so the grid above doesn't scroll under the mouse.
 
 ### Keys
 
