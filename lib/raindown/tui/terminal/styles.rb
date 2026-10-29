@@ -52,6 +52,8 @@ module Raindown
       BASIC_FEELINGS = { feelings: Curses::COLOR_MAGENTA, feelings_purple: Curses::COLOR_BLUE }.freeze
       BRIGHT_WHITE = 15
       DARK_GREY = 238
+      # Code feelings' red when the screen's too small for it, or the 8 colours' red.
+      DARK_RED = 88
 
       module_function
 
@@ -66,7 +68,7 @@ module Raindown
       # Without colours, a style that isn't here is the terminal's own.
       def plain
         Hash.new(Curses::A_NORMAL).merge(
-          title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, felt_selected: Curses::A_REVERSE,
+          title: Curses::A_REVERSE | Curses::A_BOLD, selected: Curses::A_REVERSE, felt_selected: Curses::A_REVERSE, too_small: Curses::A_REVERSE,
           selected_button: Curses::A_REVERSE,
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, page: Curses::A_BOLD,
@@ -84,10 +86,11 @@ module Raindown
         )
       end
 
-      # The selected row, its buttons, and a selected method in Code feelings that's already been felt.
+      # The selected row, its buttons, a selected method in Code feelings that's already been felt, and Code feelings' red
+      # when the screen's too small for it.
       def selections
         { selected: pair(:selected) | white_bold, felt_selected: pair(:felt_selected) | white_bold,
-          selected_button: pair(:selected_button) | Curses::A_BOLD }
+          too_small: pair(:too_small) | white_bold, selected_button: pair(:selected_button) | Curses::A_BOLD }
       end
 
       # The styles without a colour of their own, or that are only bold, dim or the like, in the text's colour, which is
@@ -141,7 +144,7 @@ module Raindown
          *(many ? CODE.merge(BRIGHT, FEELINGS, ACCENTS) : BASIC_CODE.merge(BASIC_BRIGHT, BASIC_FEELINGS, BASIC_ACCENTS))
            .map { |name, color| [name, color, -1] },
          [:text, text, -1],
-         [:selected, white, blues[:selected]], [:felt_selected, white, blues[:felt]],
+         [:selected, white, blues[:selected]], [:felt_selected, white, blues[:felt]], [:too_small, white, many ? DARK_RED : Curses::COLOR_RED],
          [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
          [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, text, -1],
          [:selected_divider, text, blues[:selected]], [:cursor_divider, text, DARK_GREY], [:shine, white, -1]]

@@ -39,6 +39,12 @@ module Raindown
       # How far a cell's digit is from its method's drift, by its roll out of NOISE_ROLL, so about four in ten are off.
       NOISE = { 0 => -1, 1 => 1, 2 => -1, 3 => 1, 4 => -2, 5 => 2, 6 => -3, 7 => 3 }.freeze
       NOISE_ROLL = 20
+      # The smallest grid that's worth refining, below which the pane's red, saying the screen's too small, under a
+      # window with arrows out from its corners, when there's room for it.
+      MIN_COLUMNS = 15
+      MIN_ROWS = 5
+      TOO_SMALL = 'Screen too small.'
+      TOO_SMALL_ART = ['↖       ↗', '  ┌───┐  ', '  └───┘  ', '↙       ↘', ''].freeze
       BUTTONS = [['Tab', 'Pane', :tab], ['1-5', 'Feel', nil], ['e', 'Edit', :edit], ['x', 'Fix', :execute],
                  ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
 
@@ -52,8 +58,10 @@ module Raindown
         padded([segment('', :blank, width: [width - progress_width, 0].max), segment(progress, :body, width: progress_width)])
       end
 
-      # The cells come first, as the first draw picks the batch to fill them.
+      # The cells come first, as the first draw picks the batch to fill them, unless the screen's too small for a grid.
       def lines
+        return too_small if too_small?
+
         cells = view.cells(columns, filled_rows)
         return instead if view.code_methods.empty? || view.celebration
 
@@ -149,6 +157,19 @@ module Raindown
       def digit(owner, index)
         drift = view.code_methods[owner].drift
         (drift + NOISE.fetch(Zlib.crc32("#{owner}:#{index}") % NOISE_ROLL, 0)).clamp(0, 9) + flicker(owner, index)
+      end
+
+      def too_small? = columns < MIN_COLUMNS || filled_rows < MIN_ROWS
+
+      # The pane in red, saying the screen's too small, in the middle, with the cells laid out without picking a batch for
+      # so small a grid, so the keys still move between them.
+      def too_small
+        view.cells(columns)
+        shown = [*TOO_SMALL_ART, TOO_SMALL]
+        shown = [TOO_SMALL] if shown.length > height
+        lines = Array.new(height, '')
+        lines[(height - shown.length) / 2, shown.length] = shown
+        lines.map { [segment(it.center(width), :too_small)] }
       end
 
       def blank(message)

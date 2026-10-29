@@ -408,12 +408,11 @@ RSpec.describe Raindown::TUI::Layout do
     it 'wraps a long note in as many lines as it takes, lined up after the question' do
       navigator.next_step(:bin5)
       'two negations and a hidden dependency on rows'.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
-      lines = described_class.new(navigator, width: 60, height: 24).lines
+      lines = described_class.new(navigator, width: 70, height: 24).lines
       note = main(lines).drop_while { !it.include?('Why MALICE?') }.take_while { !it.include?('╰') }
 
-      expect(note).to eq([' │ Why MALICE? > two negations and a │', ' │               hidden dependency   │',
-                          ' │               on rows▏            │'])
-      expect(text(lines).map { width(it) }).to all(eq(60))
+      expect(note).to eq([' │ Why MALICE? > two negations and a hidden │', ' │               dependency on rows▏        │'])
+      expect(text(lines).map { width(it) }).to all(eq(70))
     end
 
     it "magnifies the digits the mouse is over, over the cells above and below them, but not when they're selected" do
@@ -513,6 +512,16 @@ RSpec.describe Raindown::TUI::Layout do
       short, long = fresh.view.code_methods.partition { it.lines.length < 5 }.map { it.last.name }
 
       expect(shown[long]).to eq(shown[short])
+    end
+
+    it 'turns the pane red, saying the screen is too small, when the grid would be under 15 columns or 5 rows' do
+      [[60, 24], [90, 20]].each do |width, height|
+        pane = described_class.new(navigator, width:, height:).lines.map { |line| line.drop_while { it.text != '▏' }.drop(1) }
+        middle = pane.find { |line| line.any? { it.text.include?('Screen too small.') } }
+
+        expect([pane.drop(2).flatten.map(&:style).uniq, middle.first.text.strip]).to eq([%i[too_small], 'Screen too small.'])
+      end
+      expect(text(described_class.new(navigator, width: 90, height: 24).lines).join).not_to include('Screen too small.')
     end
 
     it 'picks the batch again to fill a resized screen, once it has kept its size for 2 seconds, keeping the selection' do
