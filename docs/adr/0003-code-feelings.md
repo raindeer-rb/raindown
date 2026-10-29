@@ -101,6 +101,8 @@ The box below the grid shows the selected method's code, **highlighted with Roug
 
 Code feelings is the first view to use mouse **hover**. While the TUI is open, it asks the terminal for "any motion" tracking (`\e[?1003h`) as well as clicks, because older ncurses, like macOS's, doesn't ask every terminal for it. Each movement becomes a `Hover` event carrying whatever a click at that spot would send. Tracking is turned off when the TUI quits, and while the screen is suspended for the editor or Claude Code, so they aren't sent mouse codes.
 
+The code box shows the code of the method the mouse is over, or else the selected method's, while no note's being typed (`CodeBox#hovered_method`). It keeps the selected method's height, cutting or padding the hovered method's first lines to fit, so the grid above doesn't scroll under the mouse.
+
 ### Keys
 
 | Key | Does |

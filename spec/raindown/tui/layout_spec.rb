@@ -421,6 +421,24 @@ RSpec.describe Raindown::TUI::Layout do
       expect([magnified(lines, 1), small]).to match([[nil] * 3, /\A {1,3}\d {2,4}\z/])
     end
 
+    it "shows the code of the method the mouse is over, in the selected one's lines, or else the selected method's" do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), "def short = 1\ndef long\n#{"  1\n" * 30}end\n")
+      navigator.next_step(:reload)
+      navigator.view.cursor = navigator.view.code_methods.index { it.name == 'short' }
+      long = navigator.view.code_methods.index { it.name == 'long' }
+      selected = main(described_class.new(navigator, width: 90, height: 24).lines)
+
+      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, long, :focus)))
+      hovered = main(described_class.new(navigator, width: 90, height: 24).lines)
+      expect(hovered.find { it.include?('╭─') }).to include('long')
+      expect(hovered.join).to include('def long').and(satisfy { !it.include?('def short') })
+      expect(hovered.length).to eq(selected.length)
+      expect(hovered.index { it.include?('╭─') }).to eq(selected.index { it.include?('╭─') })
+
+      navigator.next_step(Raindown::TUI::Hover.new(target: nil))
+      expect(main(described_class.new(navigator, width: 90, height: 24).lines).join).to include('def short')
+    end
+
     it 'has the digits beside the method the mouse is over flee from it, trembling often, and the cells around it bold' do
       File.write(File.join(@root, 'lib', 'shapes.rb'), (1..5).map { "def m#{it} = #{it}\n" }.join)
       navigator.next_step(:reload)
