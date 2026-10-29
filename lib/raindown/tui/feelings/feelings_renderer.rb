@@ -34,8 +34,6 @@ module Raindown
       # The columns a cell takes, on a line of its own, its digit small in the middle, which is magnified in a stat's block
       # digits across the cell and over the cells above and below it when the mouse is over its method.
       CELL = 3
-      # The code box's lines of code that a batch is sized for.
-      FILLED_CODE_LINES = 1
       # The drift from which a method's cells are restless, and flicker now and then.
       RESTLESS = 7
       # How far a cell's digit is from its method's drift, by its roll out of NOISE_ROLL, so about four in ten are off.
@@ -91,7 +89,7 @@ module Raindown
         first = first_row(cells, columns, rows)
         grid = magnified([padded([]), *grid_rows(cells, first, rows), padded([])], cells, first, rows)
 
-        [*grid, *Array.new(lines - grid.length) { padded([]) }].first(lines)
+        [*grid, *Array.new([lines - grid.length, 0].max) { padded([]) }].first(lines)
       end
 
       # The cells' lines of the rows from the first.
@@ -99,9 +97,10 @@ module Raindown
 
       def columns = [(width - 1) / CELL, 1].max
 
-      # The grid's rows with a code box of FILLED_CODE_LINES, between its top and bottom, which a batch fills. A taller box
-      # takes rows from the grid, which then scrolls to keep the selected method in view.
-      def filled_rows = [height - BIN_LINES - 4 - FILLED_CODE_LINES, 1].max
+      # The grid's rows between its blank lines, above the code box, as tall as it always is until it's expanded, and the
+      # bins, which a batch fills. An expanded box takes rows from the grid, which then scrolls to keep the selected method
+      # in view.
+      def filled_rows = [height - 2 - CODE_LINES - BOX_LINES - BIN_LINES, 1].max
 
       # The first row that shows, with the selected method's row in the middle where there's room.
       def first_row(cells, columns, rows)

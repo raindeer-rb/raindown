@@ -501,7 +501,21 @@ RSpec.describe Raindown::TUI::Layout do
       expect(digits.transpose.map { |cell| cell.tally.transform_keys { it - cell.max } }).to all(eq(0 => digits.length - 1, -1 => 1))
     end
 
-    it "shows a long method's first 8 lines, then how many more there are, clicked to show all that fit" do
+    it 'keeps the code box as tall as it gets until expanded, so neither it nor a full grid moves as the selection does' do
+      (1..300).each { File.write(File.join(@root, 'lib', "f#{it}.rb"), "def f#{it}\n#{"  1\n" * (it.odd? ? 10 : 1)}end\n") }
+      fresh = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
+      described_class.new(fresh, width: 90, height: 24).lines
+      shown = lambda do |name|
+        fresh.view.cursor = fresh.view.code_methods.index { it.name == name }
+        lines = described_class.new(fresh, width: 90, height: 24).lines
+        [grid_line(lines).filter_map { it.event&.index }, main(lines).index { it.include?('╭─ lib/') }]
+      end
+      short, long = fresh.view.code_methods.partition { it.lines.length < 5 }.map { it.last.name }
+
+      expect(shown[long]).to eq(shown[short])
+    end
+
+    it "shows a long method's first 6 lines, then how many more there are, clicked to show all that fit" do
       File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n#{(1..10).map { "    #{it}\n" }.join}  end\nend\n")
       navigator.next_step(:reload)
       box = lambda do |lines|
@@ -509,8 +523,8 @@ RSpec.describe Raindown::TUI::Layout do
       end
       lines = described_class.new(navigator, width: 90, height: 30).lines
 
-      expect(box.call(lines).length).to eq(9)
-      expect(box.call(lines).last(2)).to eq(['7', '[4 more lines]'])
+      expect(box.call(lines).length).to eq(7)
+      expect(box.call(lines).last(2)).to eq(['5', '[6 more lines]'])
       more = lines.flatten.find { it.text.include?('more lines') }
       expect([more.event, more.style]).to eq([click(:main, 0, :expand), :button])
 
@@ -519,7 +533,7 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'wraps a long line of code in the box at spaces, carrying on at its indent after an ellipsis' do
-      call = "    total = #{(1..30).map { "side#{it}" }.join(' + ')}"
+      call = "    total = #{(1..20).map { "side#{it}" }.join(' + ')}"
       File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area\n#{call}\n  end\nend\n")
       navigator.next_step(:reload)
       lines = described_class.new(navigator, width: 90, height: 30).lines

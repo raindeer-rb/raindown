@@ -14,7 +14,7 @@ module Raindown
     #    ╰───────────────────────────────────────────────────────────────────╯
     module CodeBox
       # The most of a method's code that shows, until it's expanded, and the rows the grid keeps when it is.
-      CODE_LINES = 8
+      CODE_LINES = 6
       MIN_GRID_ROWS = 2
       # The box's top and bottom, and the line of how many more lines there are.
       BOX_LINES = 3
@@ -25,9 +25,13 @@ module Raindown
       def code_box
         notes = []
         notes = note_lines if view.typing?
-        [box_top(view.selected), *code_lines(height - Bins::BIN_LINES - BOX_LINES - MIN_GRID_ROWS - notes.length), *notes,
-         box_edge('╰', '╯')]
+        code = code_lines(height - Bins::BIN_LINES - BOX_LINES - MIN_GRID_ROWS - notes.length)
+        [box_top(view.selected), *code, *blank_lines(code.length + notes.length), *notes, box_edge('╰', '╯')]
       end
+
+      # Blank lines after a short method's code and its note, so the box is always as tall as it gets until it's expanded,
+      # and the grid above stays still.
+      def blank_lines(used) = Array.new([CODE_LINES + 1 - used, 0].max) { boxed([]) }
 
       # The method's first lines, or all that fit in the room when it's expanded, highlighted and wrapped to fit the box,
       # then how many more there are, clicked to show them, or a line to show fewer again.
