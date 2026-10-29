@@ -13,7 +13,7 @@ module Raindown
     extend Trees
 
     USAGE = <<~TEXT
-      Usage: raindown [PATH]
+      Usage: raindown [PATH] [options]
              raindown watch [PATH] [options]
              raindown FILE --html [OUTPUT] [options]
              raindown init [DIRECTORY]
@@ -32,8 +32,8 @@ module Raindown
         --html [OUTPUT]     Render FILE to HTML once, writing to OUTPUT or else printing to stdout
         --stdin             Render Markdown from stdin to HTML once, without formatting FILE, which only needs
                             its extension (to allow bare directives) and can be unsaved. Add --html OUTPUT to write a file
-        --bare              Allow bare directives like :toc in Markdown files, when watching or rendering
-        -x, --execute       Run endpoint curl snippets that have no output yet, when watching or rendering
+        --bare              Allow bare directives like :toc in Markdown files
+        -x, --execute       Run endpoint curl snippets that have no output yet, as files are written back
         -h, --help          Show this message
         -v, --version       Show the version
 
@@ -64,26 +64,29 @@ module Raindown
       next if names.include?(:stdin) && names.include?(:execute)
       next if names.include?(:html) && names.include?(:html_to)
 
-      command = if names.include?(:stdin) then :render_stdin
-                elsif names.intersect?(%i[html html_to]) then :render
-                else :watch
-                end
+      # A path alone, with --bare or -x or neither, opens the terminal UI, and after "watch" it's watched.
+      commands = if names.include?(:stdin) then %i[render_stdin]
+                 elsif names.intersect?(%i[html html_to]) then %i[render]
+                 else %i[tui watch]
+                 end
       options = { bare: names.include?(:bare), execute: names.include?(:execute) }
-      pattern = [*('watch' if command == :watch), ':path', *flags].join(' ')
 
-      if names.include?(:html_to)
-        line(pattern) { |path, output| execute { send(command, path, output, **options) } }
-      else
-        line(pattern) { |path| execute { send(command, path, **options) } }
+      commands.each do |command|
+        pattern = [*('watch' if command == :watch), ':path', *flags].join(' ')
+        if names.include?(:html_to)
+          line(pattern) { |path, output| execute { send(command, path, output, **options) } }
+        else
+          line(pattern) { |path| execute { send(command, path, **options) } }
+        end
       end
     end
 
     def self.run(argv)
       return if command(argv)
 
-      # Without a path, like "raindown watch" or "raindown watch -x", the current directory is watched.
+      # Without a path, like "raindown", "raindown -x" or "raindown watch", it's the current directory.
       argv = ['watch', '.', *argv.drop(1)] if argv.first == 'watch' && (argv.size == 1 || argv[1].start_with?('-'))
-      argv = ['.', *argv] if argv.first.start_with?('-')
+      argv = ['.', *argv] if argv.empty? || argv.first.start_with?('-')
       argv = html_output(argv)
 
       super || abort("Unknown arguments: #{argv.join(' ')}\n\n#{USAGE}")
@@ -91,27 +94,17 @@ module Raindown
       report(e, path: argv.first)
     end
 
-    # The :path line would match help, version and init as the file, so they're checked first, then a path alone, or
-    # nothing, opens the terminal UI. Returns true when argv was one of them.
+    # The :path line would match help, version and init as the file, so they're checked first.
+    # Returns true when argv was one of them.
     def self.command(argv)
       abort(USAGE) if argv.intersect?(%w[-h --help])
 
-      path = tui_path(argv)
       if argv.intersect?(%w[-v --version]) then puts(VERSION)
       elsif argv.first == 'init' && argv.size <= 2 then init(argv[1])
-      elsif path then tui(path)
       else return false
       end
 
       true
-    end
-
-    # The path the terminal UI opens, from a path alone, or the current directory without one, or nil when argv is
-    # another command, or has options.
-    def self.tui_path(argv)
-      return if argv.size > 1 || argv.first.to_s.start_with?('-') || argv.first == 'watch'
-
-      argv.first || '.'
     end
 
     # Shows an error in a file as one line, rather than a backtrace, unless RAINDOWN_DEBUG is set.
@@ -143,11 +136,11 @@ module Raindown
     end
 
     # The terminal UI loads curses, so it's only required when it starts. Without a terminal, the path's watched instead.
-    def self.tui(path)
+    def self.tui(path, bare: false, execute: false)
       abort("File not found: #{path}") unless File.exist?(path)
 
       require_relative 'tui'
-      TUI.start(path) || watch(path)
+      TUI.start(path, bare:, execute:) || watch(path, bare:, execute:)
     end
 
     class << self

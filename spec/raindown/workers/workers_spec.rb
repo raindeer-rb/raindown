@@ -74,4 +74,16 @@ RSpec.describe Raindown::Workers do
       expect(worker.call(:charts)[:cards].length).to eq(1)
     end
   end
+
+  it 'allows bare directives in any file, like with --bare, when its projects are asked to' do
+    notes = File.join(@dir, 'notes.md').tap { File.write(it, "# Notes\n\ntoc:\n:toc\n\n## Added\n") }
+    expect(workers.for(notes).call(:outline, notes).directives).to be_empty
+
+    bare = Raindown::TUI::Project.workers(root: @dir, bare: true)
+    expect(bare.for(notes).call(:outline, notes).directives.map(&:name)).to eq(%w[toc])
+    bare.for(notes).call(:write_back, notes)
+    expect(File.read(notes)).to include('- [Added](#added)')
+  ensure
+    bare&.stop
+  end
 end

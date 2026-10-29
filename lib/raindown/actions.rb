@@ -20,9 +20,10 @@ module Raindown
 
     module_function
 
-    # Writes back the whole file, like saving it while it's watched.
-    def write_back(path)
-      Rewriter.update(path:, metadata: Pages.for(path))
+    # Writes back the whole file, like saving it while it's watched, with bare directives allowed, and endpoints with no
+    # response run, when asked, like with --bare and -x.
+    def write_back(path, bare: false, execute: false)
+      Rewriter.update(path:, bare:, execute:, metadata: Pages.for(path))
     end
 
     # Runs one endpoint's request and writes its response, replacing any response it had.

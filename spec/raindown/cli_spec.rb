@@ -168,24 +168,26 @@ RSpec.describe Raindown::CLI do
 
       it 'starts the terminal UI on the path, or the current directory, rather than watching' do
         described_class.run([path])
-        expect(Raindown::TUI).to have_received(:start).with(path)
+        expect(Raindown::TUI).to have_received(:start).with(path, bare: false, execute: false)
 
         described_class.run([])
-        expect(Raindown::TUI).to have_received(:start).with('.')
+        expect(Raindown::TUI).to have_received(:start).with('.', bare: false, execute: false)
         expect(Raindown::Watcher::FileWatcher).not_to have_received(:new)
         expect(Raindown::Watcher::Supervisor).not_to have_received(:new)
       end
 
-      it 'watches the path instead without a terminal' do
+      it 'watches the path instead without a terminal, with its options' do
         allow(Raindown::TUI).to receive(:start).and_return(false)
-        described_class.run([@dir])
+        described_class.run([@dir, '--bare'])
 
-        expect(Raindown::Watcher::Supervisor).to have_received(:new).with(directory: @dir, bare: false, execute: false)
+        expect(Raindown::Watcher::Supervisor).to have_received(:new).with(directory: @dir, bare: true, execute: false)
       end
 
-      it "leaves watching's options to watch" do
-        expect { described_class.run(['-x']) }.to raise_error(SystemExit).and output(/Unknown arguments: \. -x/).to_stderr
-        expect(Raindown::TUI).not_to have_received(:start)
+      it 'passes --bare and -x to the terminal UI, in any order, with or without a path' do
+        [[path, '--bare', '-x'], [path, '-x', '--bare'], ['-x']].each { described_class.run(it) }
+
+        expect(Raindown::TUI).to have_received(:start).with(path, bare: true, execute: true).twice
+        expect(Raindown::TUI).to have_received(:start).with('.', bare: false, execute: true)
       end
 
       it 'stops when the path does not exist' do

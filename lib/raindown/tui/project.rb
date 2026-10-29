@@ -25,12 +25,17 @@ module Raindown
 
       attr_reader :root
 
-      # Workers for the projects in the folder, each answering as a Project.
-      def self.workers(root:, **) = Workers.new(root:, **) { new(root: it) }
+      # Workers for the projects in the folder, each answering as a Project, which allows bare directives in any file,
+      # and runs endpoints with no response as it writes back, when asked, like with --bare and -x.
+      def self.workers(root:, bare: false, execute: false, **)
+        Workers.new(root:, **) { new(root: it, bare:, execute:) }
+      end
 
       # The projects inside this one have workers of their own, so their files are left out.
-      def initialize(root:)
+      def initialize(root:, bare: false, execute: false)
         @root = root
+        @bare = bare
+        @execute = execute
         @load_errors = []
         @file_errors = []
         Nodes.load(File.join(root, Nodes::FOLDER))
@@ -40,7 +45,7 @@ module Raindown
 
       # A file's lines, headings and directives.
       def outline(path)
-        document = Document.read(path)
+        document = Document.read(path, bare: @bare)
         Outline.new(lines: File.readlines(path, chomp: true), headings: document.headings, directives: document.directives)
       end
 
@@ -60,19 +65,19 @@ module Raindown
       def endpoints
         Projects.files(root).flat_map do |path|
           lines = File.readlines(path, encoding: Encoding::UTF_8)
-          Document.read(path).directives.select(&:endpoint?).filter_map { |directive| endpoint(path, lines, directive) }
+          Document.read(path, bare: @bare).directives.select(&:endpoint?).filter_map { |directive| endpoint(path, lines, directive) }
         rescue StandardError
           []
         end
       end
 
       def write_back(path)
-        Actions.write_back(path)
+        Actions.write_back(path, bare: @bare, execute: @execute)
       end
 
       # Runs the endpoint on the line, replacing its response.
       def execute(path, line)
-        directive = Document.read(path).directives.find { it.line == line && it.endpoint? }
+        directive = Document.read(path, bare: @bare).directives.find { it.line == line && it.endpoint? }
         raise Actions::NotAnEndpoint, "There's no endpoint on line #{line}" unless directive
 
         Actions.execute(path, directive)
@@ -88,7 +93,7 @@ module Raindown
 
       def charts_in(path)
         content = File.read(path, encoding: Encoding::UTF_8)
-        bare = BareDirectives.enabled?(path:, content:)
+        bare = @bare || BareDirectives.enabled?(path:, content:)
         lines = content.lines
         headings = Document.parse(content, bare:).headings
 
