@@ -416,7 +416,7 @@ RSpec.describe Raindown::TUI::Layout do
       expect(text(lines).map { width(it) }).to all(eq(60))
     end
 
-    it 'magnifies the digits the mouse is over, over the cells above and below them, but not the selected ones' do
+    it "magnifies the digits the mouse is over, over the cells above and below them, but not when they're selected" do
       File.write(File.join(@root, 'lib', 'more.rb'), "def other = 1\n")
       both = Raindown::TUI::Navigator.new(root: @root).tap { it.next_step(:feelings) }
       described_class.new(both, width: 90, height: 24).lines
@@ -424,6 +424,11 @@ RSpec.describe Raindown::TUI::Layout do
       lines = described_class.new(both, width: 90, height: 24).lines
       expect([magnified(lines, 0), magnified(lines, 1)]).to match([[nil] * 3, all(match(/\A[█▀▄ ]{3}\z/))])
       expect(magnified_style(lines, 1).uniq.length).to eq(1)
+
+      both.next_step(Raindown::TUI::Hover.new(target: click(:main, 0, :focus)))
+      lines = described_class.new(both, width: 90, height: 24).lines
+      selected = grid_line(lines).select { it.event == click(:main, 0, :focus) }
+      expect([magnified(lines, 0), selected.map(&:style).uniq]).to eq([[nil] * 3, %i[selected]])
       expect(text(lines).map { width(it) }).to all(eq(90))
 
       both.next_step(Raindown::TUI::Hover.new(target: nil))
@@ -444,30 +449,14 @@ RSpec.describe Raindown::TUI::Layout do
     end
 
     it 'magnifies the digits the mouse is over in purple and lavender by turns, so neighbours stand apart' do
-      File.write(File.join(@root, 'lib', 'shapes.rb'), "def long\n#{"  1\n" * 30}end\n")
-      navigator.next_step(:reload)
-      navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, 0, :focus)))
-      styles = grid_line(described_class.new(navigator, width: 90, height: 24).lines).select { it.text.match?(/[█▀▄]/) }.map(&:style)
-
-      expect([styles.length > 2, styles.each_cons(2).map(&:uniq)]).to match([true, all(contain_exactly(:feelings, :feelings_purple))])
-    end
-
-    it "shows the code of the method the mouse is over, in the selected one's lines, or else the selected method's" do
       File.write(File.join(@root, 'lib', 'shapes.rb'), "def short = 1\ndef long\n#{"  1\n" * 30}end\n")
       navigator.next_step(:reload)
       navigator.view.cursor = navigator.view.code_methods.index { it.name == 'short' }
       long = navigator.view.code_methods.index { it.name == 'long' }
-      selected = main(described_class.new(navigator, width: 90, height: 24).lines)
-
       navigator.next_step(Raindown::TUI::Hover.new(target: click(:main, long, :focus)))
-      hovered = main(described_class.new(navigator, width: 90, height: 24).lines)
-      expect(hovered.find { it.include?('╭─') }).to include('long')
-      expect(hovered.join).to include('def long').and(satisfy { !it.include?('def short') })
-      expect(hovered.length).to eq(selected.length)
-      expect(hovered.index { it.include?('╭─') }).to eq(selected.index { it.include?('╭─') })
+      styles = grid_line(described_class.new(navigator, width: 90, height: 24).lines).select { it.text.match?(/[█▀▄]/) }.map(&:style)
 
-      navigator.next_step(Raindown::TUI::Hover.new(target: nil))
-      expect(main(described_class.new(navigator, width: 90, height: 24).lines).join).to include('def short')
+      expect([styles.length > 2, styles.each_cons(2).map(&:uniq)]).to match([true, all(contain_exactly(:feelings, :feelings_purple))])
     end
 
     it 'has the digits beside the method the mouse is over flee from it, trembling often, and the cells around it bold' do

@@ -34,11 +34,12 @@ module Raindown
         :feelings
       end
 
-      # The cells of the rows from the first that are the method the mouse is over's, unless they're blank.
+      # The cells of the rows from the first that are the method the mouse is over's, unless they're blank or selected,
+      # which keeps its selection's style.
       def magnified_cells(cells, first, rows)
         (first * columns...(first + rows) * columns).select do |index|
           owner = cells[index]
-          owner && navigator.hovered == Click.new(pane:, index: owner, action: :focus) && !hidden?(owner)
+          owner && owner != view.cursor && navigator.hovered == Click.new(pane:, index: owner, action: :focus) && !hidden?(owner)
         end
       end
 
