@@ -34,6 +34,21 @@ module Raindown
         :feelings
       end
 
+      # How much of the batch is refined, at the right of the line above the grid, or nothing while a magnified digit
+      # reaches it there.
+      def progress_line(cells, first, rows)
+        progress = "#{view.batch.progress} "
+        start = width - display_width(progress)
+        return padded([]) if magnified_from?(cells, first, rows, start)
+
+        padded([segment('', :blank, width: [start, 0].max), segment(progress, :body, width: display_width(progress))])
+      end
+
+      # Whether a magnified digit in the first row reaches the column, or past it.
+      def magnified_from?(cells, first, rows, column)
+        magnified_cells(cells, first, rows).any? { (it / columns) == first && 1 + (((it % columns) + 1) * FeelingsRenderer::CELL) > column }
+      end
+
       # The cells of the rows from the first that are the method the mouse is over's, unless they're blank or selected,
       # which keeps its selection's style.
       def magnified_cells(cells, first, rows)

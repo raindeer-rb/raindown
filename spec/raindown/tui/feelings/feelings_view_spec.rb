@@ -110,14 +110,14 @@ RSpec.describe Raindown::TUI::FeelingsView do
     batch = view.batch.files
 
     expect([view.code_methods.sum(&:size), view.code_methods.map(&:path).uniq.sort]).to eq([4, batch.sort])
-    expect(view.batch.progress).to eq('0% refined')
+    expect(view.batch.refined?).to be(false)
 
     view.code_methods.each_index do
       view.cursor = it
       view.next_step(:bin2)
     end
     restarted = described_class.new(root: @root).tap(&:load).tap { it.cells(2, 2) }
-    expect([restarted.batch.files, restarted.batch.progress, restarted.next_step?(:next)]).to eq([batch, '100% refined', false])
+    expect([restarted.batch.files, restarted.batch.refined?, restarted.next_step?(:next)]).to eq([batch, true, false])
   end
 
   it 'rains when the last of the batch is felt, then shows a waffle until a key is pressed, or with Ctrl+T to try it' do
@@ -131,7 +131,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect([view.celebration.raining?, view.pace(nil), view.next_step?(:tab)]).to eq([false, :animation, true])
 
     view.next_step(:right)
-    expect([view.celebration, view.batch.progress]).to eq([nil, '100% refined'])
+    expect([view.celebration, view.batch.refined?]).to eq([nil, true])
     view.next_step(:bin1)
     expect(view.celebration).to be_nil
 

@@ -45,17 +45,20 @@ module Raindown
       MIN_ROWS = 5
       TOO_SMALL = 'Screen too small.'
       TOO_SMALL_ART = ['↖       ↗', '  ┌───┐  ', '  └───┘  ', '↙       ↘', ''].freeze
+      TITLE = 'Weekly Batch'
       BUTTONS = [['Tab', 'Pane', :tab], ['1-5', 'Feel', nil], ['e', 'Edit', :edit], ['x', 'Fix', :execute],
                  ['/', 'Search', :search], ['q', 'Quit', :quit]].freeze
 
       def buttons = BUTTONS
       def page = 'Code feelings'
 
-      # How much of the batch has been refined, on the right of the line above the panes.
+      # The pane's title, in the middle of the line above the panes, with the border either side, in its colour.
       def spacer
-        progress = "#{view.batch.progress} "
-        progress_width = display_width(progress)
-        padded([segment('', :blank, width: [width - progress_width, 0].max), segment(progress, :body, width: progress_width)])
+        title = " #{TITLE} "
+        title_width = display_width(title)
+        left = [(width - title_width) / 2, 0].max
+        padded([segment('', :blank, width: left), segment(title, :divider, width: title_width),
+                segment('', :blank, width: [width - left - title_width, 0].max)])
       end
 
       # The cells come first, as the first draw picks the batch to fill them, unless the screen's too small for a grid.
@@ -95,7 +98,7 @@ module Raindown
         lines = [height - below, 0].max
         rows = [lines - 2, 0].max
         first = first_row(cells, columns, rows)
-        grid = magnified([padded([]), *grid_rows(cells, first, rows), padded([])], cells, first, rows)
+        grid = magnified([progress_line(cells, first, rows), *grid_rows(cells, first, rows), padded([])], cells, first, rows)
 
         [*grid, *Array.new([lines - grid.length, 0].max) { padded([]) }].first(lines)
       end

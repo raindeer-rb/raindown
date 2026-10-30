@@ -16,9 +16,9 @@ module Raindown
     #    ┌─ Layout ──────────────────────────────────────────────────┐
     #    │  Raindown  ~/docs › guides/setup.md                       │
     #    │ ┌─ nav pane ──────┐ ┌─ main pane ───────────────────────┐ │
-    #    │ │ Dashboard       ▏ # Setup                             │ │
-    #    │ │ ▾ guides/       ▏   toc: [+3]                         │ │
-    #    │ │   setup.md      ▏   ## Install                        │ │
+    #    │ │ Dashboard       │ # Setup                             │ │
+    #    │ │ ▾ guides/       │   toc: [+3]                         │ │
+    #    │ │   setup.md      │   ## Install                        │ │
     #    │ └─ ListRenderer ──┘ └─ view.renderer ───────────────────┘ │
     #    │  Opened guides/setup.md                                   │
     #    │  Tab Pane  Enter Open  X Run  E dit  W rite back  Q uit   │
@@ -29,9 +29,12 @@ module Raindown
       include Title
 
       NAV_WIDTH = (16..32)
-      # The line between the nav and main panes, at its column's left edge, unlike │ in the middle,
-      # so a highlighted file's row runs up to it.
-      DIVIDER = '▏'
+      # The line between the nav and main panes, and the line beneath the title, along the line above the panes, in the
+      # middle of their rows and columns, joined where they meet, like a box's lines. The divider is never highlighted,
+      # so a highlighted row stops at the edge of its column.
+      DIVIDER = '│'
+      BORDER = '─'
+      JOIN = '┬'
       # The title, status and button lines.
       CHROME_HEIGHT = 3
 
@@ -71,16 +74,19 @@ module Raindown
         nav = renderer_in(:nav, nav_width).lines
         main = view_renderer.lines
 
-        [spacer, *Array.new(body_height - 1) { |index| [*nav[index], divider(main[index]), *main[index]] }]
+        [spacer, *Array.new(body_height - 1) { |index| [*nav[index], segment(DIVIDER, :divider, width: 1), *main[index]] }]
       end
 
-      # A line above the panes, for spacing, blank but for what the main pane's renderer puts in its side of it.
-      def spacer = [segment('', :blank, width: nav_width), divider([]), *view_renderer.spacer]
+      # A line above the panes, the border beneath the title, but for what the main pane's renderer puts in its side of it.
+      def spacer
+        [border(segment('', :blank, width: nav_width)), segment(JOIN, :divider, width: 1), *view_renderer.spacer.map { border(it) }]
+      end
 
-      # The divider is on the background of the outline's row beside it, when that's highlighted, so they meet.
-      def divider(main_line)
-        style = { selected: :selected_divider, cursor: :cursor_divider }.fetch(main_line.first&.style, :divider)
-        segment(DIVIDER, style, width: 1)
+      # A blank segment of the line above the panes as the border, in the divider's colour.
+      def border(segment)
+        return segment unless segment.style == :blank
+
+        segment.with(text: segment.text.tr(' ', BORDER), style: :divider)
       end
 
       def view_renderer

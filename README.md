@@ -7,9 +7,9 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 <{ CodeDebt: }>
 
 ```
-    ▀▀█   ▀▀█
-▀▀▀ █▀▀     █
-    ▀▀▀ ▀   ▀
+    █▀█   ▀▀█
+▀▀▀ █ █    ▀█
+    ▀▀▀ ▀ ▀▀▀
 0 fixes
 ```
 
@@ -18,10 +18,10 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 <{ CodeHealth: }>
 
 ```
-█▀█   █ █ ▀▀█
-█ █   ▀▀█ █▀▀
+█▀█   █ █ █▀█
+█ █   ▀▀█ █▀█
 ▀▀▀ ▀   ▀ ▀▀▀
-17 felt
+11 felt
 ```
 
 <{ :CodeHealth }>
@@ -29,13 +29,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 <{ Commits: limit=5 }>
 
 ```
-Total    -475 ▕████│█████████████████████████▉ +2,950
-─────────────────────────────────────────────────────
-84f352d  -306   ▐██│████████▏                    +925
-1d2ace2   -90     █│███▎                         +367
-52c8320   -58     ▐│███████████▍               +1,297
-e831696    -3     ▕│▏                              +4
-9d0a0ac   -18     ▕│███▏                         +357
+Total    -574 ▕██████████████│███████████████▉ +648
+───────────────────────────────────────────────────
+513ed05   -10               ▕│██▏               +85
+6e33b0b   -41               █│█▏                +44
+0bdc9d1   -42               █│▋                 +23
+b40b0ba   -53              ▕█│█▋                +68
+02a25a8  -428     ▐██████████│██████████▌      +428
 ```
 
 <{ :Commits }>
@@ -78,7 +78,7 @@ Below the files, after a blank line, is every endpoint in the project, by its re
 
 Code is highlighted with [Rouge](https://rouge.jneen.net), which knows over 200 languages: a directive's body when it's expanded in the outline, with its code blocks in their own languages, an endpoint's response, in the language of its code block, and the code in Code feelings, by its file's name.
 
-**Code feelings**, under the Dashboard in the files (or `f`), shows the project's functions and methods as clusters of digits in a grid, like the refiners' screens in Severance. Each week it shows a batch of files, as many as fill the screen, the first in a random order for the week, with how much of the batch is refined above the grid. Felt methods go blank, and once they're all felt, that's the week's work done. A screen too small for a grid of 15 columns by 5 rows, as one under 24 lines tall is, goes red until it's bigger. It finds them in any language with [Universal Ctags](https://ctags.io) when it's installed, or else by how the code's indented. Long methods, and ones whose files keep changing, drift. Move between them with the arrow keys to see each one's code, its first 6 lines, or as much as fits with Enter or by clicking how many more lines there are. Sort how it makes you feel with `1` to `5`, from best to worst: frolic, numb, woe, dread or malice. Woe, dread and malice ask why, which you type, then Enter, or Esc to leave it out. Either way, the cursor stays on the method, ready to fix. Each feeling goes into `.raindown/feelings.csv`, with the commit it was felt at and a checksum of the method's code. Feeling a method again replaces how it felt. Once its code changes, or it's gone, its feeling moves to `.raindown/memories.csv`, so `feelings.csv` only says how the code feels now, and the method comes back into the grid to be felt again. The code health at the top of this README is their average from 0 to 1, with each feeling's score below, labelled with how many feelings it's the average of. The code debt adds up how far each is from numb, from 1 for frolic to -1 for malice, so it's in debt below zero, labelled with how many fixes there have been, feelings that scored higher when their method was felt again after its code changed. Both are stats in `.raindown`. `e` opens the method in your editor, and `x` asks [Claude Code](https://claude.com/claude-code) to fix it, with how it felt, when the `claude` command is installed. Either way, the code is read again after, to be felt again.
+**Code feelings**, under the Dashboard in the files (or `f`), shows the project's functions and methods as clusters of digits in a grid, like the refiners' screens in Severance. Each week it shows a batch of files, as many as fill the screen, the first in a random order for the week, under its title, Weekly Batch, with how much of it is refined at the top right of the grid. Felt methods go blank, and once they're all felt, that's the week's work done. A screen too small for a grid of 15 columns by 5 rows, as one under 24 lines tall is, goes red until it's bigger. It finds them in any language with [Universal Ctags](https://ctags.io) when it's installed, or else by how the code's indented. Long methods, and ones whose files keep changing, drift. Move between them with the arrow keys to see each one's code, its first 6 lines, or as much as fits with Enter or by clicking how many more lines there are. Sort how it makes you feel with `1` to `5`, from best to worst: frolic, numb, woe, dread or malice. Woe, dread and malice ask why, which you type, then Enter, or Esc to leave it out. Either way, the cursor stays on the method, ready to fix. Each feeling goes into `.raindown/feelings.csv`, with the commit it was felt at and a checksum of the method's code. Feeling a method again replaces how it felt. Once its code changes, or it's gone, its feeling moves to `.raindown/memories.csv`, so `feelings.csv` only says how the code feels now, and the method comes back into the grid to be felt again. The code health at the top of this README is their average from 0 to 1, with each feeling's score below, labelled with how many feelings it's the average of. The code debt adds up how far each is from numb, from 1 for frolic to -1 for malice, so it's in debt below zero, labelled with how many fixes there have been, feelings that scored higher when their method was felt again after its code changed. Both are stats in `.raindown`. `e` opens the method in your editor, and `x` asks [Claude Code](https://claude.com/claude-code) to fix it, with how it felt, when the `claude` command is installed. Either way, the code is read again after, to be felt again.
 
 | Key     | 1      | 2    | 3   | 4     | 5      |
 | ------- | ------ | ---- | --- | ----- | ------ |

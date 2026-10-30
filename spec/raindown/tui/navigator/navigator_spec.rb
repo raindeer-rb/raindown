@@ -599,7 +599,6 @@ RSpec.describe Raindown::TUI::Navigator do
     it 'opens with f, and notes down a feeling with 1 to 6' do
       open_feelings
       expect([view_name(navigator), navigator.focus]).to eq(['FeelingsView', :main])
-      expect(navigator.status).to eq([:info, "This week's code to feel, #{Raindown::TUI::Batch.this_week}"])
 
       label = navigator.view.selected.label
       navigator.next_step(:bin2)

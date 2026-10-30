@@ -38,39 +38,40 @@ RSpec.describe Raindown::TUI::Layout do
     end.join
   end
 
-  it 'lays out the title, the files beside the outline below a blank line, the status and the buttons, each line the full width' do
+  it 'lays out the title, a border beneath it, the files beside the outline, the status and the buttons, each line the full width' do
     lines = described_class.new(navigator, width: 60, height: 14).lines
 
     expect(text(lines).map(&:rstrip)).to eq(
       [' 🌧  Raindown  ~/docs › guides/setup.md',
-       '                    ▏',
-       ' 📊 Dashboard       ▏ # Setup',
-       ' 🎭 Feelings        ▏   endpoint:                 [+6] [Run]',
-       '                    ▏',
-       ' ▾ guides/          ▏',
-       '   setup.md         ▏',
-       ' README.md          ▏',
-       '                    ▏',
-       ' GET example.com    ▏',
-       '                    ▏',
-       '                    ▏',
+       "#{'─' * 20}┬#{'─' * 39}",
+       ' 📊 Dashboard       │ # Setup',
+       ' 🎭 Feelings        │   endpoint:                 [+6] [Run]',
+       '                    │',
+       ' ▾ guides/          │',
+       '   setup.md         │',
+       ' README.md          │',
+       '                    │',
+       ' GET example.com    │',
+       '                    │',
+       '                    │',
        ' Opened guides/setup.md',
        ' Tab Pane  Enter Open  X Run  E dit  W rite back  R eload']
     )
     expect(text(lines).map { width(it) }).to all(eq(60))
   end
 
-  it 'highlights the cursor in the focused pane, and dimmer in the others, with the divider beside the outline\'s' do
+  it 'highlights the cursor in the focused pane, and dimmer in the others, but never the divider between them' do
     lines = described_class.new(navigator, width: 60, height: 14).lines
     divider = ->(line) { line.find { it.text == described_class::DIVIDER }.style }
 
     expect(lines[2].last.style).to eq(:selected)
     expect(lines[6].first.style).to eq(:cursor)
     expect([lines[4].first.style, lines[4].first.event]).to eq([:blank, nil])
-    expect([divider[lines[1]], divider[lines[2]], divider[lines[3]]]).to eq(%i[divider selected_divider divider])
+    expect([divider[lines[2]], divider[lines[3]]]).to eq(%i[divider divider])
+    expect([lines[1].map(&:style).uniq, lines[1].count { it.text == described_class::JOIN }]).to eq([[:divider], 1])
     navigator.next_step(:left)
     lines = described_class.new(navigator, width: 60, height: 14).lines
-    expect([lines[2].last.style, lines[6].first.style, divider[lines[2]]]).to eq(%i[cursor selected cursor_divider])
+    expect([lines[2].last.style, lines[6].first.style, divider[lines[2]]]).to eq(%i[cursor selected divider])
     expect([lines[2].first.style, lines[3].first.style]).to eq(%i[page page])
     expect(lines[3].last(2).map(&:style)).to eq(%i[button button])
   end
@@ -124,7 +125,7 @@ RSpec.describe Raindown::TUI::Layout do
     let(:navigator) { Raindown::TUI::Navigator.new(root: @root) }
 
     # The dashboard's side of each line, right of the files.
-    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+    def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
 
     it 'shows each chart in a card with a rounded border beside the files, with as many in a row as fit' do
       lines = described_class.new(navigator, width: 90, height: 10).lines
@@ -191,7 +192,7 @@ RSpec.describe Raindown::TUI::Layout do
       File.write(File.join(@root, 'guides', 'more.md'), "# More\n\n<{ chart: '3 2 1' }>\n<{ :chart }>\n")
     end
 
-    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+    def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
 
     it "puts each project's charts under its path from the home folder, titled from the project" do
       lines = described_class.new(navigator, width: 90, height: 19).lines
@@ -239,7 +240,7 @@ RSpec.describe Raindown::TUI::Layout do
                                              "```json\n{}\n```\n<!-- raindown:fetched 2026-10-26 -->\n<{ :endpoint }>\n")
     end
 
-    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+    def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
     def endpoint_row(lines) = lines.index { |line| line.any? { it.style == :method_delete } }
 
     it 'lists the method in its colour in the files' do
@@ -294,7 +295,7 @@ RSpec.describe Raindown::TUI::Layout do
   end
 
   describe 'code feelings' do
-    def main(lines) = text(lines).map { it.split('▏', 2)[1].to_s.rstrip }
+    def main(lines) = text(lines).map { it.split('│', 2)[1].to_s.rstrip }
     # The grid's first line, below the line above the panes, which has the batch's progress, and a blank line that leaves
     # room for the first row to be magnified.
     def grid_line(lines) = lines[3]
@@ -336,14 +337,15 @@ RSpec.describe Raindown::TUI::Layout do
       selected = grid_line(lines).select { it.event == click(:main, 0, :focus) }
       expect([magnified(lines, 0), selected.map(&:style).uniq]).to eq([[nil] * 3, %i[feelings_selected]])
       expect(selected.first.text).to match(/\A {0,2}\d {0,2}\z/)
-      expect(main(lines)[1].strip).to eq('0% refined')
+      left, right = text(lines)[1].split('┬', 2).last.match(/\A(─+) Weekly Batch (─+)\z/).captures
+      expect((left.length - right.length).abs).to be <= 1
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).to include('Square#area').and include('changed 0× ─╮')
       expect(main.find { it.include?('def area') }).to start_with(' │ def area').and end_with('│')
       expect(lines.flatten.find { it.text == 'def' }.style).to eq(:code_keyword)
       expect(main.find { it.include?('WOE') }.scan(/[A-Z]{3,}/)).to eq(%w[FROLIC NUMB WOE DREAD MALICE])
       expect(main.find { it.include?('╭─ lib/shapes.rb:2') }).not_to include('drift')
       style = ->(text) { lines.flatten.find { it.text.include?(text) }.style }
-      expect(['refined', 'lib/shapes.rb:2', '02', 'NUMB'].map { style[it] }).to eq(%i[body feelings feelings feelings])
+      expect(['Weekly Batch', 'lib/shapes.rb:2', '02', 'NUMB'].map { style[it] }).to eq(%i[divider feelings feelings feelings])
       expect(text(lines).map { width(it) }).to all(eq(90))
     end
 
@@ -436,6 +438,20 @@ RSpec.describe Raindown::TUI::Layout do
       expect([magnified(lines, 1), small]).to match([[nil] * 3, /\A {0,2}\d {0,2}\z/])
     end
 
+    it 'shows how much of the batch is refined above the grid, on the right, until a magnified digit reaches it' do
+      File.write(File.join(@root, 'lib', 'shapes.rb'), (1..60).map { "def m#{it} = #{it}\n" }.join)
+      navigator.next_step(:reload)
+      lines = described_class.new(navigator, width: 90, height: 24).lines
+      expect(main(lines)[2]).to end_with(' 0% refined')
+      expect(lines[2].find { it.text.include?('refined') }.style).to eq(:body)
+
+      last = grid_line(lines).reverse.find { it.event&.pane == :main }.event
+      navigator.next_step(Raindown::TUI::Hover.new(target: last))
+      expect(main(described_class.new(navigator, width: 90, height: 24).lines)[2]).not_to include('refined')
+      navigator.next_step(Raindown::TUI::Hover.new(target: nil))
+      expect(main(described_class.new(navigator, width: 90, height: 24).lines)[2]).to end_with(' 0% refined')
+    end
+
     it 'clicks the cells under a magnified digit, so the mouse over it is over them' do
       File.write(File.join(@root, 'lib', 'shapes.rb'), (1..60).map { "def m#{it} = #{it}\n" }.join)
       navigator.next_step(:reload)
@@ -525,7 +541,7 @@ RSpec.describe Raindown::TUI::Layout do
 
     it 'turns the pane red, saying the screen is too small, when the grid would be under 15 columns or 5 rows' do
       [[60, 24], [90, 20]].each do |width, height|
-        pane = described_class.new(navigator, width:, height:).lines.map { |line| line.drop_while { it.text != '▏' }.drop(1) }
+        pane = described_class.new(navigator, width:, height:).lines.map { |line| line.drop_while { it.text != '│' }.drop(1) }
         middle = pane.find { |line| line.any? { it.text.include?('Screen too small.') } }
 
         expect([pane.drop(2).flatten.map(&:style).uniq, middle.first.text.strip]).to eq([%i[too_small], 'Screen too small.'])

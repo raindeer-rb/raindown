@@ -53,7 +53,8 @@ module Raindown
         :reactive
       end
 
-      def status(_navigator) = [:info, "This week's code to feel, #{batch.week}"]
+      # Opening it says nothing, as its title is above the grid.
+      def status(_navigator) = [:info, '']
 
       # Reads the code again, keeping the batch, like after a method's edited or fixed, and the selected method, by its
       # file and name, even when the methods around it change, moving the feelings about code that's changed, or gone, to

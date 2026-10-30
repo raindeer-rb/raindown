@@ -5,7 +5,8 @@ require 'curses'
 module Raindown
   module TUI
     # The curses attributes of a Layout's styles. Text is periwinkle where there are 256 colours, and the terminal's own
-    # colour otherwise, like the line between the panes, while the title and headings are cornflower blue. The selected
+    # colour otherwise, while the title, headings, and the lines between the panes and beneath the title are cornflower
+    # blue. The selected
     # row is white on blue, or on dark grey in the panes without the focus, while other colours are on the terminal's own
     # background.
     # With only 8 colours, there's no dark grey, so those rows are underlined, and without colours,
@@ -16,7 +17,8 @@ module Raindown
       # and headings, like the outline's and the Dashboard cards', in cornflower blue, and the waffle's syrup in brown,
       # from the 256 colours most terminals
       # have, or magenta and blue with 8.
-      ACCENTS = { directive: 141, folder: 111, title: 111, heading: 111, syrup: 130 }.freeze
+      CORNFLOWER = 111
+      ACCENTS = { directive: 141, folder: CORNFLOWER, title: CORNFLOWER, heading: CORNFLOWER, syrup: 130 }.freeze
       BASIC_ACCENTS = { directive: Curses::COLOR_MAGENTA, folder: Curses::COLOR_BLUE, title: Curses::COLOR_BLUE,
                         heading: Curses::COLOR_BLUE, syrup: Curses::COLOR_YELLOW }.freeze
 
@@ -45,10 +47,11 @@ module Raindown
                        bright_green: Curses::COLOR_GREEN, bright_cyan: Curses::COLOR_CYAN, bright_blue: Curses::COLOR_BLUE,
                        bright_purple: Curses::COLOR_MAGENTA, bright_pink: Curses::COLOR_MAGENTA }.freeze
 
-      # The selected row's blue, and the green of a selected method in Code feelings that's already been felt, from the 256
-      # colours most terminals have, or the 8 they all do.
-      BLUES = { selected: 33, felt: GREEN }.freeze
-      BASIC_BLUES = { selected: Curses::COLOR_CYAN, felt: Curses::COLOR_GREEN }.freeze
+      # The selected row's blue, the green of a selected method in Code feelings that's already been felt, and the
+      # cornflower blue of the lines between the panes and beneath the title, from the 256 colours most terminals have,
+      # or the 8 they all do.
+      BLUES = { selected: 33, felt: GREEN, line: CORNFLOWER }.freeze
+      BASIC_BLUES = { selected: Curses::COLOR_CYAN, felt: Curses::COLOR_GREEN, line: Curses::COLOR_BLUE }.freeze
 
       # Text that has no colour of its own, from the 256 colours most terminals have, or the terminal's own with 8.
       PERIWINKLE = 147
@@ -82,7 +85,6 @@ module Raindown
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, page: Curses::A_BOLD,
           key: Curses::A_REVERSE, border: Curses::A_DIM, divider: Curses::A_BOLD,
-          selected_divider: Curses::A_REVERSE, cursor_divider: Curses::A_BOLD,
           code_keyword: Curses::A_BOLD, code_comment: Curses::A_DIM
         )
       end
@@ -127,8 +129,8 @@ module Raindown
       # The bright colours, bold, so they're bright in 8 colours too.
       def bright = BRIGHT.keys.to_h { [it, pair(it) | Curses::A_BOLD] }
 
-      # The line between the panes, and where it meets a selected row.
-      def dividers = { divider: pair(:divider), selected_divider: pair(:selected_divider) }
+      # The lines between the panes and beneath the title.
+      def dividers = { divider: pair(:divider) }
 
       def files
         { folder: pair(:folder) | Curses::A_BOLD, project: pair(:folder) | Curses::A_BOLD,
@@ -137,9 +139,9 @@ module Raindown
 
       # The selected rows of the panes without the focus, on dark grey where there's one.
       def unfocused
-        return { cursor_button: pair(:button) | Curses::A_BOLD, cursor_divider: pair(:divider) } unless Curses.colors >= 256
+        return { cursor_button: pair(:button) | Curses::A_BOLD } unless Curses.colors >= 256
 
-        { cursor: pair(:cursor), cursor_button: pair(:cursor_button) | Curses::A_BOLD, cursor_divider: pair(:cursor_divider) }
+        { cursor: pair(:cursor), cursor_button: pair(:cursor_button) | Curses::A_BOLD }
       end
 
       # Each colour pair as [name, foreground, background], where -1 is the terminal's own background.
@@ -156,8 +158,8 @@ module Raindown
          [:text, text, -1],
          [:selected, white, blues[:selected]], [:felt_selected, white, blues[:felt]], [:too_small, white, many ? DARK_RED : Curses::COLOR_RED],
          [:selected_button, Curses::COLOR_YELLOW, blues[:selected]],
-         [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, text, -1],
-         [:selected_divider, text, blues[:selected]], [:cursor_divider, text, DARK_GREY], [:shine, white, -1]]
+         [:cursor, white, DARK_GREY], [:cursor_button, Curses::COLOR_YELLOW, DARK_GREY], [:divider, blues[:line], -1],
+         [:shine, white, -1]]
       end
 
       def pair(name)

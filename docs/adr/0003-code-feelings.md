@@ -12,19 +12,19 @@ The terminal UI ([ADR 1](0001-terminal-ui.md)) already has views and renderers (
 `f`, or teleporting to "Code feelings", opens it as a view in the main pane:
 
 ```
-                                ▏                                                     39% refined
- 📊 Dashboard                   ▏  2  7  6  7  2  3  1  3  5  7  7  9  1  1  8  8  8  5  5  0  0  5
- 🎭 Feelings                    ▏  5  3  3  3  3  2  3  5  7  7  8  7  4  4  4  4  3  3  2  4  3  1
-                                ▏ ╭─ lib/text.rb:62 · Text#segments_between ──────── changed 6× ─╮
-                                ▏ │ def segments_between(line, from, to)                          │
-                                ▏ │ [12 more lines]                                               │
-                                ▏ ├───────────────────────────────────────────────────────────────┤
-                                ▏ │ Why DREAD? > column maths, a character at a time▏             │
-                                ▏ ╰───────────────────────────────────────────────────────────────╯
-                                ▏ ╭─ 01 ─────╮ ╭─ 02 ─────╮ ╭─ 03 ─────╮ ╭─ 04 ─────╮ ╭─ 05 ─────╮
-                                ▏ │ WOE      │ │ FROLIC   │ │ DREAD    │ │ MALICE   │ │ NUMB     │
-                                ▏ │ ██░░░░ 6 │ │ ███░░░ 9 │ │ █░░░░░ 3 │ │ █░░░░░ 2 │ │ ████░ 41 │
-                                ▏ ╰──────────╯ ╰──────────╯ ╰──────────╯ ╰──────────╯ ╰──────────╯
+────────────────────────────────┬───────────────────────── Weekly Batch ─────────────────────────
+ 📊 Dashboard                   │  2  7  6  7  2  3  1  3  5  7  7  9  1  1  8  8  8  5  5  0  0  5
+ 🎭 Feelings                    │  5  3  3  3  3  2  3  5  7  7  8  7  4  4  4  4  3  3  2  4  3  1
+                                │ ╭─ lib/text.rb:62 · Text#segments_between ──────── changed 6× ─╮
+                                │ │ def segments_between(line, from, to)                          │
+                                │ │ [12 more lines]                                               │
+                                │ ├───────────────────────────────────────────────────────────────┤
+                                │ │ Why DREAD? > column maths, a character at a time▏             │
+                                │ ╰───────────────────────────────────────────────────────────────╯
+                                │ ╭─ 01 ─────╮ ╭─ 02 ─────╮ ╭─ 03 ─────╮ ╭─ 04 ─────╮ ╭─ 05 ─────╮
+                                │ │ WOE      │ │ FROLIC   │ │ DREAD    │ │ MALICE   │ │ NUMB     │
+                                │ │ ██░░░░ 6 │ │ ███░░░ 9 │ │ █░░░░░ 3 │ │ █░░░░░ 2 │ │ ████░ 41 │
+                                │ ╰──────────╯ ╰──────────╯ ╰──────────╯ ╰──────────╯ ╰──────────╯
 ```
 
 ## Decision
@@ -46,7 +46,7 @@ The digits aren't uniform, which keeps the show's feel:
 
 ### Styles
 
-The screen's text, digits, lines and titles are lavender (the `feelings` style, 256-colour 183, or magenta in 8 colours), apart from the batch's progress, in grey. The selected method's cells are bold white on the selection's blue, or on green once it's felt, so they join into one block (`feelings_selected` and `felt_selected`, apart from the `selected` style of other views' rows, which isn't bold). The digits under the mouse are magnified, unless they are the selected method's, which keep the selection's style, with no highlight behind them, in lavender and purple (256-colour 135, or blue in 8 colours) by turns, like a chessboard's squares, since magnified digits beside and below each other touch. A felt method's cells go blank, but stay in place and stay selectable. Selecting one shows its digits and its code again. Nothing in the grid moves as methods are felt, so the batch visibly empties.
+The screen's text, digits, lines and titles are lavender (the `feelings` style, 256-colour 183, or magenta in 8 colours), apart from the title above the grid, in the border's cornflower blue. The selected method's cells are bold white on the selection's blue, or on green once it's felt, so they join into one block (`feelings_selected` and `felt_selected`, apart from the `selected` style of other views' rows, which isn't bold). The digits under the mouse are magnified, unless they are the selected method's, which keep the selection's style, with no highlight behind them, in lavender and purple (256-colour 135, or blue in 8 colours) by turns, like a chessboard's squares, since magnified digits beside and below each other touch. A felt method's cells go blank, but stay in place and stay selectable. Selecting one shows its digits and its code again. Nothing in the grid moves as methods are felt, so the batch visibly empties.
 
 When the grid would be under 15 columns or 5 rows (`FeelingsRenderer::MIN_COLUMNS` and `MIN_ROWS`), the pane is white on dark red instead (the `too_small` style, 256-colour 88, red in 8 colours, or reversed without colours), saying "Screen too small." in the middle, under a small window with arrows out from its corners when there's room for it. An 80 by 24 terminal is just big enough. No batch is picked for so small a grid, so a screen that starts small picks one once it's big enough.
 
@@ -67,7 +67,8 @@ The grid shows one **batch** of files a week, like the files the refiners work t
 - **Which files** (`Batch.pick`): the first files in an order shuffled for the week, felt or not, from a checksum of the ISO year and week, like `2026-W44`, and each file's path. The batch's methods are shuffled together the same way, so a screen mixes files. The order is random but stays the same through reloads, edits, fixes and restarts until the week changes, so a refined batch stays refined. A file felt in an earlier week can come up again, with its methods blank unless their code has changed.
 - **How many** (`Batch.filling`): as many as fill the grid's cells, worked out for the room left by the code box, which is always as tall as it gets until it's expanded, 6 lines of code and a line of how many more, with blank lines below a short method's (`FeelingsRenderer#filled_rows`). So the grid stays the same height, and doesn't scroll, as the selection moves. Files are taken in the week's order, passing over any too big for what's left, with at least one. Expanding the code box takes rows from the grid, which then scrolls to keep the selected method in view, but by then the method's already selected.
 - **When it's sized:** when the view first opens. The view can't know the screen's size itself, so nothing is picked until the screen draws it, straight after it opens and before any key. The renderer lays out the cells before anything else, and that first layout picks the batch. `WeeklyBatch` keeps that batch in memory only, until the screen's resized to a grid of a different number of cells. Once the grid's kept its new number for 2 seconds (`WeeklyBatch::RESIZE_SECONDS`), the batch is picked again to fill it, keeping the selected method where it's still in the batch, so dragging the screen's edge doesn't pick a batch for every size it passes through.
-- **Progress:** the main pane's side of the line above the panes shows how much of the batch is refined, like `39% refined`. Renderers fill that line with `spacer`, which is blank by default.
+- **Title:** the main pane's side of the line above the panes, the border beneath the title, says "Weekly Batch" in the middle, in the border's cornflower blue. Renderers fill that line with `spacer`, which is the border by default. Opening Code feelings leaves the status line empty, as it's not news.
+- **Progress:** how much of the batch is refined, like `39% refined`, in grey, is at the right of the blank line above the grid's first row (`Magnifier#progress_line`). That's the line magnified digits draw over, so while one reaches it, the progress is left out, rather than half covered.
 
 `Batch` is plain data: its files, their methods, the log and the week. `WeeklyBatch` holds it, picks it on the first draw and reads its methods again after edits. Both were taken out of `FeelingsView` when it grew past what one class should do.
 
@@ -87,8 +88,8 @@ Nothing else is stored. Which methods are felt, and so which files a batch picks
 The TUI writes nothing but `.raindown/feelings.csv`. The README counts it instead, with two `Raindown::Stat` nodes in `.raindown`, which the Dashboard shows as cards too. Both use one scale, so they can't disagree:
 
 | frolic | numb | woe | dread | malice |
-|---|---|---|---|---|
-| 1 | 0.5 | ⅓ | ⅙ | 0 |
+| ------ | ---- | --- | ----- | ------ |
+| 1      | 0.5  | ⅓   | ⅙     | 0      |
 
 Hope, at 0.75 for code that's promising but not a joy, was dropped, and its feelings became numb. Numb is neither good nor bad, and the bad feelings sit evenly below it, woe the mildest, as everywhere else woe's a bad feeling: it asks why, and a fix from it is a fix. **`CodeHealth`** is the feelings' average, to two places, which doesn't grow with the project, labelled with how many feelings it's the average of. **`CodeDebt`** adds up how far each is from numb, (score − 0.5) × 2, from 1 for frolic to −1 for malice, to one place, in debt below zero, labelled with how many fixes there have been: memories whose method's next feeling scored higher. Memories don't count otherwise, as they're about code that's since changed or gone. A chart of the tempers' counts, and a running total of the debt by day, were tried first. An earlier version also wrote a `docs/code-feelings.md` page, with a chart over a `.raindown/tempers.csv` of counts and a table of every feeling, which only repeated what the CSV holds.
 
@@ -106,37 +107,37 @@ Code feelings is the first view to use mouse **hover**. While the TUI is open, i
 
 ### Keys
 
-| Key | Does |
-|---|---|
-| `f` | open Code feelings |
-| arrows | move between methods |
-| `1` to `5` | feel frolic, numb, woe, dread or malice, best to worst |
-| Enter, Space, or a click on "[more lines]" | show all of the method's code that fits, or fewer |
-| `e` | edit the method |
-| `x` | fix it with Claude Code |
-| Tab, or left from the first method | back to the files |
+| Key                                        | Does                                                   |
+| ------------------------------------------ | ------------------------------------------------------ |
+| `f`                                        | open Code feelings                                     |
+| arrows                                     | move between methods                                   |
+| `1` to `5`                                 | feel frolic, numb, woe, dread or malice, best to worst |
+| Enter, Space, or a click on "[more lines]" | show all of the method's code that fits, or fewer      |
+| `e`                                        | edit the method                                        |
+| `x`                                        | fix it with Claude Code                                |
+| Tab, or left from the first method         | back to the files                                      |
 
 ### Options considered
 
 **Finding methods:**
 
-| | Chosen: Universal Ctags, or indentation | Prism | Rubocop | Tree-sitter |
-|---|---|---|---|---|
-| Languages | over 100 with Ctags, and most code by indentation | Ruby only | Ruby only | one grammar per language |
-| Dependency | optional external program, or none | in Ruby | a gem, and it runs per file | native extension and grammars |
-| Accuracy | Ctags exact, fallback close | exact | exact, and has complexity metrics | exact |
+|            | Chosen: Universal Ctags, or indentation           | Prism     | Rubocop                           | Tree-sitter                   |
+| ---------- | ------------------------------------------------- | --------- | --------------------------------- | ----------------------------- |
+| Languages  | over 100 with Ctags, and most code by indentation | Ruby only | Ruby only                         | one grammar per language      |
+| Dependency | optional external program, or none                | in Ruby   | a gem, and it runs per file       | native extension and grammars |
+| Accuracy   | Ctags exact, fallback close                       | exact     | exact, and has complexity metrics | exact                         |
 
 The first version used Prism, which was dropped because Code feelings is meant to work in any language. Rubocop's complexity metrics would rank drift better, but only for Ruby. Drift uses line counts and `git log` instead, which work the same everywhere.
 
 **Highlighting code:**
 
-| | Rouge (chosen) | ruby_tree_sitter | tree_sitter (Rust) | Commonmarker |
-|---|---|---|---|---|
-| Download / installed | 531 KB / 1.8 MB | 666–701 KB / 1.6 MB | 3.7–6.4 MB / 10.3 MB | already installed |
-| Native code | none | C extension | Rust extension | Rust, already installed |
-| Languages included | 233 | none: grammars loaded separately | none: grammars loaded separately | syntect's |
-| Prebuilt for Windows | not needed | no | yes | yes |
-| Gives the TUI | tokens, as `[text, style]` parts | a syntax tree | a syntax tree | HTML with styled spans |
+|                      | Rouge (chosen)                   | ruby_tree_sitter                 | tree_sitter (Rust)               | Commonmarker            |
+| -------------------- | -------------------------------- | -------------------------------- | -------------------------------- | ----------------------- |
+| Download / installed | 531 KB / 1.8 MB                  | 666–701 KB / 1.6 MB              | 3.7–6.4 MB / 10.3 MB             | already installed       |
+| Native code          | none                             | C extension                      | Rust extension                   | Rust, already installed |
+| Languages included   | 233                              | none: grammars loaded separately | none: grammars loaded separately | syntect's               |
+| Prebuilt for Windows | not needed                       | no                               | yes                              | yes                     |
+| Gives the TUI        | tokens, as `[text, style]` parts | a syntax tree                    | a syntax tree                    | HTML with styled spans  |
 
 Rouge is pure Ruby, ships its languages, and runs on every OS and build Raindown ships, including the Tebako binaries. Tree-sitter would need a native grammar per language per platform. Commonmarker only highlights through HTML, which the TUI would have to parse back. Rouge's token names map to six code styles (keyword, string, number, function, constant and comment), with 256-colour, 8-colour and no-colour versions. A fixed set stays within older curses' limit on colour pairs. Rouge also highlights an endpoint's response, in the language of its code block, and the outline's expanded directive bodies, which it lexes as Markdown so each code block gets its own language.
 
