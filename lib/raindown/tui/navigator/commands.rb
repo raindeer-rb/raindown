@@ -81,21 +81,30 @@ module Raindown
       # Writes back the files saved since the last tick, like when they're watched, then reads the open file again when
       # it's changed, like when it's saved in an editor or written back to.
       def refresh
-        watched(@saves.take) if @saves
+        effect = watched(@saves.take) if @saves
         view.load if view.changed?
-        nil
+        effect
       end
 
       # A change to a project's nodes loads them again, and a saved Markdown file's written back, like when it's watched,
-      # and the files and endpoints are read again for the files added, removed or changed.
+      # and the files and endpoints are read again for the files added, removed or changed. When endpoints run as files
+      # are written back, like with -x, the screen says so while they do, as they can take a while.
       def watched(paths)
         changes = Watcher.changes(paths, root:)
         return reload if changes.any?(&:nodes?)
         return if changes.empty?
 
-        changes.select(&:saved?).each { write_back_saved(it.path) }
+        saved = changes.select(&:saved?).map(&:path)
+        return write_back_all(saved) unless @runs_endpoints && saved.any?
+
+        Wait.new(message: "Writing back #{relative(saved.first)}...", task: -> { write_back_all(saved) })
+      end
+
+      def write_back_all(files)
+        files.each { write_back_saved(it) }
         @files.load
         @endpoints.load
+        nil
       end
 
       # A saved file's written back, saying so only when it's changed, as when it's watched.

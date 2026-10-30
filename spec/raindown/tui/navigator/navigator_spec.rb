@@ -200,6 +200,18 @@ RSpec.describe Raindown::TUI::Navigator do
       expect([saves.paths, navigator.status]).to eq([[], [:info, 'Updated guides/other.md']])
     end
 
+    it 'says it is writing back while it does, when endpoints run as files are written back, like with -x' do
+      other = write('guides/other.md', "# Other\n\n<{ toc: }>\n<{ :toc }>\n\n## Added\n")
+      navigator = described_class.new(root: @root, path: write('notes.md'), saves:, runs_endpoints: true)
+      saves.paths << other
+      wait = navigator.next_step(:tick)
+
+      expect(wait.message).to eq('Writing back guides/other.md...')
+      expect(File.read(other)).not_to include('- [Added](#added)')
+      wait.task.call
+      expect([File.read(other), navigator.status]).to match([include('- [Added](#added)'), [:info, 'Updated guides/other.md']])
+    end
+
     it "lists a Markdown file added in the folder, and loads a project's nodes again when they change" do
       navigator = described_class.new(root: @root, path: write('notes.md'), saves:)
       saves.paths << write('added.md')

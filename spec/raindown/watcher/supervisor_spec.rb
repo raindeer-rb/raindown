@@ -65,6 +65,36 @@ RSpec.describe Raindown::Watcher::Supervisor do
       expect(File.read(raindeer)).to eq("# Notes\n\nShout:\nNew\n")
     end
 
+    it "doesn't hold up a project while another's write-back is slow, like an endpoint's request" do
+      slow = project('raindeer', shout: 'Slow')
+      slow_node = "class Shout < Raindown::Node\n  def replace = sleep(3) && 'Slow'\nend\n"
+      File.write(File.join(@dir, 'raindeer', '.raindown', 'shout.rb'), slow_node)
+      fast = project('raindown', shout: 'Fast')
+
+      expect do
+        supervisor.handle([slow, fast])
+        expect([eventually(timeout: 2) { File.read(fast).include?('Fast') }, File.read(slow)]).to eq([true, "# Notes\n\nShout:\n"])
+        eventually { File.read(slow).include?('Slow') }
+      end.to output.to_stdout_from_any_process
+    end
+
+    it 'says when a worker stops partway, and starts it again for the next change' do
+      raindeer = project('raindeer', shout: 'Hi')
+      # The node leaves a mark as it stops its worker, so it's not changed back before the worker's loaded it.
+      crashed = File.join(@dir, 'crashed')
+      File.write(File.join(@dir, 'raindeer', '.raindown', 'shout.rb'),
+                 "class Shout < Raindown::Node\n  def replace = File.write('#{crashed}', '') && exit!(1)\nend\n")
+
+      expect do
+        supervisor.handle([raindeer])
+        eventually { File.exist?(crashed) }
+        node(File.join(@dir, 'raindeer'), 'Fine')
+        supervisor.handle([File.join(@dir, 'raindeer', '.raindown', 'shout.rb'), raindeer])
+        eventually { File.read(raindeer).include?('Fine') }
+      end.to output(/\[raindeer\] raindown: The worker for raindeer stopped/).to_stderr_from_any_process
+      expect(File.read(raindeer)).to eq("# Notes\n\nShout:\nFine\n")
+    end
+
     it 'starts a worker for each project as its files change' do
       raindeer = project('raindeer', shout: 'Hi')
       project('raindown', shout: 'Hi')

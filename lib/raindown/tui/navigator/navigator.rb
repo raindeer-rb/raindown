@@ -36,10 +36,12 @@ module Raindown
       # What the mouse is over, which a click there would send, like a Click on a method's cells, or nil.
       attr_reader :hovered
 
-      # Saves tells of the files saved in the folder, which are written back on the next tick, like when it's watched.
-      def initialize(root:, path: nil, workers: Project.workers(root:), saves: nil)
+      # Saves tells of the files saved in the folder, which are written back on the next tick, like when it's watched,
+      # running endpoints with no response as they are when it runs_endpoints, like with -x.
+      def initialize(root:, path: nil, workers: Project.workers(root:), saves: nil, runs_endpoints: false)
         @workers = workers
         @saves = saves
+        @runs_endpoints = runs_endpoints
         @files = FileTree.new(root:, workers:)
         @endpoints = Endpoints.new(workers:)
         @dashboard = DashboardView.new(root:, workers:)

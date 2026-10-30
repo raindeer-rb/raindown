@@ -20,6 +20,7 @@ module Raindown
         @workers = Workers.new(root: @directory, fork: fork?, quiet: false) do |root|
           Project.new(root:, name: name(root), bare:, execute:).tap(&:start)
         end
+        @queues = {}
       end
 
       def start
@@ -37,20 +38,41 @@ module Raindown
       end
 
       # Sends each saved file to its project, starting a worker for a new project, or restarting one when its nodes
-      # change.
+      # change. With fork, each project takes its changes in order in a thread of its own, so a slow write-back, like an
+      # endpoint's request with -x, only holds up its own project. Without fork, the projects share this process, so
+      # they're taken in turn.
       def handle(paths)
         Watcher.changes(paths).each do |change|
-          next restart(change.root) if change.nodes?
+          next unless change.nodes? || change.saved?
+          next take(change) unless fork?
 
-          workers[change.root].call(:update, change.path) if change.saved?
+          queue(change.root) << change
         end
       end
 
       def stop
+        @queues.each_value(&:close)
         workers.stop
       end
 
       private
+
+      # The project's changes still to take, by the thread that takes them, until the queue's closed.
+      def queue(root)
+        @queues[root] ||= Thread::Queue.new.tap do |queue|
+          Thread.new { while (change = queue.pop) do take(change) end }
+        end
+      end
+
+      # An error, like a worker stopping partway from a crash, is shown, and the project takes its next change, its
+      # worker starting again.
+      def take(change)
+        return restart(change.root) if change.nodes?
+
+        workers[change.root].call(:update, change.path)
+      rescue StandardError => e
+        warn "[#{name(change.root)}] raindown: #{e.message}"
+      end
 
       # Without fork the projects share this process, where nodes can't be unloaded.
       def restart(root)
