@@ -9,7 +9,7 @@ Code review records what's wrong with code, but not how it feels to work with. H
 
 The terminal UI ([ADR 1](0001-terminal-ui.md)) already has views and renderers ([ADR 2](0002-screen-buffer.md) lists the terms), a Dashboard that charts data, and ways to open the editor and run commands. Code feelings uses those to make recording how code feels quick enough to do regularly. It's modelled on the "macrodata refinement" screens in *Severance*, where workers sort a grid of numbers by the feeling they give off into one of four tempers: **woe, frolic, dread and malice**.
 
-`f`, or teleporting to "Code feelings", opens it as a view in the main pane:
+`f`, or teleporting to "🎭 Feelings", opens it as a view in the main pane:
 
 ```
 ────────────────────────────────┬───────────────────────── Weekly Batch ─────────────────────────

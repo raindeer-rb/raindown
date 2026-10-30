@@ -7,6 +7,7 @@ require_relative '../text'
 module Raindown
   module TUI
     # Draws what's in a pane, :nav or :main, as lines of the pane's width and height, which the Layout puts in it.
+    # Like the Layout, it's made again for each draw, so it draws what the Navigator and its view hold then.
     Renderer = Struct.new(:navigator, :pane, :width, :height) do
       include Rows
       include Text

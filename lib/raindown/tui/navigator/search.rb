@@ -97,8 +97,7 @@ module Raindown
       end
 
       def places
-        [Place.new(text: 'Dashboard', where: '', open: OpenView.new(view: dashboard)),
-         Place.new(text: 'Code feelings', where: '', open: OpenView.new(view: feelings)),
+        [*pages.map { |text, view| Place.new(text:, where: '', open: OpenView.new(view:)) },
          *@files.files.flat_map { file_places(it) },
          *@endpoints.all.map { Place.new(text: it.text, where: "#{relative(it.path)}:#{it.line}", open: open_endpoint(it)) }]
       end

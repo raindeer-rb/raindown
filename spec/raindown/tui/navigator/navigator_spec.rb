@@ -516,11 +516,11 @@ RSpec.describe Raindown::TUI::Navigator do
     def type(navigator, text) = text.each_char { navigator.next_step(Raindown::TUI::Type.new(text: it)) }
     def found(navigator) = navigator.matches.map { [it.text, it.where] }
 
-    it 'opens with /, listing the Dashboard and Code feelings, then each file with its headings and directives, until something is typed' do
+    it 'opens with /, listing the pages as in the files, then each file with its headings and directives, until something is typed' do
       navigator.next_step(:search)
 
       expect(navigator.searching?).to be(true)
-      expect(found(navigator).first(4)).to eq([['Dashboard', ''], ['Code feelings', ''], ['guides/setup.md', ''],
+      expect(found(navigator).first(4)).to eq([['📊 Dashboard', ''], ['🎭 Feelings', ''], ['guides/setup.md', ''],
                                                ['# Install', 'guides/setup.md:1']])
     end
 

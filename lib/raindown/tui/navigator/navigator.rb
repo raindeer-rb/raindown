@@ -139,14 +139,16 @@ module Raindown
         send(ACTIONS[name]) if ACTIONS.key?(name)
       end
 
-      # The Dashboard and Code feelings, whose emoji every terminal draws two columns wide, then the files and the
-      # endpoints, with a blank line between each section that has rows.
+      # The Dashboard and Code feelings, then the files and the endpoints, with a blank line between each section that
+      # has rows.
       def nav_rows
-        pages = { '📊 Dashboard' => dashboard, '🎭 Feelings' => feelings }.map do |text, view|
-          Row.new(text:, depth: 0, kind: :page, target: view, open: OpenView.new(view:))
-        end
-        [pages, @files.rows, @endpoints.rows].reject(&:empty?).flat_map { [Row::SEPARATOR, *it] }.drop(1)
+        rows = pages.map { |text, view| Row.new(text:, depth: 0, kind: :page, target: view, open: OpenView.new(view:)) }
+        [rows, @files.rows, @endpoints.rows].reject(&:empty?).flat_map { [Row::SEPARATOR, *it] }.drop(1)
       end
+
+      # The pages above the files, by how they're shown, in the files and the search, with emoji every terminal draws two
+      # columns wide.
+      def pages = { '📊 Dashboard' => dashboard, '🎭 Feelings' => feelings }
 
       def selected
         content(@focus).selected
