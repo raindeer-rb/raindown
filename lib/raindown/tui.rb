@@ -10,8 +10,8 @@ module Raindown
   module TUI
     module_function
 
-    # PATH is a file to open, or a directory. Its project is the one it's in, or else the directory itself.
-    # Without a terminal, like in a script or a service, it says so, once curses has loaded, and returns false, to be
+    # PATH is a file to open, or a directory. Its project is the one it's in, or else the directory itself. It returns
+    # true once it's quit. Without a terminal, like in a script or a service, it says so, once curses has loaded, and returns false, to be
     # watched instead, as curses' own error would be "Error opening terminal: unknown". Bare and execute, like --bare and
     # -x, allow bare directives in any file and run endpoints with no response as it writes back.
     def start(path, bare: false, execute: false)
@@ -33,6 +33,7 @@ module Raindown
       require_relative 'tui/saves'
       saves = Saves.new(root)
       Screen.new(Navigator.new(root:, path: (path unless File.directory?(path)), workers:, saves:, runs_endpoints: execute)).run
+      true
     ensure
       saves&.stop
       workers&.stop

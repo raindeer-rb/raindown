@@ -46,6 +46,7 @@ module Raindown
         @endpoints = Endpoints.new(workers:)
         @dashboard = DashboardView.new(root:, workers:)
         @feelings = FeelingsView.new(root:)
+        @sketches = SketchesView.new(root:)
         @nav = ListView.new { nav_rows }
         first = Projects.files(root, nested: true).first
         # The dashboard is the first page, unless a file is asked for, and "d" goes from it to the first file.
@@ -139,7 +140,7 @@ module Raindown
         send(ACTIONS[name]) if ACTIONS.key?(name)
       end
 
-      # The Dashboard and Code feelings, then the files and the endpoints, with a blank line between each section that
+      # The Dashboard, Code feelings and Sketches, then the files and the endpoints, with a blank line between each section that
       # has rows.
       def nav_rows
         rows = pages.map { |text, view| Row.new(text:, depth: 0, kind: :page, target: view, open: OpenView.new(view:)) }
@@ -147,8 +148,13 @@ module Raindown
       end
 
       # The pages above the files, by how they're shown, in the files and the search, with emoji every terminal draws two
-      # columns wide.
-      def pages = { '📊 Dashboard' => dashboard, '🎭 Feelings' => feelings }
+      # columns wide. Sketches is listed once the project has some, from Claude Code.
+      def pages
+        pages = { '📊 Dashboard' => dashboard, '🎭 Feelings' => feelings }
+        return pages unless sketches.saved?
+
+        pages.merge('🎨 Sketches' => sketches)
+      end
 
       def selected
         content(@focus).selected

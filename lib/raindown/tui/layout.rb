@@ -133,5 +133,6 @@ end
 require_relative 'renderers/list_renderer'
 require_relative 'renderers/outline_renderer'
 require_relative 'renderers/dashboard_renderer'
+require_relative 'renderers/sketches_renderer'
 require_relative 'renderers/endpoint_renderer'
 require_relative 'feelings/feelings_renderer'

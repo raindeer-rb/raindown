@@ -29,13 +29,13 @@ Raindown is a Markdown superset for AI, APIs, Docs and humans.
 <{ Commits: limit=5 }>
 
 ```
-Total    -574 ▕██████████████│███████████████▉ +648
+Total    -214  ████████████│██████████████████ +319
 ───────────────────────────────────────────────────
-513ed05   -10               ▕│██▏               +85
-6e33b0b   -41               █│█▏                +44
-0bdc9d1   -42               █│▋                 +23
-b40b0ba   -53              ▕█│█▋                +68
-02a25a8  -428     ▐██████████│██████████▌      +428
+8336ced   -11             ▐│▊                   +13
+b23b9e3  -110       ▕██████│████████▋          +154
+513ed05   -10             ▐│████▊               +85
+6e33b0b   -41           ▕██│██▌                 +44
+0bdc9d1   -42           ▐██│█▎                  +23
 ```
 
 <{ :Commits }>
@@ -84,6 +84,14 @@ Code is highlighted with [Rouge](https://rouge.jneen.net), which knows over 200 
 | ------- | ------ | ---- | --- | ----- | ------ |
 | Feeling | frolic | numb | woe | dread | malice |
 | Score   | 1      | 0.5  | ⅓   | ⅙     | 0      |
+
+**Sketches**, under Code feelings in the files once a project has some, shows the mockups, diagrams, charts and tables drawn in [Claude Code](https://claude.com/claude-code)'s replies, newest first, one at a time. The arrow keys move between them, and `e` opens one in your editor. The title above them, in the border, is the kind they're filtered to: Enter or a click drops down the kinds, with how many of each there are, to choose another. A sketch is a code block marked with its kind, like `mockup`, or one with no language that's drawn with box-drawing lines or blocks, whose kind is worked out from what it's drawn with: a diagram when arrows join its parts, a chart when it's mostly blocks, a table when its lines cross, and otherwise a mockup. `raindown sketches` saves those in Claude Code's last reply to the project's `.raindown/sketches.md`, each under the time it was saved and its kind, as a Stop hook in Claude Code's settings:
+
+```json
+{ "hooks": { "Stop": [{ "hooks": [{ "type": "command", "command": "raindown sketches", "async": true }] }] } }
+```
+
+The page shows a new sketch as soon as it's saved, as the terminal UI watches the project's files.
 
 ### Directives
 

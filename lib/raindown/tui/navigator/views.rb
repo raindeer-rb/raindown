@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../views/dashboard_view'
+require_relative '../views/sketches_view'
 require_relative '../views/endpoint_view'
 require_relative '../feelings/feelings_view'
 require_relative '../views/outline_view'
@@ -12,7 +13,7 @@ module Raindown
     # A view has the pane that draws it, a next step for the keys it takes while it has the focus, and a target,
     # what's opened it in the files. It loads when it's opened, and again after a change.
     module Views
-      attr_reader :view, :dashboard, :feelings
+      attr_reader :view, :dashboard, :feelings, :sketches
 
       # The path of the file the view shows, if any.
       def path = view.path
