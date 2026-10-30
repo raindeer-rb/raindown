@@ -73,7 +73,7 @@ The grid shows one **batch** of files a week, like the files the refiners work t
 
 ### Remembering what's been felt
 
-Each feeling is a row in **`.raindown/feelings.csv`**: the date, where the method is, its name, the temper, the note, the commit, and **a checksum of its code** (`CodeMethod#checksum`). The checksum is a CRC of its lines, leaving out indentation, trailing spaces and blank lines.
+Each feeling is a row in **`.raindown/feelings.csv`**: its `timestamp`, when it was felt, in UTC, like `2026-10-30T03:14:07Z`, the `commit`, **a `checksum` of its code** (`CodeMethod#checksum`), the method's `location`, its file and line, the `method`'s name, the `temper` and the `note`, in that order. The checksum is a CRC of its lines, leaving out indentation, trailing spaces and blank lines.
 
 - **A method counts as felt** when a row matches its file, name and checksum (`FeelingsLog#felt?`). Line numbers are ignored, so a method that moves within its file stays felt.
 - **When its code changes,** a method comes back into the grid to be felt again. That's what happens after `x` has Claude Code fix it.

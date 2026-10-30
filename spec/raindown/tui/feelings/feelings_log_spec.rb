@@ -23,14 +23,15 @@ RSpec.describe Raindown::TUI::FeelingsLog do
 
   def feeling(temper, note = nil, about: method) = Raindown::TUI::Feeling.new(method: about, temper:, note:)
 
-  it 'notes each feeling down in .raindown/feelings.csv, with its code\'s checksum, and counts them by temper' do
+  it 'notes each feeling down in .raindown/feelings.csv, when in UTC, with its code\'s checksum, and counts them by temper' do
     log.add(feeling('malice', 'two negations | and a hidden @rows'))
     log.add(feeling('numb', about: other))
 
-    expect(log.rows.map { it.values_at(:where, :method, :temper, :note, :checksum) })
+    expect(log.rows.map { it.values_at(:location, :method, :temper, :note, :checksum) })
       .to eq([['lib/text.rb:12', 'Text#fit', 'malice', 'two negations | and a hidden @rows', method.checksum],
               ['lib/text.rb:30', 'Text#spread', 'numb', nil, other.checksum]])
     expect(log.counts).to eq('frolic' => 0, 'numb' => 1, 'woe' => 0, 'dread' => 0, 'malice' => 1)
+    expect(log.rows.map { it[:timestamp] }).to all(match(/\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\z/))
   end
 
   def memories = CSV.read(File.join(@root, '.raindown', 'memories.csv'), headers: true).map { it.to_h.values_at('method', 'temper') }

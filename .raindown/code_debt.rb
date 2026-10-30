@@ -39,5 +39,5 @@ class CodeDebt < Raindown::Stat
   private
 
   # The file and name of the row's method, wherever its line was.
-  def row_method(row) = [row['where'].sub(/:\d+\z/, ''), row['method']]
+  def row_method(row) = [row['location'].sub(/:\d+\z/, ''), row['method']]
 end

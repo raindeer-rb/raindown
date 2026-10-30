@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'csv'
-require 'date'
 require 'fileutils'
 require 'open3'
+require 'time'
 
 module Raindown
   module TUI
@@ -27,7 +27,7 @@ module Raindown
     # .raindown/memories.csv, so the feelings stay few, and the history's kept.
     class FeelingsLog
       TEMPERS = %w[frolic numb woe dread malice].freeze
-      HEADER = %i[when where method temper note commit checksum].freeze
+      HEADER = %i[timestamp commit checksum location method temper note].freeze
       def initialize(root:)
         @root = root
         @csv = File.join(root, '.raindown', 'feelings.csv')
@@ -39,13 +39,13 @@ module Raindown
       def add(feeling)
         method = feeling.method
         row = {
-          when: Date.today.iso8601,
-          where: where(method),
+          timestamp: Time.now.utc.iso8601,
+          commit:,
+          checksum: method.checksum,
+          location: location(method),
           method: method.label,
           temper: feeling.temper,
-          note: feeling.note,
-          commit:,
-          checksum: method.checksum
+          note: feeling.note
         }
         changed, others = rows.reject { felt_row?(it, method) }.partition { about?(it, method) }
         append_memories(changed)
@@ -94,7 +94,7 @@ module Raindown
       def about?(row, method) = path(row) == relative(method.path) && row[:method] == method.label
 
       # The row's file, without the line the method was on.
-      def path(row) = row[:where].sub(/:\d+\z/, '')
+      def path(row) = row[:location].sub(/:\d+\z/, '')
 
       # The row's file, method and checksum, to match a method's.
       def key(row) = [path(row), row[:method], row[:checksum]]
@@ -120,7 +120,8 @@ module Raindown
         @rows = @felt = @felt_methods = nil
       end
 
-      def where(method) = "#{relative(method.path)}:#{method.line}"
+      # The method's file and line.
+      def location(method) = "#{relative(method.path)}:#{method.line}"
 
       def relative(path) = path.delete_prefix(File.join(@root, ''))
 

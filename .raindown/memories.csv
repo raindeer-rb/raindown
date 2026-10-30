@@ -1,13 +1,16 @@
-when,where,method,temper,note,commit,checksum
-2026-10-27,lib/raindown/document.rb:74,Document#nodes,dread,the array assignment and the conditional in one line looks confusing when coupled with the walk,e831696,
-2026-10-28,lib/raindown/tui/feelings_log.rb:45,FeelingsLog#add,dread,"the zip could be a multiline block where the args to zip are a hash, then drop the to_h. would that work?",1d2ace2,9bcb854d
-2026-10-28,lib/raindown/tui/feelings_log.rb:45,FeelingsLog#add,dread,,1d2ace2,d21d9b6f
-2026-10-28,lib/raindown/tui/terminal/styles.rb:97,Styles#code,woe,what does it refer to?,49ff701,88209dc4
-2026-10-27,lib/raindown/tui/feelings_log.rb:18,TUI#felt,numb,,e831696,
-2026-10-27,lib/raindown/tui/code_methods.rb:72,CodeMethods#indented,woe,"the it implicit block argument is too vauge in this situation, it should probably be file?",e831696,
-2026-10-28,lib/raindown/tui/navigator/views.rb:42,Views#open_feelings,woe,why not just call the method directly?,eee24a1,f54aa770
-2026-10-27,lib/raindown/tui/navigator/navigator.rb:136,Navigator#nav_rows,malice,"reject followed by flat map on one line is too complicated, flat map should be a block",e831696,
-2026-10-27,lib/raindown/tui/renderers/outline_renderer.rb:14,OutlineRenderer#page,malice,"i don't like the empty if/else blocks, this code looks broken",e831696,
-2026-10-27,lib/raindown/node_blocks.rb:79,NodeBlocks#rendered_lines,dread,the empty if/else again with a really long line for the else,0a3ddf8,
-2026-10-28,lib/raindown/endpoint/curl.rb:70,Curl#request,malice,"it's just ugly, I don't know what's going on here, so many ifs and a nested or and memoization",52c8320,
-2026-10-28,lib/raindown/tui/terminal/screen.rb:136,Screen#suspend,frolic,,1d2ace2,4dbb036f
+timestamp,commit,checksum,location,method,temper,note
+2026-10-27,e831696,,lib/raindown/document.rb:74,Document#nodes,dread,the array assignment and the conditional in one line looks confusing when coupled with the walk
+2026-10-28,1d2ace2,9bcb854d,lib/raindown/tui/feelings_log.rb:45,FeelingsLog#add,dread,"the zip could be a multiline block where the args to zip are a hash, then drop the to_h. would that work?"
+2026-10-28,1d2ace2,d21d9b6f,lib/raindown/tui/feelings_log.rb:45,FeelingsLog#add,dread,
+2026-10-28,49ff701,88209dc4,lib/raindown/tui/terminal/styles.rb:97,Styles#code,woe,what does it refer to?
+2026-10-27,e831696,,lib/raindown/tui/feelings_log.rb:18,TUI#felt,numb,
+2026-10-27,e831696,,lib/raindown/tui/code_methods.rb:72,CodeMethods#indented,woe,"the it implicit block argument is too vauge in this situation, it should probably be file?"
+2026-10-28,eee24a1,f54aa770,lib/raindown/tui/navigator/views.rb:42,Views#open_feelings,woe,why not just call the method directly?
+2026-10-27,e831696,,lib/raindown/tui/navigator/navigator.rb:136,Navigator#nav_rows,malice,"reject followed by flat map on one line is too complicated, flat map should be a block"
+2026-10-27,e831696,,lib/raindown/tui/renderers/outline_renderer.rb:14,OutlineRenderer#page,malice,"i don't like the empty if/else blocks, this code looks broken"
+2026-10-27,0a3ddf8,,lib/raindown/node_blocks.rb:79,NodeBlocks#rendered_lines,dread,the empty if/else again with a really long line for the else
+2026-10-28,52c8320,,lib/raindown/endpoint/curl.rb:70,Curl#request,malice,"it's just ugly, I don't know what's going on here, so many ifs and a nested or and memoization"
+2026-10-28,1d2ace2,4dbb036f,lib/raindown/tui/terminal/screen.rb:136,Screen#suspend,frolic,
+2026-10-28,1d2ace2,c31e01,lib/raindown/tui/endpoints.rb:22,Endpoints#load,frolic,
+2026-10-28,1d2ace2,c3cd8764,lib/raindown/supervisor.rb:60,Supervisor#listener,woe,
+2026-10-28,eee24a1,785c315c,lib/raindown/supervisor.rb:96,Supervisor#fork?,frolic,

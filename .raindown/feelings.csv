@@ -1,15 +1,12 @@
-when,where,method,temper,note,commit,checksum
-2026-10-27,lib/raindown/tui/file_tree.rb:74,FileTree#tree_rows,numb,,9d0a0ac,ac17deca
-2026-10-27,lib/raindown/tui/file_tree.rb:81,FileTree#file_row,dread,too long,9d0a0ac,a5f8b166
-2026-10-27,lib/raindown/tui/file_tree.rb:86,FileTree#folder_rows,malice,"It just feels too condensed, maybe more spacing will help",e831696,d1635e95
-2026-10-27,lib/raindown/document.rb:25,Document#endpoint?,woe,,e831696,24d1b27f
-2026-10-27,lib/raindown/pre_renderer.rb:31,PreRenderer#render_body,numb,,e831696,c109cd2
-2026-10-28,lib/raindown/tui/endpoints.rb:22,Endpoints#load,frolic,,1d2ace2,c31e01
-2026-10-28,lib/raindown/supervisor.rb:60,Supervisor#listener,woe,,1d2ace2,c3cd8764
-2026-10-28,lib/raindown/tui/terminal/screen.rb:25,Screen#run,woe,,1d2ace2,596a2db3
-2026-10-28,lib/raindown/tui/card.rb:34,Card#box_height,frolic,,1d2ace2,d7b25950
-2026-10-28,lib/raindown/tui/views/dashboard_view.rb:49,DashboardView#charts,frolic,,1d2ace2,69c07625
-2026-10-28,.raindown/code_health.rb:24,CodeHealth#score,numb,,84f352d,ff6d1099
-2026-10-28,lib/raindown/nodes.rb:24,Nodes#load,numb,,84f352d,74318048
-2026-10-28,lib/raindown/supervisor.rb:96,Supervisor#fork?,frolic,,eee24a1,785c315c
-2026-10-29,.raindown/code_health.rb:34,CodeHealth#label,numb,,e85db93,661b4526
+timestamp,commit,checksum,location,method,temper,note
+2026-10-27,9d0a0ac,ac17deca,lib/raindown/tui/file_tree.rb:74,FileTree#tree_rows,numb,
+2026-10-27,9d0a0ac,a5f8b166,lib/raindown/tui/file_tree.rb:81,FileTree#file_row,dread,too long
+2026-10-27,e831696,d1635e95,lib/raindown/tui/file_tree.rb:86,FileTree#folder_rows,malice,"It just feels too condensed, maybe more spacing will help"
+2026-10-27,e831696,24d1b27f,lib/raindown/document.rb:25,Document#endpoint?,woe,
+2026-10-27,e831696,c109cd2,lib/raindown/pre_renderer.rb:31,PreRenderer#render_body,numb,
+2026-10-28,1d2ace2,596a2db3,lib/raindown/tui/terminal/screen.rb:25,Screen#run,woe,
+2026-10-28,1d2ace2,d7b25950,lib/raindown/tui/card.rb:34,Card#box_height,frolic,
+2026-10-28,1d2ace2,69c07625,lib/raindown/tui/views/dashboard_view.rb:49,DashboardView#charts,frolic,
+2026-10-28,84f352d,ff6d1099,.raindown/code_health.rb:24,CodeHealth#score,numb,
+2026-10-28,84f352d,74318048,lib/raindown/nodes.rb:24,Nodes#load,numb,
+2026-10-29,e85db93,661b4526,.raindown/code_health.rb:34,CodeHealth#label,numb,
