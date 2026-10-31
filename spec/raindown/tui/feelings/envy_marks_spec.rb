@@ -36,15 +36,15 @@ RSpec.describe Raindown::TUI::EnvyMarks do
 
     navigator.view.cursor = envious
     expect(bottom(80)).to include('╰─ 💚 envies Canvas: 3 calls').and end_with('… ─╯')
-    expect(bottom(120)).to include('╰─ 💚 envies Canvas: 3 calls on canvas, 0 on self ─').and end_with(' c: content ─╯')
+    expect(bottom(120)).to include('╰─ 💚 envies Canvas: 3 calls on canvas, 0 on self ─').and end_with(' c: calm ─╯')
   end
 
-  it "says it's content with C, which leaves its digits untinted" do
+  it "says it's calm with C, which leaves its digits untinted" do
     lines
     navigator.view.cursor = envious
-    navigator.next_step(:content)
+    navigator.next_step(:calm)
 
-    expect(navigator.status).to eq([:info, 'Square#draw is content, until its code changes'])
+    expect(navigator.status).to eq([:info, 'Square#draw is calm, until its code changes'])
     expect(bottom(120)).not_to include('💚')
   end
 end

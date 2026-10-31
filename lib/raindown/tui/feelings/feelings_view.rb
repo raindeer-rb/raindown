@@ -16,7 +16,7 @@ module Raindown
     # sort how it feels into a bin: frolic, numb, woe, dread or malice, which notes it down in the FeelingsLog,
     # staying on it. Woe, dread and malice ask why first, typed until Enter, or Esc to leave it out. E opens the method in the
     # editor, and X asks Claude Code to fix it, and either way it's read again after, to be felt again. A method that mostly
-    # works with another class envies it, unless C says it's content, in the ContentLog, until its code changes.
+    # works with another class envies it, unless C says it's calm, in the CalmLog, until its code changes.
     class FeelingsView
       include CellMoves
       include EnvyMarks
@@ -27,7 +27,7 @@ module Raindown
       NOTED = %w[woe dread malice].freeze
       # Its own keys, besides the bins: Enter and Space show all of the selected method's code, or its first lines again.
       # Ctrl+T celebrates, to try the rain and the waffle, and isn't shown with the buttons.
-      KEYS = %i[up down left right edit execute content enter toggle expand celebrate].freeze
+      KEYS = %i[up down left right edit execute calm enter toggle expand celebrate].freeze
 
       # The temper being noted, and the note typed so far, while it's asking why, whether the selected method's code
       # shows all that fits, until another's selected, and the rain then the waffle, once the batch is refined.
@@ -36,7 +36,7 @@ module Raindown
       def initialize(root:)
         @root = root
         @log = FeelingsLog.new(root:)
-        @contents = ContentLog.new(root:)
+        @calm = CalmLog.new(root:)
         @last_feelings = {}
         @cursor = 0
         @week = WeeklyBatch.new(log: @log)
@@ -62,12 +62,12 @@ module Raindown
 
       # Reads the code again, keeping the batch, like after a method's edited or fixed, and the selected method, by its
       # file and name, even when the methods around it change, moving the feelings about code that's changed, or gone, to
-      # the memories, and forgetting which were content when their code's changed.
+      # the memories, and forgetting which were calmed when their code's changed.
       def load
         was = selected
         every = CodeMethods.list(@root)
         @log.move_stale_to_memories(every)
-        @contents.forget_changed(every)
+        @calm.forget_changed(every)
         @week.read(every)
         reselect(was)
       end
@@ -124,7 +124,7 @@ module Raindown
         when :down then move_row(1)
         when :edit then Edit.new(path: selected.path, line: selected.line)
         when :execute then fix
-        when :content then contented
+        when :calm then calmed
         when :enter, :toggle, :expand then (@expanded = !@expanded).then { nil }
         end
       end

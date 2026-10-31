@@ -148,7 +148,7 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect((1..8).map { pick.call(Date.new(2026, 11, 1) + (7 * it)) }.uniq.length).to be > 1
   end
 
-  it "marks envy, asks to fix it with what it envies, and C says it's content, until its code changes" do
+  it "marks envy, asks to fix it with what it envies, and C says it's calm, until its code changes" do
     File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area = 1\n  def side = 2\n" \
                                                      "  def draw(canvas)\n    [canvas.clear, canvas.line, canvas.fill]\n  end\nend\n")
     File.write(File.join(@root, 'lib', 'canvas.rb'), "class Canvas\n  def clear = 1\n  def line = 2\n  def fill = 3\nend\n")
@@ -158,13 +158,13 @@ RSpec.describe Raindown::TUI::FeelingsView do
 
     expect(view.next_step(:execute).feeling.prompt)
       .to include('envies Canvas: 3 calls on canvas, 0 on self, so consider moving it to Canvas.')
-    expect(view.next_step(:content)).to eq(Raindown::TUI::Content.new(method: view.selected))
-    expect([view.envy(view.selected), view.next_step(:content), view.next_step(:execute).feeling.envy]).to eq([nil, nil, nil])
+    expect(view.next_step(:calm)).to eq(Raindown::TUI::Calm.new(method: view.selected))
+    expect([view.envy(view.selected), view.next_step(:calm), view.next_step(:execute).feeling.envy]).to eq([nil, nil, nil])
 
     File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area = 1\n  def side = 2\n" \
                                                      "  def draw(canvas)\n    [canvas.clear, canvas.fill, canvas.line]\n  end\nend\n")
     view.load
-    expect([view.envy(view.selected)&.home, File.read(File.join(@root, '.raindown', 'content.csv')).lines.length])
+    expect([view.envy(view.selected)&.home, File.read(File.join(@root, '.raindown', 'calm.csv')).lines.length])
       .to eq(['Canvas', 1])
   end
 
