@@ -1,28 +1,28 @@
 # frozen_string_literal: true
 
-require_relative 'calm_log'
+require_relative 'kept_log'
 
 module Raindown
   module TUI
-    # Which of Code feelings' methods are marked as envious, in their own tint, with why below the grid, and how C calms
-    # the selected one, in the CalmLog, until its code changes.
+    # Which of Code feelings' methods are marked as envious, in their own tint, with why below the grid, and how K keeps
+    # the selected one, in the KeptLog, until its code changes.
     module EnvyMarks
-      # The method's Envy, when it's envious, and nobody's said it's calm since its code last changed, or nil.
+      # The method's Envy, when it's envious, and nobody's kept it since its code last changed, or nil.
       def envy(method)
         return unless method&.envy&.envious?
-        return if @calm.dismissed?(method)
+        return if @kept.dismissed?(method)
 
         method.envy
       end
 
       private
 
-      # Says the selected envious method is calm, until its code changes.
-      def calmed
+      # Keeps the selected envious method where it is, until its code changes.
+      def kept
         return unless envy(selected)
 
-        @calm.dismiss(selected)
-        Calm.new(method: selected)
+        @kept.dismiss(selected)
+        Kept.new(method: selected)
       end
     end
   end

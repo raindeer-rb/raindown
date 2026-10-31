@@ -22,7 +22,7 @@ module Raindown
 
     # Steps a row or a view asks of the Navigator, which each takes on it, returning what the Screen does next: to open
     # a view right of the files, or a file in the outline at a directive, to edit a file at a line, to run an endpoint,
-    # to draw the page a feeling was noted down in, to ask Claude Code to fix a method, or to calm one.
+    # to draw the page a feeling was noted down in, to ask Claude Code to fix a method, or to keep one where it is.
     OpenView = Data.define(:view) do
       def take(navigator) = navigator.open_view(view)
     end
@@ -47,8 +47,8 @@ module Raindown
       def take(navigator) = navigator.fix_with_agent(feeling)
     end
 
-    Calm = Data.define(:method) do
-      def take(navigator) = navigator.calmed(method)
+    Kept = Data.define(:method) do
+      def take(navigator) = navigator.kept(method)
     end
   end
 end

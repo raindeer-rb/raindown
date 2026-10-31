@@ -6,7 +6,7 @@ require 'raindown/tui/layout'
 RSpec.describe Raindown::TUI::Input do
   describe '.key_event' do
     it "turns curses' keys, which are strings or numbers, into events" do
-      expect(described_class.key_event('j')).to eq(:down)
+      expect(described_class.key_event(Curses::KEY_DOWN)).to eq(:down)
       expect(described_class.key_event(Curses::KEY_UP)).to eq(:up)
       expect(described_class.key_event(9)).to eq(:tab)
       expect(described_class.key_event(13)).to eq(:enter)
@@ -14,6 +14,7 @@ RSpec.describe Raindown::TUI::Input do
       expect(described_class.key_event('z')).to be_nil
       expect(described_class.key_event('E')).to eq(:edit)
       expect(described_class.key_event('Q')).to eq(:quit)
+      expect(%w[j k].map { described_class.key_event(it) }).to eq([nil, :keep])
       expect(%w[f 1 5].map { described_class.key_event(it) }).to eq(%i[feelings bin1 bin5])
       expect([20, "\x14"].map { described_class.key_event(it) }).to eq(%i[celebrate celebrate])
     end

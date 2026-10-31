@@ -11,15 +11,15 @@ module Raindown
     #    │ [12 more lines]                                                   │
     #    ├───────────────────────────────────────────────────────────────────┤
     #    │ Why DREAD? > column maths, a character at a time▏                 │
-    #    ╰─ 💚 envies Segment: 4 calls on segment, 0 on self ─ c: calm ─╯
+    #    ╰─ 💚 envies Segment: 4 calls on segment, 0 on self ─ k: keep ─╯
     module CodeBox
       # The most of a method's code that shows, until it's expanded, and the rows the grid keeps when it is.
       CODE_LINES = 6
       MIN_GRID_ROWS = 2
       # The box's top and bottom, and the line of how many more lines there are.
       BOX_LINES = 3
-      # How an envious method's box ends, when there's room, saying how to say it's calm.
-      CALM = ' c: calm ─╯'
+      # How an envious method's box ends, when there's room, saying how to keep it where it is.
+      KEEP = ' k: keep ─╯'
 
       private
 
@@ -31,15 +31,15 @@ module Raindown
         [box_top(view.selected), *code, *blank_lines(code.length + notes.length), *notes, box_bottom]
       end
 
-      # The box's bottom, saying what the method envies when it's envious, and that C says it's calm, when there's room.
+      # The box's bottom, saying what the method envies when it's envious, and that K keeps it, when there's room.
       def box_bottom
         envy = view.envy(view.selected)
         return box_edge('╰', '╯') unless envy
 
         why = "╰─ 💚 #{envy.reason} "
-        return box_edge(why, '─╯') if display_width(why + CALM) > width - 3
+        return box_edge(why, '─╯') if display_width(why + KEEP) > width - 3
 
-        box_edge(why, CALM)
+        box_edge(why, KEEP)
       end
 
       # Blank lines after a short method's code and its note, so the box is always as tall as it gets until it's expanded,

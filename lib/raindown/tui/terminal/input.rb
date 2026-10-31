@@ -11,11 +11,10 @@ module Raindown
     # Turns curses' keys and clicks into a Navigator's events.
     module Input
       KEYS = {
-        Curses::KEY_UP => :up, 'k' => :up, Curses::KEY_DOWN => :down, 'j' => :down,
-        Curses::KEY_LEFT => :left, 'h' => :left, Curses::KEY_RIGHT => :right, 'l' => :right,
+        Curses::KEY_UP => :up, Curses::KEY_DOWN => :down, Curses::KEY_LEFT => :left, Curses::KEY_RIGHT => :right,
         "\t" => :tab, Curses::KEY_BTAB => :tab, "\r" => :enter, "\n" => :enter, Curses::KEY_ENTER => :enter,
         ' ' => :toggle, 'x' => :execute, 'e' => :edit, 'w' => :write_back, 'r' => :reload, 'd' => :dashboard,
-        'p' => :projects, 'f' => :feelings, 'c' => :calm, "\x14" => :celebrate, '/' => :search,
+        'p' => :projects, 'f' => :feelings, 'k' => :keep, "\x14" => :celebrate, '/' => :search,
         '1' => :bin1, '2' => :bin2, '3' => :bin3, '4' => :bin4, '5' => :bin5, "\e" => :escape, 'q' => :quit
       }.freeze
       # While typing, like in the search, printable characters are typed, and only these keys do anything else.

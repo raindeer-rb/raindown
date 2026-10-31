@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/feelings/calm_log'
+require 'raindown/tui/feelings/kept_log'
 require 'raindown/tui/feelings/code_methods'
 require 'tmpdir'
 
-RSpec.describe Raindown::TUI::CalmLog do
+RSpec.describe Raindown::TUI::KeptLog do
   around do |example|
     Dir.mktmpdir do |dir|
       @root = File.realpath(dir)
@@ -18,7 +18,7 @@ RSpec.describe Raindown::TUI::CalmLog do
                                   lines: ['def summary(endpoint)', '  endpoint.url', 'end'], changes: 0, drift: 0, envy: nil)
   end
 
-  it "notes down in .raindown/calm.csv that a method is calm, with its code's checksum, wherever its line moves" do
+  it "notes down in .raindown/kept.csv that a method is kept, with its code's checksum, wherever its line moves" do
     log.dismiss(method)
     log.dismiss(method)
 
