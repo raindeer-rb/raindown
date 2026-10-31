@@ -148,6 +148,26 @@ RSpec.describe Raindown::TUI::FeelingsView do
     expect((1..8).map { pick.call(Date.new(2026, 11, 1) + (7 * it)) }.uniq.length).to be > 1
   end
 
+  it "marks a cuckoo, asks to fix it with where it belongs, and C says it isn't one, until its code changes" do
+    File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area = 1\n  def side = 2\n" \
+                                                     "  def draw(canvas)\n    [canvas.clear, canvas.line, canvas.fill]\n  end\nend\n")
+    File.write(File.join(@root, 'lib', 'canvas.rb'), "class Canvas\n  def clear = 1\n  def line = 2\n  def fill = 3\nend\n")
+    view = described_class.new(root: @root).tap(&:load).tap { it.cells(4, 4) }
+    view.cursor = view.code_methods.index { it.name == 'draw' }
+    expect(view.code_methods.select { view.cuckoo(it) }.map(&:label)).to eq(['Square#draw'])
+
+    expect(view.next_step(:execute).feeling.prompt)
+      .to include('probably belongs to Canvas: 3 calls on canvas, 0 on self, so consider moving it to Canvas.')
+    expect(view.next_step(:cuckoo)).to eq(Raindown::TUI::NotCuckoo.new(method: view.selected))
+    expect([view.cuckoo(view.selected), view.next_step(:cuckoo), view.next_step(:execute).feeling.cuckoo]).to eq([nil, nil, nil])
+
+    File.write(File.join(@root, 'lib', 'shapes.rb'), "class Square\n  def area = 1\n  def side = 2\n" \
+                                                     "  def draw(canvas)\n    [canvas.clear, canvas.fill, canvas.line]\n  end\nend\n")
+    view.load
+    expect([view.cuckoo(view.selected)&.home, File.read(File.join(@root, '.raindown', 'cuckoos.csv')).lines.length])
+      .to eq(['Canvas', 1])
+  end
+
   it 'leaves Tab, and left from the first method, to the files' do
     expect([view.next_step?(:tab), view.next_step?(:left), view.next_step?(:right)]).to eq([false, false, true])
   end

@@ -18,6 +18,8 @@ module Raindown
       MIN_GRID_ROWS = 2
       # The box's top and bottom, and the line of how many more lines there are.
       BOX_LINES = 3
+      # How a cuckoo's box ends, when there's room, saying how to say it isn't one.
+      NOT_CUCKOO = ' c: not a cuckoo ─╯'
 
       private
 
@@ -29,12 +31,15 @@ module Raindown
         [box_top(view.selected), *code, *blank_lines(code.length + notes.length), *notes, box_bottom]
       end
 
-      # The box's bottom, saying why the method's a cuckoo when it is one, and that C says it isn't.
+      # The box's bottom, saying why the method's a cuckoo when it is one, and that C says it isn't, when there's room.
       def box_bottom
         cuckoo = view.cuckoo(view.selected)
         return box_edge('╰', '╯') unless cuckoo
 
-        box_edge("╰─ 🐦 #{cuckoo.reason} ", ' c: not a cuckoo ─╯')
+        why = "╰─ 🐦 #{cuckoo.reason} "
+        return box_edge(why, '─╯') if display_width(why + NOT_CUCKOO) > width - 3
+
+        box_edge(why, NOT_CUCKOO)
       end
 
       # Blank lines after a short method's code and its note, so the box is always as tall as it gets until it's expanded,
