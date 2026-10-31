@@ -4,11 +4,14 @@ require 'json'
 require 'open3'
 require 'zlib'
 
+require_relative 'cuckoos'
+
 module Raindown
   module TUI
     # A function or method in a project's code, to sort how it feels: where it is, its lines, how many commits changed
-    # its file, and how much it drifts, from 0 to 9, which is how it ranks among the project's by both of them.
-    CodeMethod = Data.define(:path, :owner, :name, :line, :lines, :changes, :drift) do
+    # its file, how much it drifts, from 0 to 9, which is how it ranks among the project's by both of them, and its
+    # Cuckoo, how much it looks laid in another class's nest.
+    CodeMethod = Data.define(:path, :owner, :name, :line, :lines, :changes, :drift, :cuckoo) do
       # Like Layout#lines, or lines alone outside a class or the like.
       def label = [owner, name].compact.join('#')
 
@@ -43,7 +46,7 @@ module Raindown
 
       def list(root)
         changes = file_changes(root)
-        drifting((tagged(root) || indented(root)).map { it.with(changes: changes.fetch(it.path, 0)) })
+        Cuckoos.laying(drifting((tagged(root) || indented(root)).map { it.with(changes: changes.fetch(it.path, 0)) }))
       end
 
       # Each method with its drift, from 0 for the lightest to 9 for the heaviest, where methods that weigh the same
@@ -70,7 +73,8 @@ module Raindown
 
         path = File.join(root, tag['path'].delete_prefix('./'))
         lines = sources[path][(tag['line'] - 1)...tag['end']]
-        CodeMethod.new(path:, owner: tag['scope']&.split(/\.|::/)&.last, name: tag['name'], line: tag['line'], lines:, changes: 0, drift: 0)
+        CodeMethod.new(path:, owner: tag['scope']&.split(/\.|::/)&.last, name: tag['name'], line: tag['line'], lines:, changes: 0, drift: 0,
+                       cuckoo: nil)
       end
 
       def indented(root)
@@ -91,7 +95,7 @@ module Raindown
           next unless name
 
           CodeMethod.new(path:, owner: owner_of(lines, index), name:, line: index + 1,
-                         lines: lines[index..block_end(lines, index)], changes: 0, drift: 0)
+                         lines: lines[index..block_end(lines, index)], changes: 0, drift: 0, cuckoo: nil)
         end
       rescue SystemCallError, ArgumentError
         []

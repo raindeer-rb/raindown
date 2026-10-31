@@ -16,12 +16,12 @@ RSpec.describe Raindown::TUI::FeelingsLog do
   let(:log) { described_class.new(root: @root) }
   let(:method) do
     Raindown::TUI::CodeMethod.new(path: File.join(@root, 'lib', 'text.rb'), owner: 'Text', name: 'fit', line: 12, lines: [],
-                                  changes: 0, drift: 0)
+                                  changes: 0, drift: 0, cuckoo: nil)
   end
 
   let(:other) { method.with(name: 'spread', line: 30) }
 
-  def feeling(temper, note = nil, about: method) = Raindown::TUI::Feeling.new(method: about, temper:, note:)
+  def feeling(temper, note = nil, about: method) = Raindown::TUI::Feeling.new(method: about, temper:, note:, cuckoo: nil)
 
   it 'notes each feeling down in .raindown/feelings.csv, when in UTC, with its code\'s checksum, and counts them by temper' do
     log.add(feeling('malice', 'two negations | and a hidden @rows'))
@@ -71,5 +71,14 @@ RSpec.describe Raindown::TUI::FeelingsLog do
   it 'asks Claude Code to refactor the method, with how it felt' do
     expect(feeling('dread', 'too clever').prompt).to start_with("Refactor Text#fit in #{method.path}:12. It felt like dread: too clever.")
     expect(feeling(nil).prompt).to include('It needs a second look.')
+  end
+
+  it 'tells Claude Code where a cuckoo probably belongs' do
+    cuckoo = Raindown::TUI::Cuckoo.new(score: 9, evidence: 6, home: 'Layout',
+                                       reason: 'probably belongs to Layout: 6 calls on layout, 0 on self')
+
+    expect(feeling('woe').with(cuckoo:).prompt)
+      .to include('It felt like woe. It looks like a cuckoo, as it probably belongs to Layout: 6 calls on layout, 0 on self, ' \
+                  'so consider moving it to Layout. Keep its behaviour')
   end
 end

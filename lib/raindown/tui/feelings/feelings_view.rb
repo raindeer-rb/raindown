@@ -2,6 +2,7 @@
 
 require_relative '../events'
 require_relative 'cell_moves'
+require_relative 'cuckoo_marks'
 require_relative 'celebration/celebration'
 require_relative 'code_methods'
 require_relative 'feelings_log'
@@ -14,9 +15,11 @@ module Raindown
     # between them, the selected one's code shows below the grid, its first lines or with Enter all that fits, and 1 to 5
     # sort how it feels into a bin: frolic, numb, woe, dread or malice, which notes it down in the FeelingsLog,
     # staying on it. Woe, dread and malice ask why first, typed until Enter, or Esc to leave it out. E opens the method in the
-    # editor, and X asks Claude Code to fix it, and either way it's read again after, to be felt again.
+    # editor, and X asks Claude Code to fix it, and either way it's read again after, to be felt again. A method that looks
+    # laid in another class's nest is a cuckoo, which C says it isn't, in the CuckoosLog, until its code changes.
     class FeelingsView
       include CellMoves
+      include CuckooMarks
 
       # Best to worst, as CodeHealth scores them, so the keys rate the code.
       BINS = { bin1: 'frolic', bin2: 'numb', bin3: 'woe', bin4: 'dread', bin5: 'malice' }.freeze
@@ -24,7 +27,7 @@ module Raindown
       NOTED = %w[woe dread malice].freeze
       # Its own keys, besides the bins: Enter and Space show all of the selected method's code, or its first lines again.
       # Ctrl+T celebrates, to try the rain and the waffle, and isn't shown with the buttons.
-      KEYS = %i[up down left right edit execute enter toggle expand celebrate].freeze
+      KEYS = %i[up down left right edit execute cuckoo enter toggle expand celebrate].freeze
 
       # The temper being noted, and the note typed so far, while it's asking why, whether the selected method's code
       # shows all that fits, until another's selected, and the rain then the waffle, once the batch is refined.
@@ -33,6 +36,7 @@ module Raindown
       def initialize(root:)
         @root = root
         @log = FeelingsLog.new(root:)
+        @cuckoos = CuckoosLog.new(root:)
         @last_feelings = {}
         @cursor = 0
         @week = WeeklyBatch.new(log: @log)
@@ -58,11 +62,12 @@ module Raindown
 
       # Reads the code again, keeping the batch, like after a method's edited or fixed, and the selected method, by its
       # file and name, even when the methods around it change, moving the feelings about code that's changed, or gone, to
-      # the memories.
+      # the memories, and forgetting which weren't cuckoos when their code's changed.
       def load
         was = selected
         every = CodeMethods.list(@root)
         @log.move_stale_to_memories(every)
+        @cuckoos.forget_changed(every)
         @week.read(every)
         reselect(was)
       end
@@ -119,12 +124,17 @@ module Raindown
         when :down then move_row(1)
         when :edit then Edit.new(path: selected.path, line: selected.line)
         when :execute then fix
+        when :cuckoo then not_cuckoo
         when :enter, :toggle, :expand then (@expanded = !@expanded).then { nil }
         end
       end
 
-      # Asks to fix the method, with how it last felt, by its file and name, which stay the same when its lines change.
-      def fix = Fix.new(feeling: @last_feelings[[selected.path, selected.label]] || Feeling.new(method: selected, temper: nil, note: nil))
+      # Asks to fix the method, with how it last felt, by its file and name, which stay the same when its lines change,
+      # and where it belongs when it's a cuckoo.
+      def fix
+        felt = @last_feelings[[selected.path, selected.label]] || Feeling.new(method: selected, temper: nil, note: nil, cuckoo: nil)
+        Fix.new(feeling: felt.with(cuckoo: cuckoo(selected)))
+      end
 
       # Frolic and numb are noted down straight away, while the rest ask why first.
       def feel(temper)
@@ -148,7 +158,7 @@ module Raindown
       # Notes the feeling down, staying on the method, so it can be fixed with what was just said about it. It rains
       # when that refines the batch.
       def note_down(temper, note)
-        feeling = Feeling.new(method: selected, temper:, note:)
+        feeling = Feeling.new(method: selected, temper:, note:, cuckoo: nil)
         @last_feelings[[selected.path, selected.label]] = feeling
         @noting = nil
         refined = batch.refined?

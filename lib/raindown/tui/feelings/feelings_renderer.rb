@@ -141,9 +141,9 @@ module Raindown
       end
 
       # The selected method's cells, across the whole of each, on the selection's blue, so they join into one block, or on
-      # green when it's already been felt, and others as they move.
+      # green when it's already been felt, and others as they move, in a cuckoo's tint when they're one.
       def grid_style(owner, index)
-        return cell_style(index) unless owner == view.cursor
+        return tinted(owner, cell_style(index)) unless owner == view.cursor
         return :felt_selected if view.batch.felt?(view.code_methods[owner])
 
         :feelings_selected
