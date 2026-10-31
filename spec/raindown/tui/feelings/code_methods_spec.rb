@@ -64,7 +64,7 @@ RSpec.describe Raindown::TUI::CodeMethods do
 
   it 'checksums its code, which changes with it, but not with its indent, trailing spaces or blank lines' do
     method = Raindown::TUI::CodeMethod.new(path: 'a.rb', owner: nil, name: 'area', line: 1, lines: ['def area', '  1', 'end'], changes: 0,
-                                           drift: 0, cuckoo: nil)
+                                           drift: 0, envy: nil)
 
     expect(method.with(lines: ['    def area  ', '', '      1', '    end']).checksum).to eq(method.checksum)
     expect(method.with(lines: ['def area', '  2', 'end']).checksum).not_to eq(method.checksum)
@@ -72,7 +72,7 @@ RSpec.describe Raindown::TUI::CodeMethods do
 
   it 'takes more cells for longer methods' do
     method = Raindown::TUI::CodeMethod.new(path: 'a.rb', owner: nil, name: 'long', line: 1, lines: ['x'] * 31, changes: 12, drift: 0,
-                                           cuckoo: nil)
+                                           envy: nil)
 
     expect([method.size, method.with(lines: ['x']).size]).to eq([8, 1])
   end

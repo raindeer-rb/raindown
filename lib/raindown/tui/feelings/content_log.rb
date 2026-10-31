@@ -6,24 +6,24 @@ require 'time'
 
 module Raindown
   module TUI
-    # The methods everyone's said aren't cuckoos, kept in .raindown/cuckoos.csv with a checksum of their code, like the
-    # FeelingsLog, so a method stays dismissed until its code changes, and then it can be a cuckoo again.
-    class CuckoosLog
+    # The methods everyone's said are content, kept in .raindown/content.csv with a checksum of their code, like the
+    # FeelingsLog, so a method stays dismissed until its code changes, and then it can envy again.
+    class ContentLog
       HEADER = %i[timestamp checksum location method].freeze
 
       def initialize(root:)
         @root = root
-        @csv = File.join(root, '.raindown', 'cuckoos.csv')
+        @csv = File.join(root, '.raindown', 'content.csv')
       end
 
-      # Notes down that the method isn't a cuckoo, in place of anything said about it before.
+      # Notes down that the method is content, in place of anything said about it before.
       def dismiss(method)
         row = { timestamp: Time.now.utc.iso8601, checksum: method.checksum, location: "#{relative(method.path)}:#{method.line}",
                 method: method.label }
         write_rows(rows.reject { about?(it, method) } + [row])
       end
 
-      # Whether the method's been said not to be a cuckoo, by its file, name and code's checksum, wherever its line is now.
+      # Whether the method's been said to be content, by its file, name and code's checksum, wherever its line is now.
       def dismissed?(method) = keys.include?(method_key(method))
 
       # Forgets the methods that have changed, or gone, since they were dismissed, from the methods there are now.

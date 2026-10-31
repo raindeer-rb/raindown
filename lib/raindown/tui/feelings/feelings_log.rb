@@ -8,11 +8,11 @@ require 'time'
 module Raindown
   module TUI
     # How a method felt: one of Severance's four tempers, woe, frolic, dread or malice, or numb, with an optional note,
-    # and its Cuckoo, when it's one, to fix it with.
-    Feeling = Data.define(:method, :temper, :note, :cuckoo) do
+    # and its Envy, when it's one, to fix it with.
+    Feeling = Data.define(:method, :temper, :note, :envy) do
       # What Claude Code is asked, to fix the method.
       def prompt
-        "Refactor #{method.label} in #{method.path}:#{method.line}. #{felt} #{"#{cuckoo.prompt} " if cuckoo}" \
+        "Refactor #{method.label} in #{method.path}:#{method.line}. #{felt} #{"#{envy.prompt} " if envy}" \
           "Keep its behaviour, follow the project's CLAUDE.md if it has one, and run the specs."
       end
 

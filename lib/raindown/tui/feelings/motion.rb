@@ -6,7 +6,7 @@ module Raindown
   module TUI
     # How Code feelings' digits move in their cells: the restless ones, the heaviest, now and then flicker one lower, and
     # the ones beside the method the mouse is over flee from it, to the far side of their cells, where they tremble often,
-    # as if they're trying to escape, while every cell around it is bold, cuckoos' cells too, in their own tint.
+    # as if they're trying to escape, while every cell around it is bold, envious ones' cells too, in their own tint.
     module Motion
       # The columns a fleeing digit moves by when it trembles, each for a step of FLEEING_TREMBLE_SECONDS, a little longer
       # than a frame, so none are missed, once every FLEEING_TREMBLE_EVERY of them, about every 0.7 seconds, each cell at its
@@ -20,8 +20,8 @@ module Raindown
       # A restless digit flickers one lower for FLICKER_SECONDS, once every FLICKER_EVERY of them, about every 30 seconds.
       FLICKER_SECONDS = 0.5
       FLICKER_EVERY = 60
-      # A cuckoo's cells' styles, for the styles they'd otherwise have.
-      CUCKOO_STYLES = { feelings: :cuckoo, nearby: :cuckoo_nearby }.freeze
+      # An envious method's cells' styles, for the styles they'd otherwise have.
+      ENVY_STYLES = { feelings: :envy, nearby: :envy_nearby }.freeze
 
       private
 
@@ -76,12 +76,12 @@ module Raindown
         :feelings
       end
 
-      # A cuckoo's cells in their own tint, bold like the rest around the method the mouse is over.
+      # An envious method's cells in their own tint, bold like the rest around the method the mouse is over.
       def tinted(owner, style)
-        @cuckoos ||= Hash.new { |cuckoos, method| cuckoos[method] = !view.cuckoo(view.code_methods[method]).nil? }
-        return style unless @cuckoos[owner]
+        @envious ||= Hash.new { |envious, method| envious[method] = !view.envy(view.code_methods[method]).nil? }
+        return style unless @envious[owner]
 
-        CUCKOO_STYLES.fetch(style)
+        ENVY_STYLES.fetch(style)
       end
 
       # The cells around the cell, in the rows above and below it and beside it in its own.

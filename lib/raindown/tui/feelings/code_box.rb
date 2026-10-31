@@ -5,21 +5,21 @@ require_relative '../highlighter'
 module Raindown
   module TUI
     # Code feelings' box below the grid: the selected method's code, highlighted, its first lines or, expanded, all that
-    # fit, then why it felt that way while that's typed, below a line, and why it's a cuckoo, at the bottom, when it is:
+    # fit, then why it felt that way while that's typed, below a line, and what it envies, at the bottom, when it is:
     #    ╭─ lib/text.rb:62 · Text#segments_between ──────────── changed 6× ─╮
     #    │ def segments_between(line, from, to)                              │
     #    │ [12 more lines]                                                   │
     #    ├───────────────────────────────────────────────────────────────────┤
     #    │ Why DREAD? > column maths, a character at a time▏                 │
-    #    ╰─ 🐦 probably belongs to Segment: 4 calls on segment, 0 on self ─ c: not a cuckoo ─╯
+    #    ╰─ 💚 envies Segment: 4 calls on segment, 0 on self ─ c: content ─╯
     module CodeBox
       # The most of a method's code that shows, until it's expanded, and the rows the grid keeps when it is.
       CODE_LINES = 6
       MIN_GRID_ROWS = 2
       # The box's top and bottom, and the line of how many more lines there are.
       BOX_LINES = 3
-      # How a cuckoo's box ends, when there's room, saying how to say it isn't one.
-      NOT_CUCKOO = ' c: not a cuckoo ─╯'
+      # How an envious method's box ends, when there's room, saying how to say it's content.
+      CONTENT = ' c: content ─╯'
 
       private
 
@@ -31,15 +31,15 @@ module Raindown
         [box_top(view.selected), *code, *blank_lines(code.length + notes.length), *notes, box_bottom]
       end
 
-      # The box's bottom, saying why the method's a cuckoo when it is one, and that C says it isn't, when there's room.
+      # The box's bottom, saying what the method envies when it's envious, and that C says it's content, when there's room.
       def box_bottom
-        cuckoo = view.cuckoo(view.selected)
-        return box_edge('╰', '╯') unless cuckoo
+        envy = view.envy(view.selected)
+        return box_edge('╰', '╯') unless envy
 
-        why = "╰─ 🐦 #{cuckoo.reason} "
-        return box_edge(why, '─╯') if display_width(why + NOT_CUCKOO) > width - 3
+        why = "╰─ 💚 #{envy.reason} "
+        return box_edge(why, '─╯') if display_width(why + CONTENT) > width - 3
 
-        box_edge(why, NOT_CUCKOO)
+        box_edge(why, CONTENT)
       end
 
       # Blank lines after a short method's code and its note, so the box is always as tall as it gets until it's expanded,

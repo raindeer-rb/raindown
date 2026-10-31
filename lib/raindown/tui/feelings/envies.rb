@@ -2,23 +2,23 @@
 
 module Raindown
   module TUI
-    # How much a method looks laid in another class's nest, like a cuckoo's egg: from 0 to 9, which is how its evidence
-    # ranks among the project's, the class it probably belongs to, and why, in a few words. It's laid when its evidence is
+    # How much a method envies another class, the fifth temper beside woe, frolic, dread and malice: from 0 to 9, which is
+    # how its evidence ranks among the project's, the class it envies, and why, in a few words. It's envious when its evidence is
     # clear on its own, and it ranks near the top, so a tidy project has none.
-    Cuckoo = Data.define(:score, :evidence, :home, :reason) do
-      def laid? = evidence >= Cuckoos::CLEAR && score >= Cuckoos::LAID
+    Envy = Data.define(:score, :evidence, :home, :reason) do
+      def envious? = evidence >= Envies::CLEAR && score >= Envies::ENVIOUS
 
       # What Claude Code is told, to move it where it belongs.
-      def prompt = "It looks like a cuckoo, as it #{reason}, so consider moving it to #{home}."
+      def prompt = "It #{reason}, so consider moving it to #{home}."
     end
 
-    # Finds cuckoos among a project's methods, in any language, by their code's words rather than its grammar. Envy is
+    # Finds envy among a project's methods, in any language, by their code's words rather than its grammar. Envy is
     # the most telling: a method that calls a parameter or variable named after another class, like order.total and
-    # order.items for Order, at least one of them a method Order has, much more than it touches its own nest, like self.,
+    # order.items for Order, at least one of them a method Order has, much more than it touches its own class, like self.,
     # this., @ivars and its siblings, the methods of its class in the same file. Being named after another class it uses,
     # being a loner that calls no sibling, and no sibling calls, and being in a class not named after its file, in a file
-    # with one that is, add to it. Functions outside a class aren't in a nest, so they're never cuckoos.
-    module Cuckoos
+    # with one that is, add to it. Functions outside a class have no class of their own, so they never envy.
+    module Envies
       # The calls on another class's receiver that make envy, as long as there are ENVY_RATIO times as many as on itself.
       ENVY_CALLS = 3
       ENVY_RATIO = 3
@@ -27,9 +27,9 @@ module Raindown
       NAMED = 2
       LONER = 1
       LOST = 1
-      # The evidence that's clear on its own, and the score it needs too, so only the clearest are laid.
+      # The evidence that's clear on its own, and the score it needs too, so only the clearest are envious.
       CLEAR = 4
-      LAID = 7
+      ENVIOUS = 7
       # Owners with shorter names, like UI, are left out of what methods are named after, as they're in too many words.
       NAME_LENGTH = 4
       # The names a method calls itself by, like self.total or this.total.
@@ -50,41 +50,41 @@ module Raindown
       DECLARED = [/\A[^(\n]*\(([^)]*)\)/, /\|([^|]*)\|/, /\(([^()]*)\)\s*=>/, /(\w+)\s*=>/, /(?<![\w.@$])(\w+)\s*(?:=(?![=~>])|:=)/,
                   /\b(?:let|const|var|for|as)\s+(\w+)/].freeze
 
-      # What a method's code says about its nest: the members called on each of its parameters and variables, how many
+      # What a method's code says about its class: the members called on each of its parameters and variables, how many
       # times it touches itself, how many times it says each bare word, which includes its siblings it calls, and the
       # words it says at all, squashed, to tell which classes it uses.
       Body = Data.define(:receivers, :own, :calls, :mentions)
 
-      # The project's methods' bodies, its owners, each one's method names, each nest's methods, by file and owner, and
+      # The project's methods' bodies, its owners, each one's method names, each class's methods, by file and owner, and
       # each file's owners.
-      Project = Data.define(:bodies, :owners, :nests, :files) do
+      Project = Data.define(:bodies, :owners, :classes, :files) do
         def self.of(methods)
           owned = methods.select(&:owner)
-          new(bodies: methods.to_h { [it, Cuckoos.body(it)] },
+          new(bodies: methods.to_h { [it, Envies.body(it)] },
               owners: owned.group_by(&:owner).transform_values { it.to_set(&:name) },
-              nests: owned.group_by { [it.path, it.owner] }, files: owned.group_by(&:path).transform_values { it.map(&:owner).uniq })
+              classes: owned.group_by { [it.path, it.owner] }, files: owned.group_by(&:path).transform_values { it.map(&:owner).uniq })
         end
 
-        def siblings(method) = nests.fetch([method.path, method.owner], []) - [method]
+        def siblings(method) = classes.fetch([method.path, method.owner], []) - [method]
 
-        # How many times it touches its own nest: itself, its instance variables and its siblings.
+        # How many times it touches its own class: itself, its instance variables and its siblings.
         def own(method) = bodies[method].own + siblings(method).sum { bodies[method].calls[it.name] }
 
-        # Whether it keeps to itself, touching nothing of its nest, while none of its siblings call it.
+        # Whether it keeps to itself, touching nothing of its class, while none of its siblings call it.
         def loner?(method) = own(method).zero? && siblings(method).none? { bodies[it].calls[method.name].positive? }
       end
 
       module_function
 
-      # Each method with its Cuckoo, from 0 for no evidence to 9 for the most, where the same evidence scores the same.
-      def laying(methods)
+      # Each method with its Envy, from 0 for no evidence to 9 for the most, where the same evidence scores the same.
+      def envying(methods)
         project = Project.of(methods)
         found = methods.to_h { [it, evidence(it, project)] }
         ranked = found.values.map(&:first).sort
         methods.map do |method|
           points, home, reason = found[method]
           score = ranked.bsearch_index { it >= points } * 9 / [ranked.length - 1, 1].max
-          method.with(cuckoo: Cuckoo.new(score:, evidence: points, home:, reason:))
+          method.with(envy: Envy.new(score:, evidence: points, home:, reason:))
         end
       end
 
@@ -99,7 +99,7 @@ module Raindown
         [points.compact.sum, *why(envy, named, own)]
       end
 
-      # Points for working with another class's receiver much more than with its own nest, with that class, the receiver
+      # Points for working with another class's receiver much more than with its own class, with that class, the receiver
       # and how many calls there were on it, or no points.
       def envy(method, body, own, owners)
         home, receiver, calls = body.receivers.filter_map { |name, members| envied(name, members, method, owners) }.max_by(&:last)
@@ -119,14 +119,14 @@ module Raindown
       # The class it probably belongs to, and why, from its envy, or else what it's named after.
       def why(envy, named, own)
         _points, home, receiver, calls = envy
-        return [home, "probably belongs to #{home}: #{calls} calls on #{receiver}, #{own} on self"] if home
-        return [named, "probably belongs to #{named}: it's named after it, and makes #{own} calls on self"] if named
+        return [home, "envies #{home}: #{calls} calls on #{receiver}, #{own} on self"] if home
+        return [named, "envies #{named}: it's named after it, and makes #{own} calls on self"] if named
 
         [nil, nil]
       end
 
       # The longest other owner whose words are in the method's name, among others, like Invoice in format_invoice, when
-      # it uses it, and hardly uses its own nest.
+      # it uses it, and hardly uses its own class.
       def named_after(method, body, own, owners)
         return if own > 1
 

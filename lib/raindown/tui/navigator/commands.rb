@@ -18,7 +18,7 @@ module Raindown
       end
 
       def felt(feeling) = info("Felt #{feeling.temper} about #{feeling.method.label}")
-      def not_cuckoo(method) = info("#{method.label} isn't a cuckoo, until its code changes")
+      def contented(method) = info("#{method.label} is content, until its code changes")
 
       # Leaves the screen for Claude Code, asked to fix the method, and the view reads the code again after.
       def fix_with_agent(feeling)

@@ -57,9 +57,9 @@ module Raindown
       PERIWINKLE = 147
 
       # Code feelings' text and lines, in lavender, or magenta in 8 colours, the purple its magnified digits take turns
-      # with, or blue, and the pale blue of a cuckoo's egg, for its cuckoos' digits, or cyan.
-      FEELINGS = { feelings: 183, feelings_purple: 135, cuckoo: 152 }.freeze
-      BASIC_FEELINGS = { feelings: Curses::COLOR_MAGENTA, feelings_purple: Curses::COLOR_BLUE, cuckoo: Curses::COLOR_CYAN }.freeze
+      # with, or blue, and a pale, envious tint, for envious methods' digits, or cyan.
+      FEELINGS = { feelings: 183, feelings_purple: 135, envy: 152 }.freeze
+      BASIC_FEELINGS = { feelings: Curses::COLOR_MAGENTA, feelings_purple: Curses::COLOR_BLUE, envy: Curses::COLOR_CYAN }.freeze
       BRIGHT_WHITE = 15
       DARK_GREY = 238
 
@@ -85,7 +85,7 @@ module Raindown
           cursor: Curses::A_UNDERLINE, cursor_button: Curses::A_UNDERLINE | Curses::A_BOLD, heading: Curses::A_BOLD,
           body: Curses::A_DIM, error: Curses::A_BOLD, button: Curses::A_BOLD, folder: Curses::A_BOLD, project: Curses::A_BOLD, page: Curses::A_BOLD,
           key: Curses::A_REVERSE, border: Curses::A_DIM, divider: Curses::A_BOLD,
-          code_keyword: Curses::A_BOLD, code_comment: Curses::A_DIM, cuckoo: Curses::A_DIM
+          code_keyword: Curses::A_BOLD, code_comment: Curses::A_DIM, envy: Curses::A_DIM
         )
       end
 
@@ -112,11 +112,11 @@ module Raindown
         Hash.new(text).merge(plain.transform_values { it | text })
       end
 
-      # Headings, the waffle's butter's shine and its syrup, and Code feelings' text and lines, and its cuckoos, bold around
+      # Headings, the waffle's butter's shine and its syrup, and Code feelings' text and lines, and its envious methods, bold around
       # the method the mouse is over, and its purple.
       def emphasis
         { heading: pair(:heading) | Curses::A_BOLD, feelings: pair(:feelings), nearby: pair(:feelings) | Curses::A_BOLD,
-          cuckoo: pair(:cuckoo), cuckoo_nearby: pair(:cuckoo) | Curses::A_BOLD,
+          envy: pair(:envy), envy_nearby: pair(:envy) | Curses::A_BOLD,
           feelings_purple: pair(:feelings_purple), shine: pair(:shine) | Curses::A_BOLD, syrup: pair(:syrup) }
       end
 

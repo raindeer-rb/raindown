@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'raindown/tui/feelings/cuckoos_log'
+require 'raindown/tui/feelings/content_log'
 require 'raindown/tui/feelings/code_methods'
 require 'tmpdir'
 
-RSpec.describe Raindown::TUI::CuckoosLog do
+RSpec.describe Raindown::TUI::ContentLog do
   around do |example|
     Dir.mktmpdir do |dir|
       @root = File.realpath(dir)
@@ -15,10 +15,10 @@ RSpec.describe Raindown::TUI::CuckoosLog do
   let(:log) { described_class.new(root: @root) }
   let(:method) do
     Raindown::TUI::CodeMethod.new(path: File.join(@root, 'lib', 'report.rb'), owner: 'Report', name: 'summary', line: 5,
-                                  lines: ['def summary(endpoint)', '  endpoint.url', 'end'], changes: 0, drift: 0, cuckoo: nil)
+                                  lines: ['def summary(endpoint)', '  endpoint.url', 'end'], changes: 0, drift: 0, envy: nil)
   end
 
-  it "notes down in .raindown/cuckoos.csv that a method isn't a cuckoo, with its code's checksum, wherever its line moves" do
+  it "notes down in .raindown/content.csv that a method is content, with its code's checksum, wherever its line moves" do
     log.dismiss(method)
     log.dismiss(method)
 
@@ -26,7 +26,7 @@ RSpec.describe Raindown::TUI::CuckoosLog do
     expect([log.dismissed?(method.with(line: 9)), log.dismissed?(method.with(name: 'other'))]).to eq([true, false])
   end
 
-  it 'can be a cuckoo again once its code changes, and forgets it then' do
+  it 'can envy again once its code changes, and forgets it then' do
     log.dismiss(method)
     changed = method.with(lines: ['def summary(endpoint)', '  endpoint.host', 'end'])
     expect(log.dismissed?(changed)).to be(false)
